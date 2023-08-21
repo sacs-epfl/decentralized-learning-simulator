@@ -1,10 +1,20 @@
+import argparse
+import time
 from multiprocessing import freeze_support
 
-from dask.distributed import Client
+from dask.distributed import Client, LocalCluster
 
 from dasklearn.model_manager import ModelManager
 from dasklearn.models import create_model, unserialize_model, serialize_model
 from dasklearn.session_settings import SessionSettings, LearningSettings
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--workers', type=int, default=4)
+    parser.add_argument('--peers', type=int, default=10)
+    parser.add_argument('--rounds', type=int, default=30)
+    return parser.parse_args()
 
 
 def get_task_name(round_nr, peer_id):
@@ -13,6 +23,8 @@ def get_task_name(round_nr, peer_id):
 
 if __name__ == "__main__":
     freeze_support()
+
+    args = get_args()
 
     learning_settings = LearningSettings(
         learning_rate=0.002,
@@ -26,11 +38,12 @@ if __name__ == "__main__":
         dataset="cifar10",
         work_dir="",
         learning=learning_settings,
-        participants=20,
+        participants=args.peers,
         partitioner="iid",
     )
 
     # Start a local Dask cluster and connect to it
+    cluster = LocalCluster(n_workers=args.workers)
     client = Client()
     print("Client URL dashboard: %s" % client.dashboard_link)
 
@@ -59,7 +72,7 @@ if __name__ == "__main__":
     initial_model = create_model("cifar10")
     tasks = {"a0": initial_model}
 
-    for r in range(1, 31):
+    for r in range(1, args.rounds + 1):
         # TODO for now, assume we do an all-reduce
 
         for peer_id in range(settings.participants):
@@ -72,10 +85,10 @@ if __name__ == "__main__":
             prev_models[peer_id] = "t%d_%d" % (r, peer_id)
         tasks["a%d" % r] = (aggregate, [prev_models, r])
 
-    print(tasks)
-
     # Submit the tasks
     print("Starting training...")
-    result = client.get(tasks, 'a30')
+    start_time = time.time()
+    result = client.get(tasks, 'a%d' % args.num_rounds)
+    elapsed_time = time.time() - start_time
 
-    print("Final result: %s" % result)
+    print("Final result: %s (took %d s.)" % (result, elapsed_time))
