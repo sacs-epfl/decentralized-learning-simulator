@@ -51,8 +51,8 @@ if __name__ == "__main__":
     print("Client URL dashboard: %s" % client.dashboard_link)
 
     def aggregate(params):
-        models, round_nr = params
-        print("Aggregating %d models in round %d..." % (len(models), round_nr))
+        models, round_nr, peer_id = params
+        print("Peer %d aggregating %d models in round %d..." % (peer_id, len(models), round_nr))
 
         model_manager = ModelManager(None, settings, 0)
         for peer_id, model in models.items():
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         model_manager = ModelManager(copied_model, settings, peer_id)
         model_manager.train()
 
-        print("Training in round %d..." % round_nr)
+        print("Peer %d training in round %d..." % (peer_id, round_nr))
         return model
 
     # Parse the topology
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         # Train
         for peer_id in range(settings.participants):
             # Train on the previous aggregated model
-            agg_task = 'a%d_%d' % (peer_id, r - 1) if r > 1 else "a0_0"
+            agg_task = 'a%d_%d' % (r - 1, peer_id) if r > 1 else "a0_0"
             tasks[get_task_name(r, peer_id)] = (train, [agg_task, r, peer_id])
 
         # Aggregate
@@ -97,13 +97,19 @@ if __name__ == "__main__":
             for neighbour_peer_id in graph[peer_id]:
                 prev_models[neighbour_peer_id] = "t%d_%d" % (r, neighbour_peer_id)
 
-            tasks["a%d_%d" % (peer_id, r)] = (aggregate, [prev_models, r])
+            tasks["a%d_%d" % (r, peer_id)] = (aggregate, [prev_models, r, peer_id])
+
+    # Add one final aggregation step
+    prev_models = {}
+    for peer_id in range(settings.participants):
+        prev_models[peer_id] = "a%d_%d" % (args.rounds, peer_id)
+    tasks["final"] = (aggregate, [prev_models, args.rounds + 1, 0])
 
     # Submit the tasks
     print(tasks)
     print("Starting training...")
     start_time = time.time()
-    result = client.get(tasks, 'a0_%d' % args.rounds)
+    result = client.get(tasks, "final")
     elapsed_time = time.time() - start_time
 
     print("Final result: %s (took %d s.)" % (result, elapsed_time))
