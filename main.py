@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # Start a local Dask cluster and connect to it
     cluster = LocalCluster(n_workers=args.workers)
-    client = Client()
+    client = Client(cluster)
     print("Client URL dashboard: %s" % client.dashboard_link)
 
     def aggregate(params):
