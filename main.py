@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # Submit the tasks
     print("Starting training...")
     start_time = time.time()
-    result = client.get(tasks, 'a%d' % args.num_rounds)
+    result = client.get(tasks, 'a%d' % args.rounds)
     elapsed_time = time.time() - start_time
 
     print("Final result: %s (took %d s.)" % (result, elapsed_time))
