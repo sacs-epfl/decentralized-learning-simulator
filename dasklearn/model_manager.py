@@ -31,14 +31,14 @@ class ModelManager:
         self.model_trainer: ModelTrainer = ModelTrainer(self.data_dir, self.settings, self.participant_index)
 
         # Keeps track of the incoming trained models as aggregator
-        self.incoming_trained_models: Dict[bytes, nn.Module] = {}
+        self.incoming_trained_models: Dict[int, nn.Module] = {}
 
-    def process_incoming_trained_model(self, peer_pk: bytes, incoming_model: nn.Module):
-        if peer_pk in self.incoming_trained_models:
+    def process_incoming_trained_model(self, peer_id: int, incoming_model: nn.Module):
+        if peer_id in self.incoming_trained_models:
             # We already processed this model
             return
 
-        self.incoming_trained_models[peer_pk] = incoming_model
+        self.incoming_trained_models[peer_id] = incoming_model
 
     def reset_incoming_trained_models(self):
         self.incoming_trained_models = {}

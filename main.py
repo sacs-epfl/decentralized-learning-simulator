@@ -3,14 +3,19 @@ from multiprocessing import freeze_support
 from dask.distributed import Client
 
 from dasklearn.model_manager import ModelManager
-from dasklearn.models import create_model
+from dasklearn.models import create_model, unserialize_model, serialize_model
 from dasklearn.session_settings import SessionSettings, LearningSettings
+
+
+def get_task_name(round_nr, peer_id):
+    return "t%d_%d" % (round_nr, peer_id)
+
 
 if __name__ == "__main__":
     freeze_support()
 
     learning_settings = LearningSettings(
-        learning_rate=0.001,
+        learning_rate=0.002,
         momentum=0.9,
         weight_decay=0,
         batch_size=20,
@@ -21,8 +26,7 @@ if __name__ == "__main__":
         dataset="cifar10",
         work_dir="",
         learning=learning_settings,
-        participants=1,
-        target_participants=1,
+        participants=20,
         partitioner="iid",
     )
 
@@ -30,28 +34,48 @@ if __name__ == "__main__":
     client = Client()
     print("Client URL dashboard: %s" % client.dashboard_link)
 
-    def train(params):
-        model, round_nr = params
+    def aggregate(params):
+        models, round_nr = params
+        print("Aggregating %d models in round %d..." % (len(models), round_nr))
 
-        model_manager = ModelManager(model, settings, 0)
+        model_manager = ModelManager(None, settings, 0)
+        for peer_id, model in models.items():
+            model_manager.process_incoming_trained_model(peer_id, model)
+
+        return model_manager.aggregate_trained_models()
+
+    def train(params):
+        model, round_nr, peer_id = params
+
+        # Make a copy of the model so multiple workers are not training the same model
+        copied_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+        model_manager = ModelManager(copied_model, settings, peer_id)
         model_manager.train()
 
         print("Training in round %d..." % round_nr)
         return model
 
-    # Create an initial model
+    # Create the initial models
     initial_model = create_model("cifar10")
-    dsk = {
-        'r0': initial_model,
-    }
-    for r in range(1, 20):
-        dsk['r%d' % r] = (train, ['r%d' % (r - 1), r])
+    tasks = {"a0": initial_model}
+
+    for r in range(1, 31):
+        # TODO for now, assume we do an all-reduce
+
+        for peer_id in range(settings.participants):
+            # Train on the previous aggregated model
+            tasks[get_task_name(r, peer_id)] = (train, ['a%d' % (r - 1), r, peer_id])
+
+        # Aggregate
+        prev_models = {}
+        for peer_id in range(settings.participants):
+            prev_models[peer_id] = "t%d_%d" % (r, peer_id)
+        tasks["a%d" % r] = (aggregate, [prev_models, r])
+
+    print(tasks)
 
     # Submit the tasks
     print("Starting training...")
-    result = client.get(dsk, 'r19')
+    result = client.get(tasks, 'a30')
 
-    print(result)
-
-    while True:
-        pass
+    print("Final result: %s" % result)
