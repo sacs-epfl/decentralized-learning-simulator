@@ -9,6 +9,9 @@ from dasklearn.models import create_model, unserialize_model, serialize_model
 from dasklearn.session_settings import SessionSettings, LearningSettings
 
 
+graph = {}
+
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--workers', type=int, default=4)
@@ -30,8 +33,8 @@ if __name__ == "__main__":
         learning_rate=0.002,
         momentum=0.9,
         weight_decay=0,
-        batch_size=20,
-        local_steps=5,
+        batch_size=32,
+        local_steps=20,
     )
 
     settings = SessionSettings(
@@ -68,27 +71,39 @@ if __name__ == "__main__":
         print("Training in round %d..." % round_nr)
         return model
 
+    # Parse the topology
+    with open("data/256_nodes_6_regular.txt") as topo_file:
+        for line in topo_file.readlines():
+            parts = line.strip().split(" ")
+            from_node, to_node = int(parts[0]), int(parts[1])
+            if from_node not in graph:
+                graph[from_node] = []
+            graph[from_node].append(to_node)
+
     # Create the initial models
     initial_model = create_model("cifar10")
-    tasks = {"a0": initial_model}
+    tasks = {"a0_0": initial_model}
 
     for r in range(1, args.rounds + 1):
-        # TODO for now, assume we do an all-reduce
-
+        # Train
         for peer_id in range(settings.participants):
             # Train on the previous aggregated model
-            tasks[get_task_name(r, peer_id)] = (train, ['a%d' % (r - 1), r, peer_id])
+            agg_task = 'a%d_%d' % (peer_id, r - 1) if r > 1 else "a0_0"
+            tasks[get_task_name(r, peer_id)] = (train, [agg_task, r, peer_id])
 
         # Aggregate
-        prev_models = {}
         for peer_id in range(settings.participants):
-            prev_models[peer_id] = "t%d_%d" % (r, peer_id)
-        tasks["a%d" % r] = (aggregate, [prev_models, r])
+            prev_models = {}
+            for neighbour_peer_id in graph[peer_id]:
+                prev_models[neighbour_peer_id] = "t%d_%d" % (r, neighbour_peer_id)
+
+            tasks["a%d_%d" % (peer_id, r)] = (aggregate, [prev_models, r])
 
     # Submit the tasks
+    print(tasks)
     print("Starting training...")
     start_time = time.time()
-    result = client.get(tasks, 'a%d' % args.rounds)
+    result = client.get(tasks, 'a0_%d' % args.rounds)
     elapsed_time = time.time() - start_time
 
     print("Final result: %s (took %d s.)" % (result, elapsed_time))
