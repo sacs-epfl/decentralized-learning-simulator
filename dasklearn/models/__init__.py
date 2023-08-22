@@ -18,7 +18,10 @@ def unserialize_model(serialized_model: bytes, dataset: str, architecture: Optio
 
 def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
     if dataset == "cifar10":
-        if not architecture:
+        if not architecture or architecture == "lenet":
+            from dasklearn.models.cifar10 import LeNet
+            return LeNet()
+        elif architecture == "gnlenet":
             from dasklearn.models.cifar10 import GNLeNet
             return GNLeNet(input_channel=3, output=10, model_input=(32, 32))
         else:

@@ -17,6 +17,7 @@ def get_args():
     parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--peers', type=int, default=10)
     parser.add_argument('--rounds', type=int, default=30)
+    parser.add_argument('--model', type=str, default=None)
     return parser.parse_args()
 
 
@@ -43,6 +44,7 @@ if __name__ == "__main__":
         learning=learning_settings,
         participants=args.peers,
         partitioner="iid",
+        model=args.model
     )
 
     # Start a local Dask cluster and connect to it
@@ -81,7 +83,7 @@ if __name__ == "__main__":
             graph[from_node].append(to_node)
 
     # Create the initial models
-    initial_model = create_model("cifar10")
+    initial_model = create_model("cifar10", architecture=args.model)
     tasks = {"a0_0": initial_model}
 
     for r in range(1, args.rounds + 1):
