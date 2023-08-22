@@ -1,8 +1,5 @@
-import os
 from dataclasses import dataclass
 from typing import Optional
-
-from dataclasses_json import dataclass_json
 
 from dasklearn.gradient_aggregation import GradientAggregationMethod
 
@@ -19,7 +16,6 @@ class LearningSettings:
     local_steps: int
 
 
-@dataclass_json
 @dataclass
 class SessionSettings:
     """
@@ -35,13 +31,3 @@ class SessionSettings:
     partitioner: str = "iid"  # iid, shards or dirichlet
     gradient_aggregation: GradientAggregationMethod = GradientAggregationMethod.FEDAVG
     train_device_name: str = "cpu"
-
-
-def dump_settings(settings: SessionSettings):
-    """
-    Dump the session settings if they do not exist yet.
-    """
-    settings_file_path = os.path.join(settings.work_dir, "settings.json")
-    if not os.path.exists(settings_file_path):
-        with open(settings_file_path, "w") as settings_file:
-            settings_file.write(settings.to_json())
