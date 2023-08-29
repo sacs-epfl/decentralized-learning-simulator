@@ -16,14 +16,14 @@ graph = {}
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--peers', type=int, default=5)
-    parser.add_argument('--rounds', type=int, default=10)
+    parser.add_argument('--rounds', type=int, default=20)
     parser.add_argument('--model', type=str, default="gnlenet")
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--work-fraction', type=float, default=1)
-    parser.add_argument('--algorithm', type=str, default="dpsgd")
+    parser.add_argument('--algorithm', type=str, default="fedavg")
 
     # Accuracy checking
-    parser.add_argument('--test-interval', type=int, default=0)
+    parser.add_argument('--test-interval', type=int, default=10)
 
     # Dask-related parameters
     parser.add_argument('--workers', type=int, default=4)
@@ -50,7 +50,8 @@ if __name__ == "__main__":
         learning=learning_settings,
         participants=args.peers,
         partitioner="iid",
-        model=args.model
+        model=args.model,
+        test_interval=args.test_interval,
     )
 
     if args.scheduler:

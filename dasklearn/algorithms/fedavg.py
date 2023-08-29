@@ -19,11 +19,15 @@ def generate_task_graph(args, settings) -> Dict:
         selected_peers = rand.sample(all_peers, sample_size)
 
         # Train
+        if r > 1 and (r - 1) % settings.test_interval == 0:
+            prev_task = "test%d" % (r - 1)
+        else:
+            prev_task = 'a%d' % (r - 1)
+
         for peer_id in selected_peers:
             # Train on the previous aggregated model
-            agg_task = 'a%d' % (r - 1) if r > 1 else "a0"
             train_task_name = "t%d_%d" % (r, peer_id)
-            tasks[train_task_name] = (train, [agg_task, r, peer_id, settings])
+            tasks[train_task_name] = (train, [prev_task, r, peer_id, settings])
 
         # Aggregate
         prev_models = {}
@@ -31,6 +35,8 @@ def generate_task_graph(args, settings) -> Dict:
             prev_models[selected_peer] = "t%d_%d" % (r, selected_peer)
 
         tasks["a%d" % r] = (aggregate, [prev_models, r, None, settings])
+        if r % settings.test_interval == 0:
+            tasks["test%d" % r] = (test, ["a%d" % r, r, 0, settings])
 
     tasks["final"] = (test, ["a%d" % args.rounds, args.rounds, 0, settings])
 

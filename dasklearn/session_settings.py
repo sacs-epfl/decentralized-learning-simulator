@@ -31,3 +31,4 @@ class SessionSettings:
     partitioner: str = "iid"  # iid, shards or dirichlet
     gradient_aggregation: GradientAggregationMethod = GradientAggregationMethod.FEDAVG
     train_device_name: str = "cpu"
+    test_interval: int = 0
