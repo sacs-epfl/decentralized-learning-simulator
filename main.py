@@ -20,7 +20,7 @@ def get_args():
     parser.add_argument('--model', type=str, default="gnlenet")
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--work-fraction', type=float, default=1)
-    parser.add_argument('--algorithm', type=str, default="fedavg")
+    parser.add_argument('--algorithm', type=str, default="dpsgd")
 
     # Accuracy checking
     parser.add_argument('--test-interval', type=int, default=0)
