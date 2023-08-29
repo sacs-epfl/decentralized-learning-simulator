@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 from typing import Optional
 
 import torch
@@ -21,9 +20,6 @@ class ModelTrainer:
     """
 
     def __init__(self, data_dir, settings: SessionSettings, participant_index: int):
-        """
-        :param simulated_speed: compute speed of the simulated device, in ms/sample.
-        """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.settings: SessionSettings = settings
         self.participant_index: int = participant_index
