@@ -21,6 +21,7 @@ class SessionSettings:
     """
     All settings related to a training session.
     """
+    seed: int
     work_dir: str
     dataset: str
     learning: LearningSettings
@@ -32,3 +33,7 @@ class SessionSettings:
     gradient_aggregation: GradientAggregationMethod = GradientAggregationMethod.FEDAVG
     train_device_name: str = "cpu"
     test_interval: int = 0
+    scheduler: Optional[str] = None
+    workers: Optional[int] = None
+    capability_traces: Optional[str] = None
+    rounds: int = 10

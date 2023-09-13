@@ -1,14 +1,8 @@
 import argparse
-import math
-import time
 from multiprocessing import freeze_support
 
-from dask.distributed import Client, LocalCluster
-
 from dasklearn.session_settings import SessionSettings, LearningSettings
-
-import networkx as nx
-
+from dasklearn.simulation.simulation import Simulation
 
 graph = {}
 
@@ -21,6 +15,9 @@ def get_args():
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--work-fraction', type=float, default=1)
     parser.add_argument('--algorithm', type=str, default="fedavg")
+
+    # Traces
+    parser.add_argument('--capability-traces', type=str, default=None)
 
     # Accuracy checking
     parser.add_argument('--test-interval', type=int, default=10)
@@ -44,7 +41,9 @@ if __name__ == "__main__":
         local_steps=20,
     )
 
+    # TODO add availability traces
     settings = SessionSettings(
+        seed=args.seed,
         dataset="cifar10",
         work_dir="",
         learning=learning_settings,
@@ -52,31 +51,10 @@ if __name__ == "__main__":
         partitioner="iid",
         model=args.model,
         test_interval=args.test_interval,
+        scheduler=args.scheduler,
+        workers=args.workers,
+        capability_traces=args.capability_traces,
     )
 
-    if args.scheduler:
-        client = Client(args.scheduler)
-    else:
-        # Start a local Dask cluster and connect to it
-        cluster = LocalCluster(n_workers=args.workers)
-        client = Client(cluster)
-        print("Client dashboard URL: %s" % client.dashboard_link)
-
-    if args.algorithm == "fedavg":
-        from dasklearn.algorithms.fedavg import generate_task_graph
-        tasks = generate_task_graph(args, settings)
-    elif args.algorithm == "dpsgd":
-        from dasklearn.algorithms.dpsgd import generate_task_graph
-        k = math.floor(math.log2(args.peers))
-        G = nx.random_regular_graph(k, args.peers)
-        tasks = generate_task_graph(G, args, settings)
-    else:
-        raise RuntimeError("Unknown learning algorithm %s" % args.algorithm)
-
-    # Submit the tasks
-    print("Starting training...")
-    start_time = time.time()
-    result = client.get(tasks, "final")
-    elapsed_time = time.time() - start_time
-
-    print("Final result: %s (took %d s.)" % (result, elapsed_time))
+    simulation = Simulation(settings)
+    simulation.run()
