@@ -17,7 +17,7 @@ def get_args():
     parser.add_argument('--algorithm', type=str, default="fedavg")
 
     # Traces
-    parser.add_argument('--capability-traces', type=str, default=None)
+    parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
 
     # Accuracy checking
     parser.add_argument('--test-interval', type=int, default=10)
@@ -54,6 +54,7 @@ if __name__ == "__main__":
         scheduler=args.scheduler,
         workers=args.workers,
         capability_traces=args.capability_traces,
+        rounds=args.rounds,
     )
 
     simulation = Simulation(settings)

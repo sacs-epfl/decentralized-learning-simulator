@@ -76,6 +76,8 @@ class Simulation:
             self.current_time = event.time
             self.process_event(event)
 
+        self.evaluate_workflow_graph()
+
         # Done! Sanity checks
         for client in self.clients:
             assert len(client.bw_scheduler.incoming_requests) == 0
@@ -112,7 +114,7 @@ class Simulation:
             print("Client dashboard URL: %s" % client.dashboard_link)
 
         # Submit the tasks
-        print("Starting training...")
+        self.logger.info("Evaluating workflow graph...")
         start_time = time.time()
         result = client.get(self.tasks, "final")
         elapsed_time = time.time() - start_time
