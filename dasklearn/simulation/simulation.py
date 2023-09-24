@@ -76,7 +76,7 @@ class Simulation:
             self.current_time = event.time
             self.process_event(event)
 
-        self.evaluate_workflow_graph()
+        #self.evaluate_workflow_graph()
 
         # Done! Sanity checks
         for client in self.clients:

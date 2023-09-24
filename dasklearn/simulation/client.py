@@ -36,6 +36,8 @@ class Client:
             batch_size: int = self.simulator.settings.learning.batch_size
             train_time = AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000)
 
+        # TODO schedule the train event in the compute DAG here
+
         finish_train_event = Event(event.time + train_time, self.index, FINISH_TRAIN)
         self.simulator.schedule(finish_train_event)
 

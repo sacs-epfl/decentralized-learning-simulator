@@ -1,4 +1,5 @@
 import argparse
+import logging
 from multiprocessing import freeze_support
 
 from dasklearn.session_settings import SessionSettings, LearningSettings
@@ -30,6 +31,8 @@ def get_args():
 
 if __name__ == "__main__":
     freeze_support()
+
+    logging.basicConfig(level=logging.INFO)
 
     args = get_args()
 
