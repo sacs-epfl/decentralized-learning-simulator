@@ -21,6 +21,7 @@ class SessionSettings:
     """
     All settings related to a training session.
     """
+    algorithm: str
     seed: int
     work_dir: str
     dataset: str
@@ -37,3 +38,4 @@ class SessionSettings:
     workers: Optional[int] = None
     capability_traces: Optional[str] = None
     rounds: int = 10
+    data_dir: str = ""

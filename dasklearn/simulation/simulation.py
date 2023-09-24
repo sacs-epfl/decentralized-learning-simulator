@@ -1,7 +1,9 @@
 import heapq
 import logging
 import math
+import os
 import pickle
+import shutil
 import time
 from random import Random
 from typing import List
@@ -25,6 +27,10 @@ class Simulation:
 
     def __init__(self, settings: SessionSettings):
         self.logger = logging.getLogger(self.__class__.__name__)
+
+        self.data_dir = os.path.join("data", "%s_%s_n%d_s%d" % (settings.algorithm, settings.dataset, settings.participants, settings.seed))
+        settings.data_dir = self.data_dir
+
         self.settings = settings
         self.events: List[Event] = []
         heapq.heapify(self.events)
@@ -38,7 +44,21 @@ class Simulation:
 
         self.clients: List[Client] = []
 
+    def setup_directories(self):
+        if not os.path.exists("data"):
+            os.mkdir("data")
+
+        if os.path.exists(self.data_dir):
+            shutil.rmtree(self.data_dir)
+        os.makedirs(self.data_dir, exist_ok=True)
+
+        # Create accuracies file
+        with open(os.path.join(self.data_dir, "accuracies.csv"), "w") as accuracies_file:
+            accuracies_file.write("peer,round,time,accuracy,loss\n")
+
     def run(self):
+        self.setup_directories()
+
         # Initialize the clients
         for client_id in range(self.settings.participants):
             self.clients.append(Client(self, client_id))
@@ -76,7 +96,10 @@ class Simulation:
             self.current_time = event.time
             self.process_event(event)
 
-        #self.evaluate_workflow_graph()
+        for task_name, task in self.tasks.items():
+            print("%s => %s" % (task_name, task[1][0]))
+
+        self.evaluate_workflow_graph()
 
         # Done! Sanity checks
         for client in self.clients:
@@ -116,7 +139,9 @@ class Simulation:
         # Submit the tasks
         self.logger.info("Evaluating workflow graph...")
         start_time = time.time()
-        result = client.get(self.tasks, "final")
+        frontier_tasks = [c.latest_task for c in self.clients if c.latest_task is not None]
+        self.logger.info("Frontier tasks: %s" % frontier_tasks)
+        result = client.get(self.tasks, frontier_tasks)
         elapsed_time = time.time() - start_time
 
         print("Final result: %s (took %d s.)" % (result, elapsed_time))

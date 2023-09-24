@@ -5,23 +5,20 @@ from multiprocessing import freeze_support
 from dasklearn.session_settings import SessionSettings, LearningSettings
 from dasklearn.simulation.simulation import Simulation
 
-graph = {}
-
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--peers', type=int, default=5)
-    parser.add_argument('--rounds', type=int, default=20)
+    parser.add_argument('--peers', type=int, default=10)
+    parser.add_argument('--rounds', type=int, default=10)
     parser.add_argument('--model', type=str, default="gnlenet")
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--work-fraction', type=float, default=1)
-    parser.add_argument('--algorithm', type=str, default="fedavg")
+    parser.add_argument('--algorithm', type=str, default="dpsgd")
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
 
     # Accuracy checking
-    parser.add_argument('--test-interval', type=int, default=10)
+    parser.add_argument('--test-interval', type=int, default=5)
 
     # Dask-related parameters
     parser.add_argument('--workers', type=int, default=4)
@@ -46,6 +43,7 @@ if __name__ == "__main__":
 
     # TODO add availability traces
     settings = SessionSettings(
+        algorithm=args.algorithm,
         seed=args.seed,
         dataset="cifar10",
         work_dir="",

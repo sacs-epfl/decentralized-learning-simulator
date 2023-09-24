@@ -61,12 +61,12 @@ class BWScheduler:
             self.is_active = False
             self.total_time_transmitting += (self.client.simulator.current_time - self.became_active)
 
-    def add_transfer(self, receiver_scheduler: "BWScheduler", transfer_size: int) -> "Transfer":
+    def add_transfer(self, receiver_scheduler: "BWScheduler", transfer_size: int, model: str) -> "Transfer":
         """
         A new transfer request arrived.
         :param transfer_size: Size of the transfer, in bytes
         """
-        transfer: Transfer = Transfer(self, receiver_scheduler, transfer_size)
+        transfer: Transfer = Transfer(self, receiver_scheduler, transfer_size, model)
         self.outgoing_requests.append(transfer)
         self.logger.debug("Adding transfer request %d: %s => %s to the queue", transfer.transfer_id, self.my_id,
                           transfer.receiver_scheduler.my_id)
@@ -156,7 +156,8 @@ class BWScheduler:
         cur_time = self.client.simulator.current_time
         data = {
             "from": completed_transfer.sender_scheduler.client.index,
-            "to": completed_transfer.receiver_scheduler.client.index
+            "to": completed_transfer.receiver_scheduler.client.index,
+            "model": completed_transfer.model
         }
         incoming_model_event = Event(cur_time, self.client.index, INCOMING_MODEL, data)
         self.client.on_incoming_model(incoming_model_event)
@@ -170,6 +171,20 @@ class BWScheduler:
             incoming_bw_left: int = self.bw_limit - self.get_allocated_incoming_bw()
             if incoming_bw_left == 0:
                 break
+
+    def remove_transfer_finish_from_event_queue(self, transfer):
+        """
+        Remove an ongoing transfer completion from the event queue.
+        """
+        event_ind = -1
+        for ind, event in enumerate(self.client.simulator.events):
+            if event.action == FINISH_OUTGOING_TRANSFER and event.data["transfer"] == transfer:
+                event_ind = ind
+                break
+
+        assert event_ind != -1, "Ongoing transfer %d not found in event queue while removing it!" % transfer.transfer_id
+        self.logger.debug("Removing completion of transfer %d from event queue", transfer.transfer_id)
+        self.client.simulator.events.pop(event_ind)
 
     def on_receiver_inform_about_free_bandwidth(self, transfer):
         """
@@ -190,7 +205,8 @@ class BWScheduler:
                 self.logger.debug("Allocating %d additional bw to transfer %d", additional_bw_to_allocate,
                                   transfer.transfer_id)
                 task_name = "transfer_%d_finish_%d" % (transfer.transfer_id, transfer.reschedules)
-                self.cancel_pending_task(task_name)
+
+                self.remove_transfer_finish_from_event_queue(transfer)
 
                 # First we update how much of the transfer has been completed at this point.
                 transfer.update()
@@ -199,9 +215,10 @@ class BWScheduler:
                 transfer.allocated_bw += additional_bw_to_allocate
                 new_estimated_finish_time = (transfer.transfer_size - transfer.transferred) / transfer.allocated_bw
                 transfer.reschedules += 1
-                new_task_name = "transfer_%d_finish_%d" % (transfer.transfer_id, transfer.reschedules)
-                self.register_task(new_task_name, self.on_outgoing_transfer_complete, transfer,
-                                   delay=new_estimated_finish_time)
+                finish_transfer_event = Event(self.client.simulator.current_time + new_estimated_finish_time,
+                                              self.client.index, FINISH_OUTGOING_TRANSFER,
+                                              {"transfer": transfer})
+                self.client.simulator.schedule(finish_transfer_event)
         elif transfer in self.outgoing_requests:
             self.logger.debug("Sender %s got available bw notification from receiver %s for pending request %s",
                               self.my_id, transfer.receiver_scheduler.my_id, transfer.transfer_id)
@@ -248,7 +265,7 @@ class Transfer:
     Represents a bandwidth transfer.
     """
 
-    def __init__(self, sender_scheduler: BWScheduler, receiver_scheduler: BWScheduler, transfer_size: int):
+    def __init__(self, sender_scheduler: BWScheduler, receiver_scheduler: BWScheduler, transfer_size: int, model: str):
         self.transfer_id = random.randint(0, 100000000000)
         self.sender_scheduler: BWScheduler = sender_scheduler
         self.receiver_scheduler: BWScheduler = receiver_scheduler
@@ -258,11 +275,10 @@ class Transfer:
         self.start_time: int = -1
         self.last_time_updated: int = 0
         self.reschedules: int = 0
-        self.metadata: Dict = {}
+        self.model: str = model
 
     def finish(self):
         self.update()
-        # TODO inform the receiver!
 
     def fail(self):
         self.update()
