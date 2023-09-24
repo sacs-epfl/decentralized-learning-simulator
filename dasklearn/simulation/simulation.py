@@ -96,9 +96,6 @@ class Simulation:
             self.current_time = event.time
             self.process_event(event)
 
-        for task_name, task in self.tasks.items():
-            print("%s => %s" % (task_name, task[1][0]))
-
         self.evaluate_workflow_graph()
 
         # Done! Sanity checks
