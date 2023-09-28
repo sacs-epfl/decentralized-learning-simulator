@@ -17,6 +17,7 @@ def get_args():
     parser.add_argument('--local-steps', type=int, default=5)
 
     parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist"])
+    parser.add_argument('--dataset-base-path', type=str, default=None)
     parser.add_argument('--peers', type=int, default=10)
     parser.add_argument('--rounds', type=int, default=10)
     parser.add_argument('--model', type=str, default="gnlenet")
@@ -61,6 +62,7 @@ if __name__ == "__main__":
         algorithm=args.algorithm,
         seed=args.seed,
         dataset=args.dataset,
+        dataset_base_path=args.dataset_base_path,
         work_dir="",
         learning=learning_settings,
         participants=args.peers,
