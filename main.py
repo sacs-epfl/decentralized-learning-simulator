@@ -8,6 +8,15 @@ from dasklearn.simulation.simulation import Simulation
 
 def get_args():
     parser = argparse.ArgumentParser()
+
+    # Learning settings
+    parser.add_argument('--learning-rate', type=float, default=0.002)
+    parser.add_argument('--momentum', type=float, default=0.9)
+    parser.add_argument('--weight-decay', type=float, default=0)
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--local-steps', type=int, default=5)
+
+    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist"])
     parser.add_argument('--peers', type=int, default=10)
     parser.add_argument('--rounds', type=int, default=10)
     parser.add_argument('--model', type=str, default="gnlenet")
@@ -23,7 +32,13 @@ def get_args():
     # Dask-related parameters
     parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--scheduler', type=str, default=None)
-    return parser.parse_args()
+
+    args = parser.parse_args()
+    if args.dataset == "femnist":
+        args.learning_rate = 0.004
+        args.momentum = 0
+
+    return args
 
 
 if __name__ == "__main__":
@@ -34,18 +49,18 @@ if __name__ == "__main__":
     args = get_args()
 
     learning_settings = LearningSettings(
-        learning_rate=0.002,
-        momentum=0.9,
-        weight_decay=0,
-        batch_size=32,
-        local_steps=20,
+        learning_rate=args.learning_rate,
+        momentum=args.momentum,
+        weight_decay=args.weight_decay,
+        batch_size=args.batch_size,
+        local_steps=args.local_steps,
     )
 
     # TODO add availability traces
     settings = SessionSettings(
         algorithm=args.algorithm,
         seed=args.seed,
-        dataset="cifar10",
+        dataset=args.dataset,
         work_dir="",
         learning=learning_settings,
         participants=args.peers,

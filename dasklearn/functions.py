@@ -12,7 +12,7 @@ def train(params):
 
     if not model:
         torch.manual_seed(settings.seed)
-        copied_model = create_model("cifar10", architecture=settings.model)
+        copied_model = create_model(settings.dataset, architecture=settings.model)
     else:
         # Make a copy of the model so multiple workers are not training the same model
         copied_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)

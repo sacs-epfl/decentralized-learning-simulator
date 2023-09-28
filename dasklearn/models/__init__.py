@@ -26,5 +26,8 @@ def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
             return GNLeNet(input_channel=3, output=10, model_input=(32, 32))
         else:
             raise RuntimeError("Unknown model architecture for CIFAR10: %s" % architecture)
+    elif dataset == "femnist":
+        from dasklearn.models.femnist import CNN
+        return CNN()
     else:
         raise RuntimeError("Unknown dataset %s" % dataset)
