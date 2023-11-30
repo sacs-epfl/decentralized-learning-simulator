@@ -52,5 +52,5 @@ class ModelManager:
         return self.get_aggregation_method().aggregate(models, weights=weights)
 
     def train(self) -> int:
-        samples_trained_on = self.model_trainer.train(self.model, device_name=self.settings.train_device_name)
+        samples_trained_on = self.model_trainer.train(self.model, device_name=self.settings.torch_device_name)
         return samples_trained_on
