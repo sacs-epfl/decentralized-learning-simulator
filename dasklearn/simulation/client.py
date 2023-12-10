@@ -6,6 +6,7 @@ from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
 from dasklearn.simulation.events import *
 from dasklearn.functions import *
+from dasklearn.tasks.task import Task
 
 
 class Client:
@@ -24,9 +25,20 @@ class Client:
         self.own_model: Optional[str] = None
         self.latest_task: Optional[str] = None  # Keep track of the latest task
 
-    def add_compute_task(self, name, task):
-        self.latest_task = name
-        self.simulator.tasks[name] = task
+    def add_compute_task(self, task: Task):
+        self.simulator.workflow_dag.tasks[task.name] = task
+        self.latest_task = task
+
+        # Link inputs/outputs of the task
+        if (task.func == "train" and task.data["model"] is not None) or task.func == "test":
+            preceding_task: Task = self.simulator.workflow_dag.tasks[task.data["model"]]
+            preceding_task.outputs.append(task)
+            task.inputs.append(preceding_task)
+        elif task.func == "aggregate":
+            for _, model_name in task.data["models"].items():
+                preceding_task: Task = self.simulator.workflow_dag.tasks[model_name]
+                preceding_task.outputs.append(task)
+                task.inputs.append(preceding_task)
 
     def init_model(self, event: Event):
         # Schedule a train action
@@ -43,8 +55,9 @@ class Client:
             batch_size: int = self.simulator.settings.learning.batch_size
             train_time = AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000)
 
-        task = (train, [self.own_model, self.round, self.index, self.simulator.settings])
-        self.add_compute_task("train_%d_%d" % (self.index, self.round), task)
+        task_name = "train_%d_%d" % (self.index, self.round)
+        task = Task(task_name, "train", data={"model": self.own_model, "round": self.round, "peer": self.index})
+        self.add_compute_task(task)
 
         finish_train_event = Event(event.time + train_time, self.index, FINISH_TRAIN)
         self.simulator.schedule(finish_train_event)
@@ -77,7 +90,7 @@ class Client:
         """
         We received a model.
         """
-        self.logger.info("Client %d received from %d model %s", self.index, event.data["from"], event.data["model"])
+        self.logger.debug("Client %d received from %d model %s", self.index, event.data["from"], event.data["model"])
         num_nb = len(list(self.simulator.topology.neighbors(self.index)))
         self.incoming_models[event.data["from"]] = event.data["model"]
         if len(self.incoming_models) == num_nb + 1:
@@ -99,21 +112,21 @@ class Client:
 
     def aggregate(self, event: Event):
         model_names = [model_name for model_name in self.incoming_models.values()]
-        self.logger.info("Client %d will aggregate in round %d (%s)", self.index, self.round, model_names)
+        self.logger.debug("Client %d will aggregate in round %d (%s)", self.index, self.round, model_names)
 
         models = copy.deepcopy(self.incoming_models)
         self.incoming_models = {}
         agg_task_name = "agg_%d_%d" % (self.index, self.round)
-        task = (aggregate, [models, self.round, self.index, self.simulator.settings])
-        self.add_compute_task(agg_task_name, task)
+        task = Task(agg_task_name, "aggregate", data={"models": models, "round": self.round, "peer": self.index})
+        self.add_compute_task(task)
 
         self.own_model = agg_task_name
 
         # Should we test?
         if self.round % self.simulator.settings.test_interval == 0:
             test_task_name = "test_%d_%d" % (self.index, self.round)
-            test_task = (test, [self.own_model, self.round, self.simulator.current_time, self.index, self.simulator.settings])
-            self.add_compute_task(test_task_name, test_task)
+            task = Task(test_task_name, "test", data={"model": self.own_model, "round": self.round, "time": self.simulator.current_time, "peer": self.index})
+            self.add_compute_task(task)
             self.own_model = test_task_name
 
         self.round += 1

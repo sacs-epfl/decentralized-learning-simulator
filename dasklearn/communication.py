@@ -1,0 +1,78 @@
+import asyncio
+import logging
+import pickle
+import socket
+from asyncio import ensure_future
+from typing import Callable, Dict
+
+import zmq
+import zmq.asyncio
+
+
+ctx = zmq.asyncio.Context()
+
+
+class Communication:
+
+    def __init__(self, identity: str, listen_port: int, message_callback: Callable, is_worker: bool = False):
+        self.is_worker = is_worker
+        self.listen_port = listen_port
+        self.message_callback = message_callback
+        self.identity = identity
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.receive_msg_task = None
+
+        self.listen_socket = None
+        self.worker_connections: Dict = {}
+        self.coordinator_connection = None
+
+    async def receive_messages(self):
+        while True:
+            identity, msg = await self.listen_socket.recv_multipart()
+            msg = pickle.loads(msg)
+            self.logger.debug(f"Received message from {identity.decode()}: {msg}")
+            try:
+                self.message_callback(identity.decode(), msg)
+            except Exception as exc:
+                self.logger.exception(exc)
+
+    def setup_server(self):
+        self.listen_socket = ctx.socket(zmq.ROUTER)
+        self.listen_socket.setsockopt(zmq.IDENTITY, self.identity.encode())
+        self.listen_socket.bind("tcp://*:%d" % self.listen_port)
+        self.logger.info("%s listening on port %d", "Worker" if self.is_worker else "Coordinator", self.listen_port)
+        self.receive_msg_task = asyncio.create_task(self.receive_messages())
+
+    def start(self):
+        self.setup_server()
+
+    def connect_to_coordinator(self, coordinator_address: str):
+        # Connect to the coordinator
+        self.coordinator_connection = ctx.socket(zmq.DEALER)
+        self.coordinator_connection.setsockopt(zmq.IDENTITY, self.identity.encode())
+        self.coordinator_connection.connect(coordinator_address)
+
+        hostname = socket.gethostname()
+        ip = socket.gethostbyname(hostname)
+        msg = pickle.dumps({"type": "hello", "address": "tcp://%s:%d" % (ip, self.listen_port)})
+        self.send_message_to_coordinator(msg)
+
+    def connect_to(self, identity: str, address: str):
+        ctx = zmq.asyncio.Context()
+        sock = ctx.socket(zmq.DEALER)
+        sock.setsockopt(zmq.IDENTITY, self.identity.encode())
+        sock.connect(address)
+        self.worker_connections[identity] = sock
+
+    def send_message_to_worker(self, identity: str, msg: bytes):
+        if identity not in self.worker_connections:
+            raise RuntimeError("Unknown identity for sending %s" % identity)
+
+        self.worker_connections[identity].send(msg)
+
+    def send_message_to_all_workers(self, msg: bytes):
+        for sock in self.worker_connections.values():
+            sock.send(msg)
+
+    def send_message_to_coordinator(self, msg: bytes):
+        self.coordinator_connection.send(msg)
