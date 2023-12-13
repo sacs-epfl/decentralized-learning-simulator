@@ -29,6 +29,10 @@ def train(settings: SessionSettings, params: Dict):
     model_manager = ModelManager(copied_model, settings, peer_id)
     model_manager.train()
 
+    del model_manager
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     logger.info("Peer %d training in round %d...", peer_id, round_nr)
     return copied_model
 
