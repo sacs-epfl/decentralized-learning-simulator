@@ -29,12 +29,15 @@ def train(settings: SessionSettings, params: Dict):
     model_manager = ModelManager(copied_model, settings, peer_id)
     model_manager.train()
 
+    detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+
     del model_manager
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
     logger.info("Peer %d training in round %d...", peer_id, round_nr)
-    return copied_model
+
+    return detached_model
 
 
 def aggregate(settings: SessionSettings, params: Dict):
