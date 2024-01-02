@@ -2,7 +2,6 @@ import asyncio
 import logging
 import pickle
 import socket
-from asyncio import ensure_future
 from typing import Callable, Dict
 
 import zmq
@@ -14,8 +13,8 @@ ctx = zmq.asyncio.Context()
 
 class Communication:
 
-    def __init__(self, identity: str, listen_port: int, message_callback: Callable, is_worker: bool = False):
-        self.is_worker = is_worker
+    def __init__(self, identity: str, listen_port: int, message_callback: Callable, is_broker: bool = False):
+        self.is_broker = is_broker
         self.listen_port = listen_port
         self.message_callback = message_callback
         self.identity = identity
@@ -23,7 +22,7 @@ class Communication:
         self.receive_msg_task = None
 
         self.listen_socket = None
-        self.worker_connections: Dict = {}
+        self.broker_connections: Dict = {}
         self.coordinator_connection = None
 
     async def receive_messages(self):
@@ -40,7 +39,7 @@ class Communication:
         self.listen_socket = ctx.socket(zmq.ROUTER)
         self.listen_socket.setsockopt(zmq.IDENTITY, self.identity.encode())
         self.listen_socket.bind("tcp://*:%d" % self.listen_port)
-        self.logger.info("%s listening on port %d", "Worker" if self.is_worker else "Coordinator", self.listen_port)
+        self.logger.info("%s listening on port %d", "Worker" if self.is_broker else "Coordinator", self.listen_port)
         self.receive_msg_task = asyncio.create_task(self.receive_messages())
 
     def start(self):
@@ -62,16 +61,16 @@ class Communication:
         sock = ctx.socket(zmq.DEALER)
         sock.setsockopt(zmq.IDENTITY, self.identity.encode())
         sock.connect(address)
-        self.worker_connections[identity] = sock
+        self.broker_connections[identity] = sock
 
-    def send_message_to_worker(self, identity: str, msg: bytes):
-        if identity not in self.worker_connections:
+    def send_message_to_broker(self, identity: str, msg: bytes):
+        if identity not in self.broker_connections:
             raise RuntimeError("Unknown identity for sending %s" % identity)
 
-        self.worker_connections[identity].send(msg)
+        self.broker_connections[identity].send(msg)
 
-    def send_message_to_all_workers(self, msg: bytes):
-        for sock in self.worker_connections.values():
+    def send_message_to_all_brokers(self, msg: bytes):
+        for sock in self.broker_connections.values():
             sock.send(msg)
 
     def send_message_to_coordinator(self, msg: bytes):
