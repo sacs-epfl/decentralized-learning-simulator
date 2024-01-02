@@ -5,13 +5,11 @@ import math
 import os
 import pickle
 import shutil
+from asyncio import Future
 from random import Random
 from typing import List, Optional
 
 import networkx as nx
-
-import zmq
-import zmq.asyncio
 
 from dasklearn.communication import Communication
 from dasklearn.models import create_model, serialize_model
@@ -41,6 +39,7 @@ class Simulation:
         self.workflow_dag = WorkflowDAG()
         self.model_size: int = 0
         self.current_time: float = 0
+        self.workers_available_future: Future = Future()
 
         # TODO assume D-PSGD for now
         k = math.floor(math.log2(self.settings.participants))
@@ -79,6 +78,8 @@ class Simulation:
             self.logger.info("Registering new worker %s", msg["address"])
             self.communication.connect_to(identity, msg["address"])
             self.worker_addresses[identity] = msg["address"]
+            if len(self.worker_addresses) >= self.settings.workers:
+                self.workers_available_future.set_result(True)
         elif msg["type"] == "result":  # Received a sink task result
             self.logger.info("Received result for sink task %s" % msg["task"])
             completed_task_name: str = msg["task"]
@@ -176,14 +177,11 @@ class Simulation:
         self.communication.send_message_to_worker(worker, msg)
 
     async def solve_workflow_graph(self):
-        self.logger.info("Will start solving workflow DAG with %d tasks", len(self.workflow_dag.tasks))
+        self.logger.info("Will start solving workflow DAG with %d tasks, waiting for workers...", len(self.workflow_dag.tasks))
 
-        while True:
-            if len(self.worker_addresses) >= self.settings.workers:
-                break
+        await self.workers_available_future
 
-            self.logger.warning("%d/%d workers available - waiting 5 sec." % (len(self.worker_addresses), self.settings.workers))
-            await asyncio.sleep(5)
+        self.logger.info("%d workers available - starting to solve workload", len(self.worker_addresses))
 
         # Send all workers the right configuration
         self.distribute_workers()
