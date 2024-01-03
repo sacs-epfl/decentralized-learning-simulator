@@ -2,6 +2,7 @@ import asyncio
 import threading
 from asyncio import ensure_future
 
+import psutil
 import torch.multiprocessing as multiprocessing
 import pickle
 import random
@@ -40,7 +41,7 @@ class Broker:
         self.worker_result_queues: List = []
         self.worker_result_queue = asyncio.Queue()
         self.read_worker_results_task = None
-        self.queue_monitor_task = None
+        self.monitor_task = None
         self.worker_queue = None
         self.items_in_worker_queue: int = 0
         self.workers_ready: bool = False
@@ -55,27 +56,45 @@ class Broker:
         self.logger.info("Broker %s initialized", self.identity)
 
     def write_statistics(self):
+        broker_id = self.identity.split("_")[1]
         with open(os.path.join(self.settings.data_dir, "tasks_%s.csv" % self.identity), "w") as tasks_file:
-            tasks_file.write("task_name,function,worker,transfer_to_time,execute_time,transfer_from_time,total_time\n")
+            tasks_file.write("broker,task_name,function,worker,transfer_to_time,execute_time,transfer_from_time,total_time\n")
             for task_stats in self.task_statistics:
-                tasks_file.write("%s,%s,%d,%f,%f,%f,%f\n" % task_stats)
+                task_stats_str = "%s,%s,%d,%f,%f,%f,%f" % task_stats
+                tasks_file.write("%s,%s\n" % (broker_id, task_stats_str))
 
-    async def monitor_queue(self):
-        self.logger.info("Started queue monitor")
-        file_path = os.path.join(self.settings.data_dir, "queue_%s.csv" % self.identity)
-        with open(file_path, "w") as queue_file:
-            queue_file.write("time,num_items\n")
+    async def monitor(self):
+        self.logger.info("Started monitor")
+        broker_id = self.identity.split("_")[1]
+        process = psutil.Process(os.getpid())
+
+        file_path = os.path.join(self.settings.data_dir, "resources_%s.csv" % self.identity)
+        with open(file_path, "w") as resources_file:
+            resources_file.write("broker,time,queue_items,cpu_percent,phys_mem_usage,virt_mem_usage,shared_mem_usage\n")
 
         while True:
-            with open(file_path, "a") as queue_file:
-                queue_file.write("%f,%d\n" % (time.time() - self.start_time, self.items_in_worker_queue))
-            await asyncio.sleep(1)
+            try:
+                with open(file_path, "a") as resources_file:
+                    cpu_usage = psutil.cpu_percent()
+                    mem_info = process.memory_info()
+                    phys_mem = mem_info.rss
+                    virt_mem = mem_info.vms
+                    shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
+
+                    resources_file.write("%s,%f,%d,%f,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
+                                                                 self.items_in_worker_queue, cpu_usage,
+                                                                 phys_mem, virt_mem, shared_mem))
+                await asyncio.sleep(1)
+            except Exception as exc:
+                self.logger.exception(exc)
+                self.shutdown_everyone()
+                break
 
     async def start_workers(self):
         self.logger.info("Starting %d workers...", self.args.workers)
         self.worker_queue = multiprocessing.Queue()
         self.read_worker_results_task = asyncio.create_task(self.worker_result_queue_task())
-        self.queue_monitor_task = asyncio.create_task(self.monitor_queue())
+        self.monitor_task = asyncio.create_task(self.monitor())
         for worker_ind in range(self.args.workers):
             await self.start_worker(worker_ind)
 
