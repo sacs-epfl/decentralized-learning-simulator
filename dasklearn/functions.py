@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from typing import Dict
 
 import torch
@@ -29,8 +30,15 @@ def train(settings: SessionSettings, params: Dict):
     model_manager = ModelManager(copied_model, settings, peer_id)
     model_manager.train()
 
+    detached_model = unserialize_model(serialize_model(copied_model), settings.dataset, architecture=settings.model)
+
+    del model_manager
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     logger.info("Peer %d training in round %d...", peer_id, round_nr)
-    return copied_model
+
+    return detached_model
 
 
 def aggregate(settings: SessionSettings, params: Dict):
@@ -46,7 +54,10 @@ def aggregate(settings: SessionSettings, params: Dict):
     for peer_id, model in models.items():
         model_manager.process_incoming_trained_model(peer_id, model)
 
-    return model_manager.aggregate_trained_models()
+    start_time = time.time()
+    agg_model = model_manager.aggregate_trained_models()
+    logger.info("Model aggregation took %f s.", time.time() - start_time)
+    return agg_model
 
 
 def test(settings: SessionSettings, params: Dict):

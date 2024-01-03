@@ -5,13 +5,11 @@ import math
 import os
 import pickle
 import shutil
+from asyncio import Future
 from random import Random
 from typing import List, Optional
 
 import networkx as nx
-
-import zmq
-import zmq.asyncio
 
 from dasklearn.communication import Communication
 from dasklearn.models import create_model, serialize_model
@@ -32,7 +30,7 @@ class Simulation:
     def __init__(self, settings: SessionSettings):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.data_dir = os.path.join("data", "%s_%s_n%d_w%d_s%d" % (settings.algorithm, settings.dataset, settings.participants, settings.workers, settings.seed))
+        self.data_dir = os.path.join("data", "%s_%s_n%d_b%d_s%d" % (settings.algorithm, settings.dataset, settings.participants, settings.brokers, settings.seed))
         settings.data_dir = self.data_dir
 
         self.settings = settings
@@ -41,15 +39,16 @@ class Simulation:
         self.workflow_dag = WorkflowDAG()
         self.model_size: int = 0
         self.current_time: float = 0
+        self.brokers_available_future: Future = Future()
 
         # TODO assume D-PSGD for now
         k = math.floor(math.log2(self.settings.participants))
         self.topology = nx.random_regular_graph(k, self.settings.participants, seed=self.settings.seed)
 
         self.clients: List[Client] = []
-        self.worker_addresses: Dict[str, str] = {}
-        self.workers_to_clients: Dict = {}
-        self.clients_to_workers: Dict = {}
+        self.broker_addresses: Dict[str, str] = {}
+        self.brokers_to_clients: Dict = {}
+        self.clients_to_brokers: Dict = {}
 
         self.communication: Optional[Communication] = None
 
@@ -58,27 +57,29 @@ class Simulation:
             shutil.rmtree(self.data_dir)
         os.makedirs(self.data_dir, exist_ok=True)
 
-    def distribute_workers(self):
+    def distribute_brokers(self):
         """
-        Distribute the clients over the work using a very simple modulo-based assignment mapping.
+        Distribute the clients over the brokers using a very simple modulo-based assignment mapping.
         """
-        self.workers_to_clients = {}
-        self.clients_to_workers = {}
+        self.brokers_to_clients = {}
+        self.clients_to_brokers = {}
 
         for client in range(len(self.clients)):
-            self.clients_to_workers[client] = list(self.worker_addresses.keys())[client % len(self.worker_addresses)]
+            self.clients_to_brokers[client] = list(self.broker_addresses.keys())[client % len(self.broker_addresses)]
 
         # Build the reverse map
-        for client, worker in self.clients_to_workers.items():
-            if worker not in self.workers_to_clients:
-                self.workers_to_clients[worker] = []
-            self.workers_to_clients[worker].append(client)
+        for client, broker in self.clients_to_brokers.items():
+            if broker not in self.brokers_to_clients:
+                self.brokers_to_clients[broker] = []
+            self.brokers_to_clients[broker].append(client)
 
     def on_message(self, identity: str, msg: Dict):
-        if msg["type"] == "hello":  # Register a new worker
-            self.logger.info("Registering new worker %s", msg["address"])
+        if msg["type"] == "hello":  # Register a new broker
+            self.logger.info("Registering new broker %s", msg["address"])
             self.communication.connect_to(identity, msg["address"])
-            self.worker_addresses[identity] = msg["address"]
+            self.broker_addresses[identity] = msg["address"]
+            if len(self.broker_addresses) >= self.settings.brokers:
+                self.brokers_available_future.set_result(True)
         elif msg["type"] == "result":  # Received a sink task result
             self.logger.info("Received result for sink task %s" % msg["task"])
             completed_task_name: str = msg["task"]
@@ -92,9 +93,9 @@ class Simulation:
                     task.done = True
 
             if all([task.done for task in sink_tasks]):
-                self.logger.info("All sink tasks completed - shutting down workers")
+                self.logger.info("All sink tasks completed - shutting down brokers")
                 out_msg = pickle.dumps({"type": "shutdown"})
-                self.communication.send_message_to_all_workers(out_msg)
+                self.communication.send_message_to_all_brokers(out_msg)
                 asyncio.get_event_loop().call_later(2, asyncio.get_event_loop().stop)
         elif msg["type"] == "shutdown":
             self.logger.info("Received shutdown signal - stopping")
@@ -171,40 +172,37 @@ class Simulation:
     def schedule(self, event: Event):
         heapq.heappush(self.events, event)
 
-    def schedule_tasks_on_worker(self, tasks: List[Task], worker: str):
+    def schedule_tasks_on_broker(self, tasks: List[Task], broker: str):
         msg = pickle.dumps({"type": "tasks", "tasks": [task.name for task in tasks]})
-        self.communication.send_message_to_worker(worker, msg)
+        self.communication.send_message_to_broker(broker, msg)
 
     async def solve_workflow_graph(self):
-        self.logger.info("Will start solving workflow DAG with %d tasks", len(self.workflow_dag.tasks))
+        self.logger.info("Will start solving workflow DAG with %d tasks, waiting for %d broker(s)...", len(self.workflow_dag.tasks), self.settings.brokers)
 
-        while True:
-            if len(self.worker_addresses) >= self.settings.workers:
-                break
+        await self.brokers_available_future
 
-            self.logger.warning("%d/%d workers available - waiting 5 sec." % (len(self.worker_addresses), self.settings.workers))
-            await asyncio.sleep(5)
+        self.logger.info("%d brokers available - starting to solve workload", len(self.broker_addresses))
 
-        # Send all workers the right configuration
-        self.distribute_workers()
+        # Send all brokers the right configuration
+        self.distribute_brokers()
         data = {
             "type": "config",
-            "workers": self.worker_addresses,
-            "workers_to_clients": self.workers_to_clients,
+            "brokers": self.broker_addresses,
+            "brokers_to_clients": self.brokers_to_clients,
             "settings": self.settings.to_dict(),
             "dag": self.workflow_dag.serialize()
         }
         msg = pickle.dumps(data)
-        self.communication.send_message_to_all_workers(msg)
+        self.communication.send_message_to_all_brokers(msg)
 
         source_tasks = self.workflow_dag.get_source_tasks()
-        workers_to_tasks: Dict[str, List[Task]] = {}
+        brokers_to_tasks: Dict[str, List[Task]] = {}
         for source_task in source_tasks:
-            worker = self.clients_to_workers[source_task.data["peer"]]
-            if worker not in workers_to_tasks:
-                workers_to_tasks[worker] = []
-            workers_to_tasks[worker].append(source_task)
+            broker = self.clients_to_brokers[source_task.data["peer"]]
+            if broker not in brokers_to_tasks:
+                brokers_to_tasks[broker] = []
+            brokers_to_tasks[broker].append(source_task)
 
-        for worker, tasks in workers_to_tasks.items():
-            self.logger.info("Scheduling %d task(s) on worker %s", len(tasks), worker)
-            self.schedule_tasks_on_worker(tasks, worker)
+        for broker, tasks in brokers_to_tasks.items():
+            self.logger.info("Scheduling %d task(s) on broker %s", len(tasks), broker)
+            self.schedule_tasks_on_broker(tasks, broker)

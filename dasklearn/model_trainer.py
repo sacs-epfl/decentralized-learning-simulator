@@ -52,7 +52,6 @@ class ModelTrainer:
                          self.settings.learning.learning_rate, self.settings.learning.weight_decay)
 
         samples_trained_on = 0
-        model = model.to(device)  # just to make sure...
         for local_step in range(local_steps):
             train_set = self.dataset.get_trainset(batch_size=self.settings.learning.batch_size, shuffle=True)
             train_set_it = iter(train_set)
@@ -82,5 +81,6 @@ class ModelTrainer:
             optimizer.optimizer.step()
 
         self.is_training = False
+        model.to("cpu")
 
         return samples_trained_on

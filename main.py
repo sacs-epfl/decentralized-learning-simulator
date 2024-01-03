@@ -33,7 +33,7 @@ def run():
         partitioner="iid",
         model=args.model,
         test_interval=args.test_interval,
-        workers=args.workers,
+        brokers=args.brokers,
         capability_traces=args.capability_traces,
         rounds=args.rounds,
         port=args.port,

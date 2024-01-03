@@ -37,7 +37,7 @@ class SessionSettings:
     torch_device_name: str = "cpu"
     test_interval: int = 0
     scheduler: Optional[str] = None
-    workers: Optional[int] = None
+    brokers: Optional[int] = None
     capability_traces: Optional[str] = None
     rounds: int = 10
     data_dir: str = ""
