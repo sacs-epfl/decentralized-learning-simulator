@@ -30,7 +30,7 @@ class Worker:
 
                 res = f(self.settings, data)
                 finish_time = time.time()
-                self.result_queue.put((task_name, res, {"received": received_time, "finished": finish_time}))
+                self.result_queue.put((task_name, res, {"received": received_time, "finished": finish_time, "worker": self.index}))
             except Exception as exc:
                 self.logger.exception(exc)
                 self.result_queue.put(("error", None))

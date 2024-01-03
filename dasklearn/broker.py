@@ -1,9 +1,7 @@
 import asyncio
 import threading
-import time
 from asyncio import ensure_future
 
-import torch
 import torch.multiprocessing as multiprocessing
 import pickle
 import random
@@ -42,34 +40,49 @@ class Broker:
         self.worker_result_queues: List = []
         self.worker_result_queue = asyncio.Queue()
         self.read_worker_results_task = None
+        self.queue_monitor_task = None
         self.worker_queue = None
+        self.items_in_worker_queue: int = 0
         self.workers_ready: bool = False
         self.pending_tasks: List[Task] = []
         self.identity: str = "broker_%s" % ''.join(random.choice('0123456789abcdef') for _ in range(6))
 
         # For statistics
+        self.start_time = time.time()
         self.task_start_times: Dict[str, float] = {}
         self.task_statistics: List[Tuple] = []
 
         self.logger.info("Broker %s initialized", self.identity)
 
     def write_statistics(self):
-        with open(os.path.join(self.settings.data_dir, "tasks.csv"), "w") as tasks_file:
-            tasks_file.write("task_name,function,transfer_to_time,execute_time,transfer_from_time,total_time\n")
+        with open(os.path.join(self.settings.data_dir, "tasks_%s.csv" % self.identity), "w") as tasks_file:
+            tasks_file.write("task_name,function,worker,transfer_to_time,execute_time,transfer_from_time,total_time\n")
             for task_stats in self.task_statistics:
-                tasks_file.write("%s,%s,%f,%f,%f,%f\n" % task_stats)
+                tasks_file.write("%s,%s,%d,%f,%f,%f,%f\n" % task_stats)
+
+    async def monitor_queue(self):
+        self.logger.info("Started queue monitor")
+        file_path = os.path.join(self.settings.data_dir, "queue_%s.csv" % self.identity)
+        with open(file_path, "w") as queue_file:
+            queue_file.write("time,num_items\n")
+
+        while True:
+            with open(file_path, "a") as queue_file:
+                queue_file.write("%f,%d\n" % (time.time() - self.start_time, self.items_in_worker_queue))
+            await asyncio.sleep(1)
 
     async def start_workers(self):
         self.logger.info("Starting %d workers...", self.args.workers)
         self.worker_queue = multiprocessing.Queue()
         self.read_worker_results_task = asyncio.create_task(self.worker_result_queue_task())
+        self.queue_monitor_task = asyncio.create_task(self.monitor_queue())
         for worker_ind in range(self.args.workers):
             await self.start_worker(worker_ind)
 
         # Workers ready - clear any pending tasks
         self.workers_ready = True
         for pending_task in self.pending_tasks:
-            self.worker_queue.put((pending_task.name, pending_task.func, pending_task.data))
+            self.put_in_worker_queue(pending_task)
         self.pending_tasks = []
 
     def worker_result_queue_thread(self, mp_queue, loop):
@@ -92,12 +105,13 @@ class Broker:
                     break
 
                 task = self.dag.tasks[task_name]
+                self.items_in_worker_queue -= 1
 
                 received_by_broker_time = time.time()
                 received_by_worker_time = info["received"]
                 finished_time = info["finished"]
                 task_start_time = self.task_start_times[task_name]
-                task_stats = (task.name, task.func,
+                task_stats = (task.name, task.func, info["worker"],
                               received_by_worker_time - task_start_time,
                               finished_time - received_by_worker_time,
                               received_by_broker_time - finished_time,
@@ -161,6 +175,10 @@ class Broker:
         self.communication.send_message_to_coordinator(msg)
         self.shutdown()
 
+    def put_in_worker_queue(self, task: Task):
+        self.items_in_worker_queue += 1
+        self.worker_queue.put((task.name, task.func, task.data))
+
     def schedule_task(self, task: Task):
         """
         Schedule the task on one of the available workers.
@@ -171,7 +189,7 @@ class Broker:
             self.pending_tasks.append(task)
         else:
             self.logger.info("Broker dispatching task %s to workers", task.name)
-            self.worker_queue.put((task.name, task.func, task.data))
+            self.put_in_worker_queue(task)
 
     def handle_task_result(self, task: Task, res):
         """
