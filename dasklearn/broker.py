@@ -159,6 +159,8 @@ class Broker:
                         else:
                             msg = pickle.dumps({"type": "result", "task": task.name, "result": res})
                             self.communication.send_message_to_broker(broker_to_inform, msg)
+
+                task.clear_data()  # Clean up the memory of the completed task
             except Exception as exc:
                 self.logger.exception(exc)
                 self.shutdown_everyone()

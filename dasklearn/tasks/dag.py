@@ -67,5 +67,5 @@ class WorkflowDAG:
         Compute recursively the number of models in all tasks.
         """
         model_hashes = set()
-        WorkflowDAG.count_models([d.data for d in self.tasks.values()], model_hashes)
+        WorkflowDAG.count_models([d.data for d in self.tasks.values() if d.data is not None], model_hashes)
         return len(model_hashes)
