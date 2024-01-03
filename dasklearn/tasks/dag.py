@@ -1,4 +1,6 @@
-from typing import Dict, List
+from typing import Dict, List, Set
+
+from torch import nn
 
 from dasklearn.tasks.task import Task
 
@@ -46,3 +48,24 @@ class WorkflowDAG:
     def print_tasks(self):
         for task in self.tasks.values():
             print("Task %s, in: %s, out: %s" % (task, task.inputs, task.outputs))
+
+    @staticmethod
+    def count_models(d, model_hashes: Set[int]):
+        if isinstance(d, nn.Module):
+            model_hashes.add(id(d))
+        elif isinstance(d, dict):
+            for item in d.values():
+                WorkflowDAG.count_models(item, model_hashes)
+        elif isinstance(d, list):
+            for item in d:
+                WorkflowDAG.count_models(item, model_hashes)
+
+        return model_hashes
+
+    def get_num_models(self) -> int:
+        """
+        Compute recursively the number of models in all tasks.
+        """
+        model_hashes = set()
+        WorkflowDAG.count_models([d.data for d in self.tasks.values()], model_hashes)
+        return len(model_hashes)

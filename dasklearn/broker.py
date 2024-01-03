@@ -71,7 +71,7 @@ class Broker:
 
         file_path = os.path.join(self.settings.data_dir, "resources_%s.csv" % self.identity)
         with open(file_path, "w") as resources_file:
-            resources_file.write("broker,time,queue_items,cpu_percent,phys_mem_usage,virt_mem_usage,shared_mem_usage\n")
+            resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,shared_mem_usage\n")
 
         while True:
             try:
@@ -80,11 +80,12 @@ class Broker:
                     mem_info = process.memory_info()
                     phys_mem = mem_info.rss
                     virt_mem = mem_info.vms
+                    num_models = self.dag.get_num_models()
                     shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
 
-                    resources_file.write("%s,%f,%d,%f,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
-                                                                 self.items_in_worker_queue, cpu_usage,
-                                                                 phys_mem, virt_mem, shared_mem))
+                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
+                                                                        self.items_in_worker_queue, num_models,
+                                                                        cpu_usage, phys_mem, virt_mem, shared_mem))
                 await asyncio.sleep(1)
             except Exception as exc:
                 self.logger.exception(exc)
