@@ -2,10 +2,10 @@ import logging
 import os
 
 
-def setup_logging(data_dir: str, log_file_name: str):
+def setup_logging(data_dir: str, log_file_name: str, log_level: str = "INFO") -> None:
     # Create a logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(getattr(logging, log_level))
 
     logger.handlers.clear()
 

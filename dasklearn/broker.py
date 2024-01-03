@@ -238,7 +238,7 @@ class Broker:
                     self.clients_to_brokers[client] = broker
 
             self.settings = SessionSettings.from_dict(msg["settings"])
-            setup_logging(self.settings.data_dir, "%s.log" % self.identity)
+            setup_logging(self.settings.data_dir, "%s.log" % self.identity, log_level=self.settings.log_level)
             self.dag = WorkflowDAG.unserialize(msg["dag"])
             self.connect_to_brokers()
             ensure_future(self.start_workers())

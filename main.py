@@ -37,6 +37,7 @@ def run():
         capability_traces=args.capability_traces,
         rounds=args.rounds,
         port=args.port,
+        log_level=args.log_level,
     )
 
     simulation = Simulation(settings)
