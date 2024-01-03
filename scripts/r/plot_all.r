@@ -64,3 +64,26 @@ p <- ggplot(dat, aes(x=time, y=shared_mem_usage, group=broker, color=broker)) +
      ylab("Shared Mem. Utilization [MB]") +
      theme(legend.position="bottom")
 ggsave(paste(args[1], "shared_mem_usage.pdf"), p, width=4.5, height=3)
+
+
+# Plot task statistics
+dat <- merge_csv_files(args[1], "tasks_broker_.*\\.csv")
+dat$func <- dat$`function`
+
+# Total completion time for tasks, per broker
+p <- ggplot(dat, aes(x=total_time, group=broker, color=broker)) +
+     stat_ecdf(geom="step") +
+     theme_bw() +
+     xlab("Task Execution Time [s.]") +
+     ylab("ECDF") +
+     theme(legend.position="bottom")
+ggsave(paste(args[1], "tasks_total_time_per_broker_ecdf.pdf"), p, width=4.5, height=3)
+
+# Total completion time for tasks, per broker
+p <- ggplot(dat, aes(x=total_time, group=func, color=func)) +
+     stat_ecdf(geom="step") +
+     theme_bw() +
+     xlab("Task Execution Time [s.]") +
+     ylab("ECDF") +
+     theme(legend.position="bottom")
+ggsave(paste(args[1], "tasks_total_time_per_function_ecdf.pdf"), p, width=4.5, height=3)
