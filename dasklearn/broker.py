@@ -1,12 +1,13 @@
 import asyncio
 import threading
+import time
 from asyncio import ensure_future
 
 import torch.multiprocessing as multiprocessing
 import pickle
 import random
 from asyncio.subprocess import Process
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Tuple
 
 from dasklearn.communication import Communication
 from dasklearn.functions import *
@@ -43,7 +44,18 @@ class Broker:
         self.workers_ready: bool = False
         self.pending_tasks: List[Task] = []
         self.identity: str = "broker_%s" % ''.join(random.choice('0123456789abcdef') for _ in range(6))
+
+        # For statistics
+        self.task_start_times: Dict[str, float] = {}
+        self.task_statistics: List[Tuple] = []
+
         self.logger.info("Broker %s initialized", self.identity)
+
+    def write_statistics(self):
+        with open(os.path.join(self.settings.data_dir, "tasks.csv"), "w") as tasks_file:
+            tasks_file.write("task_name,function,transfer_to_time,execute_time,transfer_from_time,total_time\n")
+            for task_stats in self.task_statistics:
+                tasks_file.write("%s,%s,%f,%f,%f,%f\n" % task_stats)
 
     async def start_workers(self):
         self.logger.info("Starting %d workers...", self.args.workers)
@@ -69,34 +81,50 @@ class Broker:
     async def worker_result_queue_task(self):
         self.logger.info("Starting result queue task")
         while True:
-            task_name, res = await self.worker_result_queue.get()
-            if task_name == "error":
-                # One of the workers encountered an exception - stop everything
-                self.logger.info("Worker encountered an exception - shutting down everything")
+            try:
+                task_name, res, info = await self.worker_result_queue.get()
+                if task_name == "error":
+                    # One of the workers encountered an exception - stop everything
+                    self.logger.info("Worker encountered an exception - shutting down everything")
+                    self.shutdown_everyone()
+                    break
+
+                task = self.dag.tasks[task_name]
+
+                received_by_broker_time = time.time()
+                received_by_worker_time = info["received"]
+                finished_time = info["finished"]
+                task_start_time = self.task_start_times[task_name]
+                task_stats = (task.name, task.func,
+                              received_by_worker_time - task_start_time,
+                              finished_time - received_by_worker_time,
+                              received_by_broker_time - finished_time,
+                              received_by_broker_time - task_start_time)
+                self.task_statistics.append(task_stats)
+
+                self.logger.info("Task %s completed", task.name)
+
+                # If this is a sink task, inform the coordinator about the result
+                if not task.outputs:
+                    # This is a sink task with no further outputs - send the result back to the coordinator
+                    msg = pickle.dumps({"type": "result", "task": task.name, "result": res})
+                    self.communication.send_message_to_coordinator(msg)
+                else:
+                    # Some broker needs this result - get all brokers we need to inform about this result
+                    brokers_to_inform: Set[str] = set()
+                    for next_task in task.outputs:
+                        peer_next_task = next_task.data["peer"]
+                        brokers_to_inform.add(self.clients_to_brokers[peer_next_task])
+
+                    for broker_to_inform in brokers_to_inform:
+                        if broker_to_inform == self.identity:
+                            self.handle_task_result(task, res)
+                        else:
+                            msg = pickle.dumps({"type": "result", "task": task.name, "result": res})
+                            self.communication.send_message_to_broker(broker_to_inform, msg)
+            except Exception as exc:
+                self.logger.exception(exc)
                 self.shutdown_everyone()
-                break
-
-            task = self.dag.tasks[task_name]
-            self.logger.info("Task %s completed", task.name)
-
-            # If this is a sink task, inform the coordinator about the result
-            if not task.outputs:
-                # This is a sink task with no further outputs - send the result back to the coordinator
-                msg = pickle.dumps({"type": "result", "task": task.name, "result": res})
-                self.communication.send_message_to_coordinator(msg)
-            else:
-                # Some broker needs this result - get all brokers we need to inform about this result
-                brokers_to_inform: Set[str] = set()
-                for next_task in task.outputs:
-                    peer_next_task = next_task.data["peer"]
-                    brokers_to_inform.add(self.clients_to_brokers[peer_next_task])
-
-                for broker_to_inform in brokers_to_inform:
-                    if broker_to_inform == self.identity:
-                        self.handle_task_result(task, res)
-                    else:
-                        msg = pickle.dumps({"type": "result", "task": task.name, "result": res})
-                        self.communication.send_message_to_broker(broker_to_inform, msg)
 
     async def start_worker(self, index: int):
         worker_result_queue = multiprocessing.Queue()
@@ -117,6 +145,8 @@ class Broker:
             self.communication.connect_to(broker_name, broker_address)
 
     def shutdown(self):
+        self.write_statistics()
+
         for worker_proc in self.workers:
             worker_proc.terminate()
 
@@ -133,6 +163,7 @@ class Broker:
         """
         Schedule the task on one of the available workers.
         """
+        self.task_start_times[task.name] = time.time()
         if not self.workers_ready:
             self.logger.info("Broker enqueueing task %s since workers are not ready yet", task.name)
             self.pending_tasks.append(task)

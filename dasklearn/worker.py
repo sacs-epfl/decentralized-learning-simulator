@@ -1,3 +1,5 @@
+import time
+
 from dasklearn.functions import *
 from dasklearn.util.logging import setup_logging
 
@@ -18,6 +20,7 @@ class Worker:
 
     def start(self):
         while True:
+            received_time = time.time()
             task_name, func_name, data = self.shared_queue.get()  # Blocks until an item is available
             try:
                 self.logger.info("Worker %d executing task %s", self.index, task_name)
@@ -26,7 +29,8 @@ class Worker:
                 f = globals()[func_name]
 
                 res = f(self.settings, data)
-                self.result_queue.put((task_name, res))
+                finish_time = time.time()
+                self.result_queue.put((task_name, res, {"received": received_time, "finished": finish_time}))
             except Exception as exc:
                 self.logger.exception(exc)
                 self.result_queue.put(("error", None))
