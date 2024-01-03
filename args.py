@@ -37,18 +37,6 @@ def get_args():
     return args
 
 
-def get_worker_args():
-    parser = argparse.ArgumentParser()
-
-    # Learning settings
-    parser.add_argument("--port", type=int, default=5556)
-    parser.add_argument('--coordinator', type=str)
-
-    args = parser.parse_args()
-
-    return args
-
-
 def get_broker_args():
     parser = argparse.ArgumentParser()
 

@@ -3,6 +3,7 @@ import threading
 import time
 from asyncio import ensure_future
 
+import torch
 import torch.multiprocessing as multiprocessing
 import pickle
 import random
@@ -20,6 +21,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def worker_proc(shared_queue, result_queue, index, settings):
+    torch.set_num_threads(4)
     worker = Worker(shared_queue, result_queue, index, settings)
     worker.start()
 
