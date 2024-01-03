@@ -36,6 +36,7 @@ class Broker:
         self.dag: Optional[WorkflowDAG] = None
         self.coordinator_socket = None
         self.communication: Optional[Communication] = None
+        self.broker_addresses: Dict[str, str] = {}
 
         self.workers: List[Process] = []
         self.worker_result_queues: List = []
@@ -49,7 +50,7 @@ class Broker:
         self.identity: str = "broker_%s" % ''.join(random.choice('0123456789abcdef') for _ in range(6))
 
         # For statistics
-        self.start_time = time.time()
+        self.start_time: float = -1
         self.task_start_times: Dict[str, float] = {}
         self.task_statistics: List[Tuple] = []
 
@@ -224,6 +225,7 @@ class Broker:
     def on_message(self, identity: str, msg: Dict):
         if identity == "coordinator" and msg["type"] == "config":  # Configuration received from the coordinator
             self.logger.info("Received configuration from the coordinator")
+            self.start_time = time.time()
             self.broker_addresses = msg["brokers"]
             self.brokers_to_clients = msg["brokers_to_clients"]
 
