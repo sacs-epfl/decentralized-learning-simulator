@@ -16,7 +16,7 @@ merge_csv_files <- function(directory, pattern) {
 
 # Plot broker resource usage
 args <- commandArgs(trailingOnly = TRUE)
-dat <- merge_csv_files(args[1], "resources_broker_.*\\.csv")
+dat <- merge_csv_files(args[1], "^resources_broker_.*\\.csv")
 dat$phys_mem_usage <- dat$phys_mem_usage / 1000 / 1000
 dat$shared_mem_usage <- dat$shared_mem_usage / 1000 / 1000
 
@@ -45,7 +45,7 @@ p <- ggplot(dat, aes(x=time, y=cpu_percent, group=broker, color=broker)) +
      xlab("Time into Experiment [s.]") +
      ylab("CPU Utilization [%]") +
      theme(legend.position="bottom")
-ggsave(paste(args[1], "cpu_usage.pdf"), p, width=4.5, height=3)
+ggsave(paste(args[1], "cpu_usage_broker.pdf"), p, width=4.5, height=3)
 
 # Physical Memory Usage
 p <- ggplot(dat, aes(x=time, y=phys_mem_usage, group=broker, color=broker)) +
@@ -87,3 +87,16 @@ p <- ggplot(dat, aes(x=total_time, group=func, color=func)) +
      ylab("ECDF") +
      theme(legend.position="bottom")
 ggsave(paste(args[1], "tasks_total_time_per_function_ecdf.pdf"), p, width=4.5, height=3)
+
+
+# Plot worker statistics
+dat <- merge_csv_files(args[1], "worker_resources_broker_.*\\.csv")
+
+# CPU Usage
+p <- ggplot(dat, aes(x=time, y=cpu_percent, group=worker, color=worker)) +
+     geom_line() +
+     theme_bw() +
+     xlab("Time into Experiment [s.]") +
+     ylab("CPU Utilization [%]") +
+     theme(legend.position="bottom")
+ggsave(paste(args[1], "cpu_usage_workers.pdf"), p, width=4.5, height=3)

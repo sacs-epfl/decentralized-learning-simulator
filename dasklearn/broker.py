@@ -39,6 +39,7 @@ class Broker:
         self.broker_addresses: Dict[str, str] = {}
 
         self.workers: List[Process] = []
+        self.psutil_workers: List = []
         self.worker_result_queues: List = []
         self.worker_result_queue = asyncio.Queue()
         self.read_worker_results_task = None
@@ -69,13 +70,16 @@ class Broker:
         broker_id = self.identity.split("_")[1]
         process = psutil.Process(os.getpid())
 
-        file_path = os.path.join(self.settings.data_dir, "resources_%s.csv" % self.identity)
-        with open(file_path, "w") as resources_file:
+        resources_file_path = os.path.join(self.settings.data_dir, "resources_%s.csv" % self.identity)
+        workers_file_path = os.path.join(self.settings.data_dir, "worker_resources_%s.csv" % self.identity)
+        with open(resources_file_path, "w") as resources_file:
             resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,shared_mem_usage\n")
+        with open(workers_file_path, "w") as workers_resources_file:
+            workers_resources_file.write("broker,time,worker,cpu_percent\n")
 
         while True:
             try:
-                with open(file_path, "a") as resources_file:
+                with open(resources_file_path, "a") as resources_file:
                     cpu_usage = psutil.cpu_percent()
                     mem_info = process.memory_info()
                     phys_mem = mem_info.rss
@@ -86,6 +90,17 @@ class Broker:
                     resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
                                                                         self.items_in_worker_queue, num_models,
                                                                         cpu_usage, phys_mem, virt_mem, shared_mem))
+
+                with open(workers_file_path, "a") as workers_resources_file:
+                    # Get the subprocesses and their CPU utilization
+                    for worker_ind, worker_proc in enumerate(self.psutil_workers):
+                        try:
+                            cpu_usage = worker_proc.cpu_percent()
+                        except (ProcessLookupError, psutil.ZombieProcess):
+                            continue
+                        workers_resources_file.write("%s,%f,%s_%d,%f\n" % (broker_id, time.time() - self.start_time,
+                                                                           broker_id, worker_ind, cpu_usage))
+
                 await asyncio.sleep(1)
             except Exception as exc:
                 self.logger.exception(exc)
@@ -173,6 +188,7 @@ class Broker:
         proc = multiprocessing.Process(target=worker_proc, args=(self.worker_queue, worker_result_queue, index, self.settings))
         proc.start()
         self.workers.append(proc)
+        self.psutil_workers.append(psutil.Process(proc.pid))
         self.logger.info("Worker %d started: %s", index, proc)
 
     def connect_to_brokers(self):
