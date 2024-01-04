@@ -1,6 +1,10 @@
 from time import sleep
 
+import torch
+
 from dasklearn.models import create_model
+
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 print("Creating models in shared memory...")
 models = []
