@@ -68,7 +68,7 @@ class ModelTrainer:
             if self.settings.dataset == "movielens":
                 lossf = MSELoss()
             elif self.settings.dataset == "cifar10":
-                if self.settings.model == "resnet8":
+                if self.settings.model in ["resnet8", "resnet18"]:
                     lossf = CrossEntropyLoss()
                 else:
                     lossf = NLLLoss()
