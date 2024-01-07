@@ -123,11 +123,16 @@ class Broker:
 
     def worker_result_queue_thread(self, mp_queue, loop):
         while True:
-            item = mp_queue.get()
-            if item is None:  # Sentinel value to end loop
-                break
+            try:
+                item = mp_queue.get()
+                if item is None:  # Sentinel value to end loop
+                    break
 
-            asyncio.run_coroutine_threadsafe(self.worker_result_queue.put(item), loop)
+                asyncio.run_coroutine_threadsafe(self.worker_result_queue.put(item), loop)
+            except Exception as exc:
+                self.logger.exception(exc)
+                asyncio.run_coroutine_threadsafe(self.worker_result_queue.put(("error", None, None)), loop)
+                break
 
     async def worker_result_queue_task(self):
         self.logger.info("Starting result queue task")
@@ -179,6 +184,7 @@ class Broker:
             except Exception as exc:
                 self.logger.exception(exc)
                 self.shutdown_everyone()
+                break
 
     async def start_worker(self, index: int):
         worker_result_queue = multiprocessing.Queue()
