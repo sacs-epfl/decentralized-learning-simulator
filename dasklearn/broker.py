@@ -88,6 +88,7 @@ class Broker:
                     num_models = self.dag.get_num_models()
                     shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
                     mp_torch_cache_items = len(mp_torch_sc)
+                    mp_torch_sc.free_dead_references()
 
                     resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
                                                                            self.items_in_worker_queue, num_models,
