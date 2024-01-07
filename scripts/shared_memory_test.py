@@ -4,8 +4,6 @@ import torch
 
 from dasklearn.models import create_model
 
-from torch.multiprocessing.reductions import shared_cache as sc
-
 torch.multiprocessing.set_sharing_strategy('file_system')
 
 print("Creating models in shared memory...")
@@ -15,5 +13,4 @@ for i in range(500):
     model = model.share_memory()
     sleep(0.5)
     print("Deleting model %d" % i)
-    print(sc)
     del model

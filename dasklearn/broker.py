@@ -4,6 +4,7 @@ from asyncio import ensure_future
 
 import psutil
 import torch.multiprocessing as multiprocessing
+from torch.multiprocessing.reductions import shared_cache as mp_torch_sc
 import pickle
 import random
 from asyncio.subprocess import Process
@@ -73,7 +74,7 @@ class Broker:
         resources_file_path = os.path.join(self.settings.data_dir, "resources_%s.csv" % self.identity)
         workers_file_path = os.path.join(self.settings.data_dir, "worker_resources_%s.csv" % self.identity)
         with open(resources_file_path, "w") as resources_file:
-            resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,shared_mem_usage\n")
+            resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,shared_mem_usage,mp_torch_cache_items\n")
         with open(workers_file_path, "w") as workers_resources_file:
             workers_resources_file.write("broker,time,worker,cpu_percent\n")
 
@@ -86,10 +87,12 @@ class Broker:
                     virt_mem = mem_info.vms
                     num_models = self.dag.get_num_models()
                     shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
+                    mp_torch_cache_items = len(mp_torch_sc)
 
-                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
-                                                                        self.items_in_worker_queue, num_models,
-                                                                        cpu_usage, phys_mem, virt_mem, shared_mem))
+                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
+                                                                           self.items_in_worker_queue, num_models,
+                                                                           cpu_usage, phys_mem, virt_mem, shared_mem,
+                                                                           mp_torch_cache_items))
 
                 with open(workers_file_path, "a") as workers_resources_file:
                     # Get the subprocesses and their CPU utilization
