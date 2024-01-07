@@ -66,6 +66,16 @@ p <- ggplot(dat, aes(x=time, y=shared_mem_usage, group=broker, color=broker)) +
 ggsave(paste(args[1], "shared_mem_usage.pdf"), p, width=4.5, height=3)
 
 
+# Torch multiprocessing shared cache size
+p <- ggplot(dat, aes(x=time, y=mp_torch_cache_items, group=broker, color=broker)) +
+     geom_line() +
+     theme_bw() +
+     xlab("Time into Experiment [s.]") +
+     ylab("Shared Cache Size") +
+     theme(legend.position="bottom")
+ggsave(paste(args[1], "mp_torch_cache_items.pdf"), p, width=4.5, height=3)
+
+
 # Plot task statistics
 dat <- merge_csv_files(args[1], "tasks_broker_.*\\.csv")
 dat$func <- dat$`function`
