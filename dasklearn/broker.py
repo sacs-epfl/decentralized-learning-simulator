@@ -53,8 +53,11 @@ class Broker:
 
         # For statistics
         self.start_time: float = -1
+        self.time_last_check: float = -1
         self.task_start_times: Dict[str, float] = {}
         self.task_statistics: List[Tuple] = []
+        self.completed_tasks: int = 0
+        self.completed_tasks_last_check: int = 0  # Used to compute the task/sec throughput
 
         self.logger.info("Broker %s initialized", self.identity)
 
@@ -74,7 +77,8 @@ class Broker:
         resources_file_path = os.path.join(self.settings.data_dir, "resources_%s.csv" % self.identity)
         workers_file_path = os.path.join(self.settings.data_dir, "worker_resources_%s.csv" % self.identity)
         with open(resources_file_path, "w") as resources_file:
-            resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,shared_mem_usage,mp_torch_cache_items\n")
+            resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,"
+                                 "shared_mem_usage,mp_torch_cache_items,completed_tasks,tasks_throughput\n")
         with open(workers_file_path, "w") as workers_resources_file:
             workers_resources_file.write("broker,time,worker,cpu_percent\n")
 
@@ -90,10 +94,19 @@ class Broker:
                     mp_torch_cache_items = len(mp_torch_sc)
                     mp_torch_sc.free_dead_references()
 
-                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
-                                                                           self.items_in_worker_queue, num_models,
-                                                                           cpu_usage, phys_mem, virt_mem, shared_mem,
-                                                                           mp_torch_cache_items))
+                    # Calculate the task/sec throughput
+                    if self.time_last_check == -1:
+                        self.time_last_check = self.start_time
+
+                    time_diff = time.time() - self.time_last_check
+                    tasks_diff = self.completed_tasks - self.completed_tasks_last_check
+                    self.completed_tasks_last_check = self.completed_tasks
+                    self.time_last_check = time.time()
+
+                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d,%d,%d,%f\n" % (
+                        broker_id, time.time() - self.start_time, self.items_in_worker_queue, num_models,
+                        cpu_usage, phys_mem, virt_mem, shared_mem, mp_torch_cache_items, self.completed_tasks,
+                        tasks_diff / time_diff))
 
                 with open(workers_file_path, "a") as workers_resources_file:
                     # Get the subprocesses and their CPU utilization
@@ -151,6 +164,7 @@ class Broker:
 
                 task = self.dag.tasks[task_name]
                 self.items_in_worker_queue -= 1
+                self.completed_tasks += 1
 
                 received_by_broker_time = time.time()
                 received_by_worker_time = info["received"]

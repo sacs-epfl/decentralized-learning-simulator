@@ -75,6 +75,24 @@ p <- ggplot(dat, aes(x=time, y=mp_torch_cache_items, group=broker, color=broker)
      theme(legend.position="bottom")
 ggsave(paste(args[1], "mp_torch_cache_items.pdf"), p, width=4.5, height=3)
 
+# Total completed tasks
+p <- ggplot(dat, aes(x=time, y=completed_tasks, group=broker, color=broker)) +
+     geom_line() +
+     theme_bw() +
+     xlab("Time into Experiment [s.]") +
+     ylab("Completed Tasks") +
+     theme(legend.position="bottom")
+ggsave(paste(args[1], "completed_tasks.pdf"), p, width=4.5, height=3)
+
+# Task throughput
+p <- ggplot(dat, aes(x=time, y=tasks_throughput, group=broker, color=broker)) +
+     geom_line() +
+     theme_bw() +
+     xlab("Time into Experiment [s.]") +
+     ylab("Throughput [tasks/s.]") +
+     theme(legend.position="bottom")
+ggsave(paste(args[1], "tasks_throughput.pdf"), p, width=4.5, height=3)
+
 
 # Plot task statistics
 dat <- merge_csv_files(args[1], "tasks_broker_.*\\.csv")
