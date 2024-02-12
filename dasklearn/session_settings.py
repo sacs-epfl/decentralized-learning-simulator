@@ -43,3 +43,4 @@ class SessionSettings:
     data_dir: str = ""
     port: int = 5555
     log_level: str = "INFO"
+    torch_threads: int = 4

@@ -38,6 +38,7 @@ def run():
         rounds=args.rounds,
         port=args.port,
         log_level=args.log_level,
+        torch_threads=args.torch_threads,
     )
 
     simulation = Simulation(settings)
