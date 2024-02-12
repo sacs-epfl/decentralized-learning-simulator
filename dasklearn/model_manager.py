@@ -26,7 +26,7 @@ class ModelManager:
             self.data_dir = os.path.join(dataset_base_path, "dfl-data")
         else:
             # The LEAF dataset
-            self.data_dir = os.path.join(dataset_base_path, "leaf", self.settings.dataset)
+            self.data_dir = os.path.join(dataset_base_path, "leaf", "data", self.settings.dataset)
 
         self.model_trainer: ModelTrainer = ModelTrainer(self.data_dir, self.settings, self.participant_index)
 

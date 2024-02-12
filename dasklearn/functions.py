@@ -71,7 +71,7 @@ def test(settings: SessionSettings, params: Dict):
         data_dir = os.path.join(dataset_base_path, "dfl-data")
     else:
         # The LEAF dataset
-        data_dir = os.path.join(dataset_base_path, "leaf", settings.dataset)
+        data_dir = os.path.join(dataset_base_path, "leaf", "data", settings.dataset)
 
     if not evaluator:
         evaluator = ModelEvaluator(data_dir, settings)
