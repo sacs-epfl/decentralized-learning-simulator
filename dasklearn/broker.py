@@ -78,7 +78,7 @@ class Broker:
         workers_file_path = os.path.join(self.settings.data_dir, "worker_resources_%s.csv" % self.identity)
         with open(resources_file_path, "w") as resources_file:
             resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,"
-                                 "shared_mem_usage,mp_torch_cache_items,completed_tasks,tasks_throughput\n")
+                                 "shared_mem_usage,mp_torch_cache_items,completed_tasks,tasks_throughput,bytes_up,bytes_down\n")
         with open(workers_file_path, "w") as workers_resources_file:
             workers_resources_file.write("broker,time,worker,cpu_percent\n")
 
@@ -103,10 +103,10 @@ class Broker:
                     self.completed_tasks_last_check = self.completed_tasks
                     self.time_last_check = time.time()
 
-                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d,%d,%d,%f\n" % (
+                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d,%d,%d,%f,%d,%d\n" % (
                         broker_id, time.time() - self.start_time, self.items_in_worker_queue, num_models,
                         cpu_usage, phys_mem, virt_mem, shared_mem, mp_torch_cache_items, self.completed_tasks,
-                        tasks_diff / time_diff))
+                        tasks_diff / time_diff, self.communication.bytes_sent, self.communication.bytes_received))
 
                 with open(workers_file_path, "a") as workers_resources_file:
                     # Get the subprocesses and their CPU utilization
