@@ -21,7 +21,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def worker_proc(shared_queue, result_queue, index, settings):
-    torch.set_num_threads(4)
+    torch.set_num_threads(settings.torch_threads)
     worker = Worker(shared_queue, result_queue, index, settings)
     worker.start()
 
