@@ -22,16 +22,14 @@ def train(settings: SessionSettings, params: Dict):
 
     if not model:
         torch.manual_seed(settings.seed)
-        copied_model = create_model(settings.dataset, architecture=settings.model)
-    else:
-        # Make a copy of the model so multiple workers are not training the same model
-        copied_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+        model = create_model(settings.dataset, architecture=settings.model)
 
-    model_manager = ModelManager(copied_model, settings, peer_id)
+    model_manager = ModelManager(model, settings, peer_id)
     model_manager.train()
 
-    detached_model = unserialize_model(serialize_model(copied_model), settings.dataset, architecture=settings.model)
+    detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
 
+    del model_manager.model
     del model_manager
     if torch.cuda.is_available():
         torch.cuda.empty_cache()

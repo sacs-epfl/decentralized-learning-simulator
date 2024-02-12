@@ -18,6 +18,7 @@ def get_args():
     parser.add_argument('--model', type=str, default="gnlenet")
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--algorithm', type=str, default="dpsgd")
+    parser.add_argument('--log-level', type=str, default="INFO")
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")

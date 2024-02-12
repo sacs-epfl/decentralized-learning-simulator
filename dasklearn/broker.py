@@ -4,6 +4,7 @@ from asyncio import ensure_future
 
 import psutil
 import torch.multiprocessing as multiprocessing
+from torch.multiprocessing.reductions import shared_cache as mp_torch_sc
 import pickle
 import random
 from asyncio.subprocess import Process
@@ -39,6 +40,7 @@ class Broker:
         self.broker_addresses: Dict[str, str] = {}
 
         self.workers: List[Process] = []
+        self.psutil_workers: List = []
         self.worker_result_queues: List = []
         self.worker_result_queue = asyncio.Queue()
         self.read_worker_results_task = None
@@ -51,8 +53,11 @@ class Broker:
 
         # For statistics
         self.start_time: float = -1
+        self.time_last_check: float = -1
         self.task_start_times: Dict[str, float] = {}
         self.task_statistics: List[Tuple] = []
+        self.completed_tasks: int = 0
+        self.completed_tasks_last_check: int = 0  # Used to compute the task/sec throughput
 
         self.logger.info("Broker %s initialized", self.identity)
 
@@ -69,23 +74,50 @@ class Broker:
         broker_id = self.identity.split("_")[1]
         process = psutil.Process(os.getpid())
 
-        file_path = os.path.join(self.settings.data_dir, "resources_%s.csv" % self.identity)
-        with open(file_path, "w") as resources_file:
-            resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,shared_mem_usage\n")
+        resources_file_path = os.path.join(self.settings.data_dir, "resources_%s.csv" % self.identity)
+        workers_file_path = os.path.join(self.settings.data_dir, "worker_resources_%s.csv" % self.identity)
+        with open(resources_file_path, "w") as resources_file:
+            resources_file.write("broker,time,queue_items,num_models,cpu_percent,phys_mem_usage,virt_mem_usage,"
+                                 "shared_mem_usage,mp_torch_cache_items,completed_tasks,tasks_throughput,bytes_up,bytes_down\n")
+        with open(workers_file_path, "w") as workers_resources_file:
+            workers_resources_file.write("broker,time,worker,cpu_percent\n")
 
         while True:
             try:
-                with open(file_path, "a") as resources_file:
+                with open(resources_file_path, "a") as resources_file:
                     cpu_usage = psutil.cpu_percent()
                     mem_info = process.memory_info()
                     phys_mem = mem_info.rss
                     virt_mem = mem_info.vms
                     num_models = self.dag.get_num_models()
                     shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
+                    mp_torch_cache_items = len(mp_torch_sc)
+                    mp_torch_sc.free_dead_references()
 
-                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d\n" % (broker_id, time.time() - self.start_time,
-                                                                        self.items_in_worker_queue, num_models,
-                                                                        cpu_usage, phys_mem, virt_mem, shared_mem))
+                    # Calculate the task/sec throughput
+                    if self.time_last_check == -1:
+                        self.time_last_check = self.start_time
+
+                    time_diff = time.time() - self.time_last_check
+                    tasks_diff = self.completed_tasks - self.completed_tasks_last_check
+                    self.completed_tasks_last_check = self.completed_tasks
+                    self.time_last_check = time.time()
+
+                    resources_file.write("%s,%f,%d,%d,%f,%d,%d,%d,%d,%d,%f,%d,%d\n" % (
+                        broker_id, time.time() - self.start_time, self.items_in_worker_queue, num_models,
+                        cpu_usage, phys_mem, virt_mem, shared_mem, mp_torch_cache_items, self.completed_tasks,
+                        tasks_diff / time_diff, self.communication.bytes_sent, self.communication.bytes_received))
+
+                with open(workers_file_path, "a") as workers_resources_file:
+                    # Get the subprocesses and their CPU utilization
+                    for worker_ind, worker_proc in enumerate(self.psutil_workers):
+                        try:
+                            cpu_usage = worker_proc.cpu_percent()
+                        except (ProcessLookupError, psutil.ZombieProcess):
+                            continue
+                        workers_resources_file.write("%s,%f,%s_%d,%f\n" % (broker_id, time.time() - self.start_time,
+                                                                           broker_id, worker_ind, cpu_usage))
+
                 await asyncio.sleep(1)
             except Exception as exc:
                 self.logger.exception(exc)
@@ -108,11 +140,16 @@ class Broker:
 
     def worker_result_queue_thread(self, mp_queue, loop):
         while True:
-            item = mp_queue.get()
-            if item is None:  # Sentinel value to end loop
-                break
+            try:
+                item = mp_queue.get()
+                if item is None:  # Sentinel value to end loop
+                    break
 
-            asyncio.run_coroutine_threadsafe(self.worker_result_queue.put(item), loop)
+                asyncio.run_coroutine_threadsafe(self.worker_result_queue.put(item), loop)
+            except Exception as exc:
+                self.logger.exception(exc)
+                asyncio.run_coroutine_threadsafe(self.worker_result_queue.put(("error", None, None)), loop)
+                break
 
     async def worker_result_queue_task(self):
         self.logger.info("Starting result queue task")
@@ -127,6 +164,7 @@ class Broker:
 
                 task = self.dag.tasks[task_name]
                 self.items_in_worker_queue -= 1
+                self.completed_tasks += 1
 
                 received_by_broker_time = time.time()
                 received_by_worker_time = info["received"]
@@ -164,6 +202,7 @@ class Broker:
             except Exception as exc:
                 self.logger.exception(exc)
                 self.shutdown_everyone()
+                break
 
     async def start_worker(self, index: int):
         worker_result_queue = multiprocessing.Queue()
@@ -173,6 +212,7 @@ class Broker:
         proc = multiprocessing.Process(target=worker_proc, args=(self.worker_queue, worker_result_queue, index, self.settings))
         proc.start()
         self.workers.append(proc)
+        self.psutil_workers.append(psutil.Process(proc.pid))
         self.logger.info("Worker %d started: %s", index, proc)
 
     def connect_to_brokers(self):
@@ -238,7 +278,7 @@ class Broker:
                     self.clients_to_brokers[client] = broker
 
             self.settings = SessionSettings.from_dict(msg["settings"])
-            setup_logging(self.settings.data_dir, "%s.log" % self.identity)
+            setup_logging(self.settings.data_dir, "%s.log" % self.identity, log_level=self.settings.log_level)
             self.dag = WorkflowDAG.unserialize(msg["dag"])
             self.connect_to_brokers()
             ensure_future(self.start_workers())

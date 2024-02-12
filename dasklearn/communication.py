@@ -25,9 +25,13 @@ class Communication:
         self.broker_connections: Dict = {}
         self.coordinator_connection = None
 
+        self.bytes_sent: int = 0
+        self.bytes_received: int = 0
+
     async def receive_messages(self):
         while True:
             identity, msg = await self.listen_socket.recv_multipart()
+            self.bytes_received += len(msg)
             msg = pickle.loads(msg)
             self.logger.debug(f"Received message from {identity.decode()}: {msg}")
             try:
@@ -68,10 +72,13 @@ class Communication:
             raise RuntimeError("Unknown identity for sending %s" % identity)
 
         self.broker_connections[identity].send(msg)
+        self.bytes_sent += len(msg)
 
     def send_message_to_all_brokers(self, msg: bytes):
         for sock in self.broker_connections.values():
             sock.send(msg)
+            self.bytes_sent += len(msg)
 
     def send_message_to_coordinator(self, msg: bytes):
         self.coordinator_connection.send(msg)
+        self.bytes_sent += len(msg)

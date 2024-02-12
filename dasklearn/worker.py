@@ -13,7 +13,7 @@ class Worker:
         self.result_queue = result_queue
         self.index: int = index
         self.settings = settings
-        setup_logging(self.settings.data_dir, "worker_%d.log" % self.index)
+        setup_logging(self.settings.data_dir, "worker_%d.log" % self.index, log_level=settings.log_level)
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.logger.info("Worker %d initialized", self.index)

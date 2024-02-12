@@ -42,3 +42,4 @@ class SessionSettings:
     rounds: int = 10
     data_dir: str = ""
     port: int = 5555
+    log_level: str = "INFO"
