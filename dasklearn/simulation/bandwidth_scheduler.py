@@ -4,7 +4,7 @@ sending and receiving party.
 """
 import logging
 import random
-from typing import List
+from typing import List, Any
 
 from dasklearn.simulation.events import *
 
@@ -61,12 +61,13 @@ class BWScheduler:
             self.is_active = False
             self.total_time_transmitting += (self.client.simulator.current_time - self.became_active)
 
-    def add_transfer(self, receiver_scheduler: "BWScheduler", transfer_size: int, model: str) -> "Transfer":
+    def add_transfer(self, receiver_scheduler: "BWScheduler", transfer_size: int, model: str,
+                     metadata: Dict[Any, Any]) -> "Transfer":
         """
         A new transfer request arrived.
         :param transfer_size: Size of the transfer, in bytes
         """
-        transfer: Transfer = Transfer(self, receiver_scheduler, transfer_size, model)
+        transfer: Transfer = Transfer(self, receiver_scheduler, transfer_size, model, metadata)
         self.outgoing_requests.append(transfer)
         self.logger.debug("Adding transfer request %d: %s => %s to the queue", transfer.transfer_id, self.my_id,
                           transfer.receiver_scheduler.my_id)
@@ -157,7 +158,8 @@ class BWScheduler:
         data = {
             "from": completed_transfer.sender_scheduler.client.index,
             "to": completed_transfer.receiver_scheduler.client.index,
-            "model": completed_transfer.model
+            "model": completed_transfer.model,
+            "metadata": completed_transfer.metadata,
         }
         incoming_model_event = Event(cur_time, self.client.index, INCOMING_MODEL, data)
         self.client.on_incoming_model(incoming_model_event)
@@ -265,17 +267,19 @@ class Transfer:
     Represents a bandwidth transfer.
     """
 
-    def __init__(self, sender_scheduler: BWScheduler, receiver_scheduler: BWScheduler, transfer_size: int, model: str):
+    def __init__(self, sender_scheduler: BWScheduler, receiver_scheduler: BWScheduler, transfer_size: int, model: str,
+                 metadata: Dict[Any, Any]):
         self.transfer_id = random.randint(0, 100000000000)
         self.sender_scheduler: BWScheduler = sender_scheduler
         self.receiver_scheduler: BWScheduler = receiver_scheduler
         self.transfer_size: int = transfer_size
+        self.model: str = model
+        self.metadata: Dict[Any, Any] = metadata
         self.transferred: int = 0
         self.allocated_bw: int = 0
         self.start_time: int = -1
         self.last_time_updated: int = 0
         self.reschedules: int = 0
-        self.model: str = model
 
     def finish(self):
         self.update()

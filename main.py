@@ -6,7 +6,6 @@ import torch
 
 from args import get_args
 from dasklearn.session_settings import SessionSettings, LearningSettings
-from dasklearn.simulation.simulation import Simulation
 
 
 def run():
@@ -41,7 +40,14 @@ def run():
         torch_threads=args.torch_threads,
     )
 
-    simulation = Simulation(settings)
+    if settings.algorithm == "dpsgd":
+        from dasklearn.simulation.dpsgd.simulation import DPSGDSimulation
+        simulation = DPSGDSimulation(settings)
+    elif settings.algorithm == "subset":
+        from dasklearn.simulation.subset.simulation import SubsetDLSimulation
+        simulation = SubsetDLSimulation(settings, args.sample_size)
+    else:
+        raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
     ensure_future(simulation.run())
 
 

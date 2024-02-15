@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 import torch
@@ -48,3 +50,7 @@ class Cutout(object):
         mask = mask.expand_as(img)
         img *= mask
         return img
+
+
+def get_random_hex_str(length: int) -> str:
+    return ''.join(random.choice('0123456789abcdef') for n in range(length))
