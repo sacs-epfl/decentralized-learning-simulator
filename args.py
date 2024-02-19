@@ -17,9 +17,12 @@ def get_args():
     parser.add_argument('--rounds', type=int, default=1)
     parser.add_argument('--model', type=str, default="gnlenet")
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--algorithm', type=str, default="dpsgd")
     parser.add_argument('--log-level', type=str, default="INFO")
     parser.add_argument('--torch-threads', type=int, default=4)
+
+    # Algorithm-specific parameters
+    parser.add_argument('--algorithm', type=str, default="dpsgd")
+    parser.add_argument('--sample-size', type=int, default=10)
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")

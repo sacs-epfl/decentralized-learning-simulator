@@ -19,10 +19,12 @@ class Event(NamedTuple):
         return (self.time, self.client_id, self.action) == (other.time, other.client_id, other.action)
 
 
-MODEL_INIT = "model_init"
+INIT_CLIENT = "init_client"
 START_TRAIN = "start_train"
 FINISH_TRAIN = "finish_train"
 START_TRANSFER = "start_transfer"
 FINISH_OUTGOING_TRANSFER = "finish_outgoing_transfer"
 INCOMING_MODEL = "incoming_model"
 AGGREGATE = "aggregate"
+
+START_ROUND = "start_round"

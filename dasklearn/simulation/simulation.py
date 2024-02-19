@@ -1,22 +1,19 @@
 import asyncio
 import heapq
 import logging
-import math
 import os
 import pickle
 import shutil
 from asyncio import Future
 from random import Random
-from typing import List, Optional
-
-import networkx as nx
+from typing import List, Optional, Callable
 
 from dasklearn.communication import Communication
 from dasklearn.models import create_model, serialize_model
 from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.events import *
 
-from dasklearn.simulation.client import Client
+from dasklearn.simulation.client import BaseClient
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
 from dasklearn.util.logging import setup_logging
@@ -26,6 +23,7 @@ class Simulation:
     """
     Contains general control logic related to the simulator.
     """
+    CLIENT_CLASS = BaseClient
 
     def __init__(self, settings: SessionSettings):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -35,22 +33,24 @@ class Simulation:
 
         self.settings = settings
         self.events: List[Event] = []
+        self.event_callbacks: Dict[str, str] = {}
         heapq.heapify(self.events)
         self.workflow_dag = WorkflowDAG()
         self.model_size: int = 0
         self.current_time: float = 0
         self.brokers_available_future: Future = Future()
 
-        # TODO assume D-PSGD for now
-        k = math.floor(math.log2(self.settings.participants))
-        self.topology = nx.random_regular_graph(k, self.settings.participants, seed=self.settings.seed)
-
-        self.clients: List[Client] = []
+        self.clients: List[BaseClient] = []
         self.broker_addresses: Dict[str, str] = {}
         self.brokers_to_clients: Dict = {}
         self.clients_to_brokers: Dict = {}
 
         self.communication: Optional[Communication] = None
+
+        self.register_event_callback(INIT_CLIENT, "init_client")
+        self.register_event_callback(START_TRAIN, "start_train")
+        self.register_event_callback(START_TRANSFER, "start_transfer")
+        self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
 
     def setup_directories(self):
         if os.path.exists(self.data_dir):
@@ -101,6 +101,12 @@ class Simulation:
             self.logger.info("Received shutdown signal - stopping")
             asyncio.get_event_loop().stop()
 
+    def initialize_clients(self):
+        for client_id in range(self.settings.participants):
+            self.clients.append(self.CLIENT_CLASS(self, client_id))
+            init_client_event = Event(0, client_id, INIT_CLIENT)
+            heapq.heappush(self.events, init_client_event)
+
     async def run(self):
         self.setup_directories()
         setup_logging(self.data_dir, "coordinator.log")
@@ -108,10 +114,7 @@ class Simulation:
         self.communication.start()
 
         # Initialize the clients
-        for client_id in range(self.settings.participants):
-            self.clients.append(Client(self, client_id))
-            model_init_event = Event(0, client_id, MODEL_INIT)
-            heapq.heappush(self.events, model_init_event)
+        self.initialize_clients()
 
         # Apply traces if applicable
         if self.settings.capability_traces:
@@ -153,21 +156,15 @@ class Simulation:
             assert len(client.bw_scheduler.incoming_transfers) == 0
             assert len(client.bw_scheduler.outgoing_transfers) == 0
 
+    def register_event_callback(self, name: str, callback: str):
+        self.event_callbacks[name] = callback
+
     def process_event(self, event: Event):
-        if event.action == MODEL_INIT:
-            self.clients[event.client_id].init_model(event)
-        elif event.action == START_TRAIN:
-            self.clients[event.client_id].start_train(event)
-        elif event.action == FINISH_TRAIN:
-            self.clients[event.client_id].finish_train(event)
-        elif event.action == START_TRANSFER:
-            self.clients[event.client_id].start_transfer(event)
-        elif event.action == FINISH_OUTGOING_TRANSFER:
-            self.clients[event.client_id].finish_outgoing_transfer(event)
-        elif event.action == AGGREGATE:
-            self.clients[event.client_id].aggregate(event)
-        else:
-            raise RuntimeError("Unknown event %s!", event.action)
+        if event.action not in self.event_callbacks:
+            raise RuntimeError("Action %s has no callback!" % event.action)
+
+        callback: Callable = getattr(self.clients[event.client_id], self.event_callbacks[event.action])
+        callback(event)
 
     def schedule(self, event: Event):
         heapq.heappush(self.events, event)
