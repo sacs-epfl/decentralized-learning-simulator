@@ -49,8 +49,8 @@ def aggregate(settings: SessionSettings, params: Dict):
         logger.info("Aggregating %d models in round %d...", len(models), round_nr)
 
     model_manager = ModelManager(None, settings, 0)
-    for peer_id, model in models.items():
-        model_manager.process_incoming_trained_model(peer_id, model)
+    for idx, model in enumerate(models):
+        model_manager.process_incoming_trained_model(idx, model)
 
     start_time = time.time()
     agg_model = model_manager.aggregate_trained_models()

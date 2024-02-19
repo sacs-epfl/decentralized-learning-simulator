@@ -1,0 +1,7 @@
+torch~=2.1.2
+numpy~=1.26.2
+torchvision~=0.16.2
+psutil~=5.9.7
+networkx~=3.2.1
+pyzmq~=25.1.2
+dataclasses-json~=0.6.4
