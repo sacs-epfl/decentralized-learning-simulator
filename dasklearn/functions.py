@@ -79,4 +79,6 @@ def test(settings: SessionSettings, params: Dict):
     with open(os.path.join(settings.data_dir, "accuracies.csv"), "a") as accuracies_file:
         accuracies_file.write("%d,%d,%f,%f,%f\n" % (peer_id, round_nr, cur_time, accuracy, loss))
     logger.info("Model accuracy: %f, loss: %f", accuracy, loss)
-    return model
+
+    detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+    return detached_model
