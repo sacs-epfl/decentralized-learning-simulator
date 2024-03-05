@@ -18,9 +18,7 @@ class BaseClient:
         self.other_nodes_bws: Dict[bytes, int] = {}
 
         self.simulated_speed: Optional[float] = None
-        self.round: int = 0
 
-        self.own_model: Optional[str] = None
         self.latest_task: Optional[str] = None  # Keep track of the latest task
 
     def client_log(self, msg: str):
@@ -39,11 +37,12 @@ class BaseClient:
         We started training. Schedule when the training has ended.
         """
         task_name = "train_%s" % get_random_hex_str(6)
-        task = Task(task_name, "train", data={"model": self.own_model, "round": self.round, "peer": self.index})
+        task = Task(task_name, "train", data={
+            "model": event.data["model"], "round": event.data["round"], "peer": self.index})
         self.add_compute_task(task)
 
         finish_train_event = Event(event.time + self.get_train_time(), self.index, FINISH_TRAIN,
-                                   data={"model": task_name})
+                                   data={"model": task_name, "round": event.data["round"]})
         self.simulator.schedule(finish_train_event)
 
     def send_model(self, to: int, model: str, metadata: Optional[Dict[Any, Any]] = None) -> None:
@@ -67,9 +66,9 @@ class BaseClient:
         """
         self.bw_scheduler.on_outgoing_transfer_complete(event.data["transfer"])
 
-    def aggregate_models(self, models: List[str]) -> str:
+    def aggregate_models(self, models: List[str], round_nr: int) -> str:
         task_name = "agg_%s" % get_random_hex_str(6)
-        task = Task(task_name, "aggregate", data={"models": models, "round": self.round, "peer": self.index})
+        task = Task(task_name, "aggregate", data={"models": models, "round": round_nr, "peer": self.index})
         self.add_compute_task(task)
         return task_name
 
