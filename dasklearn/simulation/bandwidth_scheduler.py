@@ -115,6 +115,7 @@ class BWScheduler:
         estimated_transfer_duration = request.transfer_size / request.allocated_bw
         request.start_time = self.client.simulator.current_time
         request.last_time_updated = self.client.simulator.current_time
+        assert estimated_transfer_duration >= 0
 
         finish_transfer_event = Event(request.start_time + estimated_transfer_duration,
                                       self.client.index, FINISH_OUTGOING_TRANSFER,
@@ -216,6 +217,7 @@ class BWScheduler:
                 # "Restart" the transfer and reschedule the completion event
                 transfer.allocated_bw += additional_bw_to_allocate
                 new_estimated_finish_time = (transfer.transfer_size - transfer.transferred) / transfer.allocated_bw
+                assert new_estimated_finish_time >= 0, "Estimated finish time in the past: %f (transfer size: %d, transferred: %d)" % (new_estimated_finish_time, transfer.transfer_size, transfer.transferred)
                 transfer.reschedules += 1
                 finish_transfer_event = Event(self.client.simulator.current_time + new_estimated_finish_time,
                                               self.client.index, FINISH_OUTGOING_TRANSFER,

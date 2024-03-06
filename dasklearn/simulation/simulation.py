@@ -37,7 +37,7 @@ class Simulation:
         heapq.heapify(self.events)
         self.workflow_dag = WorkflowDAG()
         self.model_size: int = 0
-        self.current_time: float = 0
+        self.current_time: float = 0.0
         self.brokers_available_future: Future = Future()
 
         self.clients: List[BaseClient] = []
@@ -104,7 +104,7 @@ class Simulation:
     def initialize_clients(self):
         for client_id in range(self.settings.participants):
             self.clients.append(self.CLIENT_CLASS(self, client_id))
-            init_client_event = Event(0, client_id, INIT_CLIENT)
+            init_client_event = Event(0.0, client_id, INIT_CLIENT)
             heapq.heappush(self.events, init_client_event)
 
     async def run(self):
@@ -144,6 +144,7 @@ class Simulation:
 
         while self.events:
             event = heapq.heappop(self.events)
+            assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %f)" % (str(event), self.current_time)
             self.current_time = event.time
             self.process_event(event)
 

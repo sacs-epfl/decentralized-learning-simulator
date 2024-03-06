@@ -29,7 +29,7 @@ class BaseClient:
         if self.simulated_speed:
             local_steps: int = self.simulator.settings.learning.local_steps
             batch_size: int = self.simulator.settings.learning.batch_size
-            train_time = AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000)
+            train_time = float(AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000))
         return train_time
 
     def start_train(self, event: Event):
@@ -41,7 +41,7 @@ class BaseClient:
             "model": event.data["model"], "round": event.data["round"], "peer": self.index})
         self.add_compute_task(task)
 
-        finish_train_event = Event(event.time + self.get_train_time(), self.index, FINISH_TRAIN,
+        finish_train_event = Event(self.simulator.current_time + self.get_train_time(), self.index, FINISH_TRAIN,
                                    data={"model": task_name, "round": event.data["round"]})
         self.simulator.schedule(finish_train_event)
 
