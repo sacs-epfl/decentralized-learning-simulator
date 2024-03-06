@@ -13,8 +13,7 @@ class SubsetDLClient(BaseClient):
         self.round_info: Dict[int, Round] = {}
 
     def init_client(self, event: Event):
-        start_round_event = Event(event.time, self.index, START_ROUND, data={"round": 1, "model": None})
-        self.simulator.schedule(start_round_event)
+        self.schedule_next_round({"round": 1, "model": None})
 
     def start_round(self, event: Event):
         round_nr: int = event.data["round"]
@@ -37,6 +36,11 @@ class SubsetDLClient(BaseClient):
         start_train_event = Event(self.simulator.current_time, self.index, START_TRAIN, data={
             "model": round_info.model, "round": round_info.round_nr})
         self.simulator.schedule(start_train_event)
+
+    def schedule_next_round(self, round_data: Dict):
+        if round_data["round"] <= self.simulator.settings.rounds:
+            start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round_data)
+            self.simulator.schedule(start_round_event)
 
     def is_training(self) -> bool:
         return any([r.is_training for r in self.round_info.values()])
@@ -103,9 +107,9 @@ class SubsetDLClient(BaseClient):
 
         if model_round not in self.round_info:
             # We were not activated yet by the previous sample - start a new round
-            start_round_event = Event(event.time, self.index, START_ROUND, data={
-                "round": model_round, "model": None, "incoming_models": {event.data["from"]: event.data["model"]}})
-            self.start_round(start_round_event)
+            round_data: Dict = {"round": model_round, "model": None,
+                                "incoming_models": {event.data["from"]: event.data["model"]}}
+            self.schedule_next_round(round_data)
         else:
             # We are currently working on this round.
             round_info: Round = self.round_info[model_round]
@@ -134,6 +138,4 @@ class SubsetDLClient(BaseClient):
                 self.schedule_train(round_info)
         else:
             # Start a new round.
-            start_round_event = Event(event.time, self.index, START_ROUND,
-                                      data={"round": model_round, "model": event.data["model"]})
-            self.simulator.schedule(start_round_event)
+            self.schedule_next_round({"round": model_round, "model": event.data["model"]})
