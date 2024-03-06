@@ -21,6 +21,7 @@ def run():
 
     # TODO add availability traces
     settings = SessionSettings(
+        synchronous=args.synchronous,
         algorithm=args.algorithm,
         seed=args.seed,
         dataset=args.dataset,

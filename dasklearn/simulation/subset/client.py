@@ -39,8 +39,13 @@ class SubsetDLClient(BaseClient):
 
     def schedule_next_round(self, round_data: Dict):
         if round_data["round"] <= self.simulator.settings.rounds:
-            start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round_data)
-            self.simulator.schedule(start_round_event)
+            is_sync: bool = self.simulator.settings.synchronous
+            if not is_sync:
+                start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round_data)
+                self.simulator.schedule(start_round_event)
+            else:
+                # We operate in synchronous mode, so the start of the next round is initiated by the simulator.
+                self.simulator.client_ready_for_round(self.index, round_data["round"], round_data)
 
     def is_training(self) -> bool:
         return any([r.is_training for r in self.round_info.values()])
