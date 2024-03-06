@@ -12,7 +12,7 @@ class SubsetDLClient(BaseClient):
         super().__init__(simulator, index)
         self.round_info: Dict[int, Round] = {}
 
-    def init_client(self, event: Event):
+    def init_client(self, _: Event):
         self.schedule_next_round({"round": 1, "model": None})
 
     def start_round(self, event: Event):

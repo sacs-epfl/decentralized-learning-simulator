@@ -45,10 +45,10 @@ class BaseClient:
                                    data={"model": task_name, "round": event.data["round"]})
         self.simulator.schedule(finish_train_event)
 
-    def send_model(self, to: int, model: str, metadata: Optional[Dict[Any, Any]] = None) -> None:
+    def send_model(self, to: int, model: str, metadata: Optional[Dict[Any, Any]] = None, send_time: Optional[float] = None) -> None:
         metadata = metadata or {}
         event_data = {"from": self.index, "to": to, "model": model, "metadata": metadata}
-        start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
+        start_transfer_event = Event(send_time or self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
         self.simulator.schedule(start_transfer_event)
 
     def start_transfer(self, event: Event):
