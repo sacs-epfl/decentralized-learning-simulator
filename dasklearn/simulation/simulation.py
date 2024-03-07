@@ -1,12 +1,11 @@
 import asyncio
-import heapq
-import logging
+import bisect
 import os
 import pickle
 import shutil
 from asyncio import Future
 from random import Random
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, Tuple
 
 from dasklearn.communication import Communication
 from dasklearn.models import create_model, serialize_model
@@ -16,6 +15,7 @@ from dasklearn.simulation.events import *
 from dasklearn.simulation.client import BaseClient
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
+from dasklearn.util import MICROSECONDS
 from dasklearn.util.logging import setup_logging
 
 
@@ -32,12 +32,11 @@ class Simulation:
         settings.data_dir = self.data_dir
 
         self.settings = settings
-        self.events: List[Event] = []
+        self.events: List[Tuple[int, int, Event]] = []
         self.event_callbacks: Dict[str, str] = {}
-        heapq.heapify(self.events)
         self.workflow_dag = WorkflowDAG()
         self.model_size: int = 0
-        self.current_time: float = 0.0
+        self.current_time: int = 0
         self.brokers_available_future: Future = Future()
 
         self.clients: List[BaseClient] = []
@@ -104,8 +103,8 @@ class Simulation:
     def initialize_clients(self):
         for client_id in range(self.settings.participants):
             self.clients.append(self.CLIENT_CLASS(self, client_id))
-            init_client_event = Event(0.0, client_id, INIT_CLIENT)
-            heapq.heappush(self.events, init_client_event)
+            init_client_event = Event(0, client_id, INIT_CLIENT)
+            self.schedule(init_client_event)
 
     async def run(self):
         self.setup_directories()
@@ -143,8 +142,8 @@ class Simulation:
         self.logger.info("Determine model size: %d bytes", self.model_size)
 
         while self.events:
-            event = heapq.heappop(self.events)
-            assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %f)" % (str(event), self.current_time)
+            _, _, event = self.events.pop(0)
+            assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
             self.current_time = event.time
             self.process_event(event)
 
@@ -157,6 +156,9 @@ class Simulation:
             assert len(client.bw_scheduler.incoming_transfers) == 0
             assert len(client.bw_scheduler.outgoing_transfers) == 0
 
+    def cur_time_in_sec(self) -> float:
+        return self.current_time / MICROSECONDS
+
     def register_event_callback(self, name: str, callback: str):
         self.event_callbacks[name] = callback
 
@@ -168,7 +170,8 @@ class Simulation:
         callback(event)
 
     def schedule(self, event: Event):
-        heapq.heappush(self.events, event)
+        assert event.time >= self.current_time, "Cannot schedule event %s in the past!" % event
+        bisect.insort(self.events, (event.time, event.index, event))
 
     def schedule_tasks_on_broker(self, tasks: List[Task], broker: str):
         msg = pickle.dumps({"type": "tasks", "tasks": [task.name for task in tasks]})

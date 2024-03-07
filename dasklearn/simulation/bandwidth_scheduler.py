@@ -7,6 +7,7 @@ import random
 from typing import List, Any
 
 from dasklearn.simulation.events import *
+from dasklearn.util import MICROSECONDS
 
 
 class BWScheduler:
@@ -26,8 +27,8 @@ class BWScheduler:
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.is_active: bool = False  # Whether we are sending or receiving something
-        self.became_active: float = 0
-        self.total_time_transmitting: float = 0
+        self.became_active: int = 0
+        self.total_time_transmitting: int = 0
 
     def get_allocated_outgoing_bw(self) -> int:
         allocated_bw: int = sum([transfer.allocated_bw for transfer in self.outgoing_transfers])
@@ -117,8 +118,8 @@ class BWScheduler:
         request.last_time_updated = self.client.simulator.current_time
         assert estimated_transfer_duration >= 0
 
-        finish_transfer_event = Event(request.start_time + estimated_transfer_duration,
-                                      self.client.index, FINISH_OUTGOING_TRANSFER,
+        finish_time: int = self.client.simulator.current_time + int(estimated_transfer_duration * MICROSECONDS)
+        finish_transfer_event = Event(finish_time, self.client.index, FINISH_OUTGOING_TRANSFER,
                                       {"transfer": request})
         self.client.simulator.schedule(finish_transfer_event)
 
@@ -180,7 +181,8 @@ class BWScheduler:
         Remove an ongoing transfer completion from the event queue.
         """
         event_ind = -1
-        for ind, event in enumerate(self.client.simulator.events):
+        for ind, entry in enumerate(self.client.simulator.events):
+            _, _, event = entry
             if event.action == FINISH_OUTGOING_TRANSFER and event.data["transfer"] == transfer:
                 event_ind = ind
                 break
@@ -207,7 +209,6 @@ class BWScheduler:
                 # We can allocate more bw to this transfer, do so and update everything accordingly.
                 self.logger.debug("Allocating %d additional bw to transfer %d", additional_bw_to_allocate,
                                   transfer.transfer_id)
-                task_name = "transfer_%d_finish_%d" % (transfer.transfer_id, transfer.reschedules)
 
                 self.remove_transfer_finish_from_event_queue(transfer)
 
@@ -219,8 +220,8 @@ class BWScheduler:
                 new_estimated_finish_time = (transfer.transfer_size - transfer.transferred) / transfer.allocated_bw
                 assert new_estimated_finish_time >= 0, "Estimated finish time in the past: %f (transfer size: %d, transferred: %d)" % (new_estimated_finish_time, transfer.transfer_size, transfer.transferred)
                 transfer.reschedules += 1
-                finish_transfer_event = Event(self.client.simulator.current_time + new_estimated_finish_time,
-                                              self.client.index, FINISH_OUTGOING_TRANSFER,
+                finish_time: int = self.client.simulator.current_time + int(new_estimated_finish_time * MICROSECONDS)
+                finish_transfer_event = Event(finish_time, self.client.index, FINISH_OUTGOING_TRANSFER,
                                               {"transfer": transfer})
                 self.client.simulator.schedule(finish_transfer_event)
         elif transfer in self.outgoing_requests:
@@ -295,8 +296,8 @@ class Transfer:
                                                "ignoring for now", self)
 
     def update(self):
-        cur_time = self.sender_scheduler.client.simulator.current_time
-        transferred: float = (cur_time - self.last_time_updated) * self.allocated_bw
+        cur_time: int = self.sender_scheduler.client.simulator.current_time
+        transferred: int = int((cur_time - self.last_time_updated) / MICROSECONDS * self.allocated_bw)
         self.transferred += transferred
         self.last_time_updated = cur_time
 

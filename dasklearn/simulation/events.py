@@ -1,22 +1,22 @@
-from functools import total_ordering
-from typing import NamedTuple, Dict
+import logging
+from typing import Dict
 
 
-@total_ordering
-class Event(NamedTuple):
-    time: float
-    client_id: int
-    action: str
-    data: Dict = {}
+class Event:
+    COUNTER = 0
 
-    def __lt__(self, other: 'Event') -> bool:
-        # Compare primarily by time, then by client_id and action for tiebreakers.
-        # This logic can be adjusted based on the intended ordering.
-        return self.time < other.time
+    def __init__(self, time: int, client_id: int, action: str, data: Dict = None):
+        assert isinstance(time, int), "%s" % type(time)
+        self.time: int = time
+        self.index = Event.COUNTER
+        self.client_id: int = client_id
+        self.action: str = action
+        self.data: Dict = data or {}
 
-    # Define __eq__ as well, since total_ordering requires it.
-    def __eq__(self, other: 'Event') -> bool:
-        return (self.time, self.client_id, self.action) == (other.time, other.client_id, other.action)
+        Event.COUNTER += 1
+
+    def __str__(self):
+        return "Event(%d, %d, %s)" % (self.time, self.client_id, self.action)
 
 
 INIT_CLIENT = "init_client"

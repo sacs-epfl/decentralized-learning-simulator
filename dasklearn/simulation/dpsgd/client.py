@@ -62,8 +62,7 @@ class DPSGDClient(BaseClient):
         round_info.train_done = True
 
         for index, neighbour in enumerate(list(self.simulator.topology.neighbors(self.index))):
-            send_time = self.simulator.current_time + 0.001 * index
-            self.send_model(neighbour, event.data["model"], metadata={"round": event.data["round"]}, send_time=send_time)
+            self.send_model(neighbour, event.data["model"], metadata={"round": event.data["round"]})
 
         # Do we have all incoming models for this round? If so, aggregate.
         num_nb = len(list(self.simulator.topology.neighbors(self.index)))
