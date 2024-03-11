@@ -10,7 +10,6 @@ models = [create_model("femnist") for _ in range(20)]
 settings = SessionSettings(
     algorithm="dpsgd",
     seed=42,
-    work_dir=None,
     dataset="femnist",
     learning=LearningSettings(batch_size=0, learning_rate=0, momentum=0, weight_decay=0, local_steps=0),
     participants=100

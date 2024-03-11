@@ -39,6 +39,7 @@ def run():
         port=args.port,
         log_level=args.log_level,
         torch_threads=args.torch_threads,
+        dry_run=args.dry_run,
     )
 
     if settings.algorithm == "dpsgd":

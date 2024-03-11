@@ -110,7 +110,7 @@ class DPSGDClient(BaseClient):
         round_info.model = self.aggregate_models(model_names, round_nr)
 
         # Should we test?
-        if round_nr % self.simulator.settings.test_interval == 0:
+        if self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0:
             test_task_name = "test_%d_%d" % (self.index, round_nr)
             task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index})
             self.add_compute_task(task)

@@ -46,3 +46,5 @@ class SessionSettings:
     port: int = 5555
     log_level: str = "INFO"
     torch_threads: int = 4
+    dry_run: bool = False
+    unit_testing: bool = False

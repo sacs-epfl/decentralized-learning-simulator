@@ -28,7 +28,9 @@ class Simulation:
     def __init__(self, settings: SessionSettings):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.data_dir = os.path.join("data", "%s_%s_n%d_b%d_s%d" % (settings.algorithm, settings.dataset, settings.participants, settings.brokers, settings.seed))
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d" %
+                                     (settings.algorithm, settings.dataset, settings.participants,
+                                      settings.brokers, settings.seed))
         settings.data_dir = self.data_dir
 
         self.settings = settings
@@ -108,9 +110,10 @@ class Simulation:
 
     async def run(self):
         self.setup_directories()
-        setup_logging(self.data_dir, "coordinator.log")
-        self.communication = Communication("coordinator", self.settings.port, self.on_message)
-        self.communication.start()
+        if not self.settings.unit_testing:
+            setup_logging(self.data_dir, "coordinator.log")
+            self.communication = Communication("coordinator", self.settings.port, self.on_message)
+            self.communication.start()
 
         # Initialize the clients
         self.initialize_clients()
@@ -149,7 +152,8 @@ class Simulation:
 
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
 
-        await self.solve_workflow_graph()
+        if not self.settings.dry_run:
+            await self.solve_workflow_graph()
 
         # Done! Sanity checks
         for client in self.clients:
