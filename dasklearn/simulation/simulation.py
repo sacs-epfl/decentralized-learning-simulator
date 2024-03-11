@@ -147,6 +147,8 @@ class Simulation:
             self.current_time = event.time
             self.process_event(event)
 
+        self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
+
         await self.solve_workflow_graph()
 
         # Done! Sanity checks
