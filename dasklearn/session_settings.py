@@ -17,6 +17,7 @@ class LearningSettings:
     batch_size: int
     local_steps: int
 
+
 @dataclass_json
 @dataclass
 class SessionSettings:
@@ -29,6 +30,7 @@ class SessionSettings:
     dataset: str
     learning: LearningSettings
     participants: int
+    synchronous: bool = False
     model: Optional[str] = None
     alpha: float = 1
     dataset_base_path: Optional[str] = None
@@ -44,3 +46,5 @@ class SessionSettings:
     port: int = 5555
     log_level: str = "INFO"
     torch_threads: int = 4
+    dry_run: bool = False
+    unit_testing: bool = False

@@ -19,8 +19,10 @@ def get_args():
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--log-level', type=str, default="INFO")
     parser.add_argument('--torch-threads', type=int, default=4)
+    parser.add_argument('--dry-run', action=argparse.BooleanOptionalAction)
 
     # Algorithm-specific parameters
+    parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
     parser.add_argument('--algorithm', type=str, default="dpsgd")
     parser.add_argument('--sample-size', type=int, default=10)
 

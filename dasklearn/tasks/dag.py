@@ -28,6 +28,13 @@ class WorkflowDAG:
         """
         return [task.to_json_dict() for task in self.tasks.values()]
 
+    def save_to_file(self, file_path: str) -> None:
+        with open(file_path, "w") as dag_file:
+            dag_file.write("from,to\n")
+            for task_name, task in self.tasks.items():
+                for output in task.outputs:
+                    dag_file.write("%s,%s\n" % (task_name, output.name))
+
     @classmethod
     def unserialize(cls, serialized_tasks):
         dag = WorkflowDAG()

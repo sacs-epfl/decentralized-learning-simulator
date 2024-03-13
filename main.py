@@ -21,6 +21,7 @@ def run():
 
     # TODO add availability traces
     settings = SessionSettings(
+        synchronous=args.synchronous,
         algorithm=args.algorithm,
         seed=args.seed,
         dataset=args.dataset,
@@ -38,6 +39,7 @@ def run():
         port=args.port,
         log_level=args.log_level,
         torch_threads=args.torch_threads,
+        dry_run=args.dry_run,
     )
 
     if settings.algorithm == "dpsgd":

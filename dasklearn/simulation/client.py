@@ -5,6 +5,7 @@ from dasklearn.simulation.bandwidth_scheduler import BWScheduler
 from dasklearn.functions import *
 from dasklearn.simulation.events import FINISH_TRAIN, Event, START_TRANSFER
 from dasklearn.tasks.task import Task
+from dasklearn.util import MICROSECONDS, time_to_sec
 from dasklearn.util.utils import get_random_hex_str
 
 
@@ -18,38 +19,37 @@ class BaseClient:
         self.other_nodes_bws: Dict[bytes, int] = {}
 
         self.simulated_speed: Optional[float] = None
-        self.round: int = 0
 
-        self.own_model: Optional[str] = None
         self.latest_task: Optional[str] = None  # Keep track of the latest task
 
     def client_log(self, msg: str):
-        self.logger.info("[t=%.3f] %s", self.simulator.current_time, msg)
+        self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
 
-    def get_train_time(self) -> float:
+    def get_train_time(self) -> int:
         train_time: float = 0.0
         if self.simulated_speed:
             local_steps: int = self.simulator.settings.learning.local_steps
             batch_size: int = self.simulator.settings.learning.batch_size
-            train_time = AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000)
-        return train_time
+            train_time = float(AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000))
+        return int(train_time * MICROSECONDS)
 
     def start_train(self, event: Event):
         """
         We started training. Schedule when the training has ended.
         """
         task_name = "train_%s" % get_random_hex_str(6)
-        task = Task(task_name, "train", data={"model": self.own_model, "round": self.round, "peer": self.index})
+        task = Task(task_name, "train", data={
+            "model": event.data["model"], "round": event.data["round"], "peer": self.index})
         self.add_compute_task(task)
 
-        finish_train_event = Event(event.time + self.get_train_time(), self.index, FINISH_TRAIN,
-                                   data={"model": task_name})
+        finish_train_event = Event(self.simulator.current_time + self.get_train_time(), self.index, FINISH_TRAIN,
+                                   data={"model": task_name, "round": event.data["round"]})
         self.simulator.schedule(finish_train_event)
 
-    def send_model(self, to: int, model: str, metadata: Optional[Dict[Any, Any]] = None) -> None:
+    def send_model(self, to: int, model: str, metadata: Optional[Dict[Any, Any]] = None, send_time: Optional[int] = None) -> None:
         metadata = metadata or {}
         event_data = {"from": self.index, "to": to, "model": model, "metadata": metadata}
-        start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
+        start_transfer_event = Event(send_time or self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
         self.simulator.schedule(start_transfer_event)
 
     def start_transfer(self, event: Event):
@@ -67,9 +67,9 @@ class BaseClient:
         """
         self.bw_scheduler.on_outgoing_transfer_complete(event.data["transfer"])
 
-    def aggregate_models(self, models: List[str]) -> str:
+    def aggregate_models(self, models: List[str], round_nr: int) -> str:
         task_name = "agg_%s" % get_random_hex_str(6)
-        task = Task(task_name, "aggregate", data={"models": models, "round": self.round, "peer": self.index})
+        task = Task(task_name, "aggregate", data={"models": models, "round": round_nr, "peer": self.index})
         self.add_compute_task(task)
         return task_name
 
