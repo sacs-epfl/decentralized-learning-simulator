@@ -125,7 +125,7 @@ class Simulation:
                 data = pickle.load(traces_file)
 
             rand = Random(self.settings.seed)
-            device_ids = rand.sample(list(data.keys()), self.settings.participants)
+            device_ids = rand.sample(list(data.keys()), len(self.clients))
             nodes_bws: Dict[int, int] = {}
             for ind, client in enumerate(self.clients):
                 client.simulated_speed = data[device_ids[ind]]["computation"]

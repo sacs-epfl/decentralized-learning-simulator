@@ -42,7 +42,10 @@ def run():
         dry_run=args.dry_run,
     )
 
-    if settings.algorithm == "dpsgd":
+    if settings.algorithm == "fl":
+        from dasklearn.simulation.fl.simulation import FLSimulation
+        simulation = FLSimulation(settings)
+    elif settings.algorithm == "dpsgd":
         from dasklearn.simulation.dpsgd.simulation import DPSGDSimulation
         simulation = DPSGDSimulation(settings)
     elif settings.algorithm == "subset":

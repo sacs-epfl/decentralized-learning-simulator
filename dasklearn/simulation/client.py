@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import Optional, Any, List
 
 from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
