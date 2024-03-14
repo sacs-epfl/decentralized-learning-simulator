@@ -34,6 +34,8 @@ class SessionSettings:
     model: Optional[str] = None
     alpha: float = 1
     dataset_base_path: Optional[str] = None
+    validation_set_fraction: float = 0
+    compute_validation_loss_global_model: bool = False
     partitioner: str = "iid"  # iid, shards or dirichlet
     gradient_aggregation: GradientAggregationMethod = GradientAggregationMethod.FEDAVG
     torch_device_name: str = "cpu"

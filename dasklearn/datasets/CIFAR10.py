@@ -30,7 +30,9 @@ class CIFAR10(Dataset):
         sizes="",
         test_batch_size=1024,
         shards=1,
-        alpha: float = 1
+        alpha: float = 1,
+        validation_size=0,
+        seed: int = 42,
     ):
         """
         Constructor which reads the data files, instantiates and partitions the dataset
@@ -64,11 +66,13 @@ class CIFAR10(Dataset):
             test_dir,
             sizes,
             test_batch_size,
+            validation_size,
         )
 
         self.partitioner = partitioner
         self.shards = shards
         self.alpha = alpha
+        self.seed = seed
 
         normalization_vectors = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.201)
         self.train_transformer = transforms.Compose([
@@ -90,7 +94,8 @@ class CIFAR10(Dataset):
         if self.__testing__:
             self.load_testset()
 
-        # TODO: Add Validation
+        if self.__training__ and self.__validating__:
+            self.load_validationset()
 
     def load_trainset(self):
         """
@@ -147,6 +152,19 @@ class CIFAR10(Dataset):
 
         self.logger.info("Test dataset initialization done! Total samples: %d", len(self.testset))
 
+    def load_validationset(self):
+        """
+        Loads the validation set
+        """
+        dataset_len = len(self.trainset)
+        val_len = int(self.validation_size * dataset_len) if dataset_len >= 10 else 0
+
+        self.logger.info("Creating validation set (samples: %d)", val_len)
+
+        self.validationset, self.trainset = torch.utils.data.random_split(
+            self.trainset, [val_len, dataset_len - val_len], torch.Generator().manual_seed(42),
+        )
+
     def get_trainset(self, batch_size=1, shuffle=False):
         """
         Function to get the training set
@@ -187,6 +205,21 @@ class CIFAR10(Dataset):
         if self.__testing__:
             return DataLoader(self.testset, batch_size=self.test_batch_size)
         raise RuntimeError("Test set not initialized!")
+
+    def get_validationset(self):
+        """
+        Function to get the validation set
+        Returns
+        -------
+        torch.utils.Dataset(decentralizepy.datasets.Data)
+        Raises
+        ------
+        RuntimeError
+            If the test set was not initialized
+        """
+        if self.__validating__:
+            return DataLoader(self.validationset, batch_size=self.test_batch_size)
+        raise RuntimeError("Validation set not initialized!")
 
     def test(self, model, device_name: str = "cpu"):
         """

@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 
 import torch.nn as nn
 
@@ -51,6 +51,5 @@ class ModelManager:
         models = [model for model in self.incoming_trained_models.values()]
         return self.get_aggregation_method().aggregate(models, weights=weights)
 
-    def train(self) -> int:
-        samples_trained_on = self.model_trainer.train(self.model, device_name=self.settings.torch_device_name)
-        return samples_trained_on
+    def train(self) -> Dict:
+        return self.model_trainer.train(self.model, device_name=self.settings.torch_device_name)
