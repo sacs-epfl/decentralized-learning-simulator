@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import Optional, Any, List
 
 from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
@@ -39,7 +40,8 @@ class BaseClient:
         """
         task_name = "train_%s" % get_random_hex_str(6)
         task = Task(task_name, "train", data={
-            "model": event.data["model"], "round": event.data["round"], "peer": self.index})
+            "model": event.data["model"], "round": event.data["round"],
+            "time": self.simulator.current_time, "peer": self.index})
         self.add_compute_task(task)
 
         finish_train_event = Event(self.simulator.current_time + self.get_train_time(), self.index, FINISH_TRAIN,

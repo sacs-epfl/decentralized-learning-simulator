@@ -26,6 +26,8 @@ def run():
         seed=args.seed,
         dataset=args.dataset,
         dataset_base_path=args.dataset_base_path,
+        validation_set_fraction=args.validation_set_fraction,
+        compute_validation_loss_global_model=args.compute_validation_loss_global_model,
         torch_device_name="cpu" if not torch.cuda.is_available() else "cuda:0",
         work_dir="",
         learning=learning_settings,
@@ -42,7 +44,10 @@ def run():
         dry_run=args.dry_run,
     )
 
-    if settings.algorithm == "dpsgd":
+    if settings.algorithm == "fl":
+        from dasklearn.simulation.fl.simulation import FLSimulation
+        simulation = FLSimulation(settings)
+    elif settings.algorithm == "dpsgd":
         from dasklearn.simulation.dpsgd.simulation import DPSGDSimulation
         simulation = DPSGDSimulation(settings)
     elif settings.algorithm == "subset":

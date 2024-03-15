@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional
+from typing import Optional, Dict, Tuple
 
 import torch
 from torch.autograd import Variable
@@ -33,7 +33,35 @@ class ModelTrainer:
             self.train_dir = os.path.join(data_dir, "per_user_data", "train")
         self.dataset: Optional[Dataset] = None
 
-    def train(self, model, device_name: str = "cpu") -> int:
+    def get_validation_loss(self, model) -> float:
+        validation_set = self.dataset.get_validationset()
+        total_loss = 0.0
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        model.eval()  # set model to evaluation mode
+
+        with torch.no_grad():
+            for data, target in validation_set:
+                data, target = data.to(device), target.to(device)
+                output = model(data)
+
+                if self.settings.dataset == "movielens":
+                    loss_func = MSELoss()
+                elif self.settings.dataset == "cifar10":
+                    if self.settings.model == "resnet8":
+                        loss_func = CrossEntropyLoss()
+                    else:
+                        loss_func = NLLLoss()
+                else:
+                    loss_func = CrossEntropyLoss()
+
+                loss = loss_func(output, target)
+                total_loss += loss.item()
+
+        avg_loss = total_loss / len(validation_set)
+        return float(avg_loss)
+
+    def train(self, model, device_name: str = "cpu") -> Dict:
         """
         Train the model on a batch. Return an integer that indicates how many local steps we have done.
         """
@@ -41,6 +69,10 @@ class ModelTrainer:
 
         if not self.dataset:
             self.dataset = create_dataset(self.settings, participant_index=self.participant_index, train_dir=self.train_dir)
+
+        validation_loss_global_model: Optional[float] = None
+        if self.settings.compute_validation_loss_global_model and len(self.dataset.validationset) > 0:
+            validation_loss_global_model = self.get_validation_loss(model)
 
         local_steps: int = self.settings.learning.local_steps
         device = torch.device(device_name)
@@ -83,4 +115,4 @@ class ModelTrainer:
         self.is_training = False
         model.to("cpu")
 
-        return samples_trained_on
+        return {"samples": samples_trained_on, "validation_loss_global": validation_loss_global_model}

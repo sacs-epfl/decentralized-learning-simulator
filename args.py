@@ -30,9 +30,11 @@ def get_args():
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
 
     # Accuracy checking
+    parser.add_argument('--validation-set-fraction', type=float, default=0.0)
+    parser.add_argument('--compute-validation-loss-global-model', action=argparse.BooleanOptionalAction)
     parser.add_argument('--test-interval', type=int, default=5)
 
-    # Dask-related parameters
+    # Broker-related parameters
     parser.add_argument('--brokers', type=int, default=1)
     parser.add_argument('--port', type=int, default=5555)
 

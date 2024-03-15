@@ -10,7 +10,8 @@ def create_dataset(settings: SessionSettings, participant_index: int = 0, train_
     if settings.dataset == "cifar10":
         from dasklearn.datasets.CIFAR10 import CIFAR10
         return CIFAR10(participant_index, 0, mapping, settings.partitioner,
-                       train_dir=train_dir, test_dir=test_dir, shards=settings.participants, alpha=settings.alpha)
+                       train_dir=train_dir, test_dir=test_dir, shards=settings.participants, alpha=settings.alpha,
+                       validation_size=settings.validation_set_fraction, seed=settings.seed)
     elif settings.dataset == "femnist":
         from dasklearn.datasets.femnist import Femnist
         return Femnist(participant_index, 0, mapping, train_dir=train_dir, test_dir=test_dir)

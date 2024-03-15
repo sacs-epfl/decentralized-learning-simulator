@@ -18,6 +18,7 @@ evaluator = None
 def train(settings: SessionSettings, params: Dict):
     model = params["model"]
     round_nr = params["round"]
+    cur_time = params["time"]
     peer_id = params["peer"]
 
     if not model:
@@ -25,7 +26,11 @@ def train(settings: SessionSettings, params: Dict):
         model = create_model(settings.dataset, architecture=settings.model)
 
     model_manager = ModelManager(model, settings, peer_id)
-    model_manager.train()
+    train_info = model_manager.train()
+
+    if train_info["validation_loss_global"] is not None:
+        with open(os.path.join(settings.data_dir, "validation_losses.csv"), "a") as loss_file:
+            loss_file.write("%d,%d,%f,%f\n" % (peer_id, round_nr, cur_time, train_info["validation_loss_global"]))
 
     detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
 

@@ -20,6 +20,7 @@ class Dataset:
         test_dir="",
         sizes="",
         test_batch_size="",
+        validation_size=0,
     ):
         """
         Constructor which reads the data files, instantiates and partitions the dataset
@@ -56,6 +57,7 @@ class Dataset:
         self.test_dir = utils.conditional_value(test_dir, "", None)
         self.sizes = utils.conditional_value(sizes, "", None)
         self.test_batch_size = utils.conditional_value(test_batch_size, "", 64)
+        self.validation_size = utils.conditional_value(validation_size, "", None)
         if self.sizes:
             if type(self.sizes) == str:
                 self.sizes = eval(self.sizes)
@@ -69,6 +71,11 @@ class Dataset:
             self.__testing__ = True
         else:
             self.__testing__ = False
+
+        if self.validation_size > 0:
+            self.__validating__ = True
+        else:
+            self.__validating__ = False
 
     def get_trainset(self, batch_size=1, shuffle=False):
         """
@@ -99,5 +106,18 @@ class Dataset:
         RuntimeError
             If the test set was not initialized
 
+        """
+        raise NotImplementedError
+
+    def get_validationset(self):
+        """
+        Function to get the test set
+        Returns
+        -------
+        torch.utils.Dataset(decentralizepy.datasets.Data)
+        Raises
+        ------
+        RuntimeError
+            If the test set was not initialized
         """
         raise NotImplementedError
