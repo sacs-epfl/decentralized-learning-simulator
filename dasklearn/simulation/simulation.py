@@ -152,6 +152,9 @@ class Simulation:
 
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
 
+        # Sanity check the DAG
+        self.workflow_dag.check_validity()
+
         if not self.settings.dry_run:
             await self.solve_workflow_graph()
 
