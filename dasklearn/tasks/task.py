@@ -23,14 +23,16 @@ class Task:
                 if isinstance(value, (dict, list)):
                     values_replaced += Task.replace_values_recursively(value, string_to_replace, new_value, do_replace)
                 elif value == string_to_replace:
-                    d[key] = new_value
+                    if do_replace:
+                        d[key] = new_value
                     values_replaced += 1
         elif isinstance(d, list):
             for i, item in enumerate(d):
                 if isinstance(item, (dict, list)):
                     Task.replace_values_recursively(item, string_to_replace, new_value, do_replace)
                 elif item == string_to_replace:
-                    d[i] = new_value
+                    if do_replace:
+                        d[i] = new_value
                     values_replaced += 1
 
         return values_replaced
