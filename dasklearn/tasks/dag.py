@@ -76,3 +76,13 @@ class WorkflowDAG:
         model_hashes = set()
         WorkflowDAG.count_models([d.data for d in self.tasks.values() if d.data is not None], model_hashes)
         return len(model_hashes)
+
+    def check_validity(self):
+        # Check 1 - make sure that the data dependencies are sane, e.g., the data in each task should actually be
+        # dependent on its previous (input) tasks.
+        for task_name, task in self.tasks.items():
+            for output_task in task.outputs:
+                replaced: int = output_task.set_data(task_name, "dummy", do_replace=False)
+                if replaced == 0:
+                    raise RuntimeError("Data of output task %s does not contain dependency on task %s!" %
+                                       (output_task.name, task_name))
