@@ -1,8 +1,9 @@
-import json
 from typing import Dict, List
+from collections import Counter
 
 
 class Task:
+    COUNTER = Counter()
 
     def __init__(self, name: str, func: str, data: Dict):
         self.name = name
@@ -14,6 +15,12 @@ class Task:
 
         self.inputs_resolve: int = 0
         self.done: bool = False
+
+    @staticmethod
+    def generate_name(base: str) -> str:
+        Task.COUNTER[base] += 1
+        name = base + "_" + str(Task.COUNTER[base])
+        return name
 
     @staticmethod
     def replace_values_recursively(d, string_to_replace, new_value, do_replace: bool = True) -> int:

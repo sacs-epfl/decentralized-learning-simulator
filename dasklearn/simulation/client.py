@@ -7,7 +7,6 @@ from dasklearn.functions import *
 from dasklearn.simulation.events import FINISH_TRAIN, Event, START_TRANSFER
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS, time_to_sec
-from dasklearn.util.utils import get_random_hex_str
 
 
 class BaseClient:
@@ -38,7 +37,7 @@ class BaseClient:
         """
         We started training. Schedule when the training has ended.
         """
-        task_name = "train_%s" % get_random_hex_str(6)
+        task_name = Task.generate_name("train")
         task = Task(task_name, "train", data={
             "model": event.data["model"], "round": event.data["round"],
             "time": self.simulator.current_time, "peer": self.index})
@@ -70,7 +69,7 @@ class BaseClient:
         self.bw_scheduler.on_outgoing_transfer_complete(event.data["transfer"])
 
     def aggregate_models(self, models: List[str], round_nr: int) -> str:
-        task_name = "agg_%s" % get_random_hex_str(6)
+        task_name = Task.generate_name("agg")
         task = Task(task_name, "aggregate", data={"models": models, "round": round_nr, "peer": self.index})
         self.add_compute_task(task)
         return task_name
