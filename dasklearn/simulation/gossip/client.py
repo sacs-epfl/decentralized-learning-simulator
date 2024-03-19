@@ -20,7 +20,8 @@ class GossipClient(BaseClient):
         """
         Schedule train, test and disseminate events
         """
-        start_train_event = Event(event.time, self.index, START_TRAIN, data={"model": self.own_model, "round": self.age})
+        start_train_event = Event(event.time, self.index, START_TRAIN, data={
+            "model": self.own_model, "round": self.age})
         self.simulator.schedule(start_train_event)
 
         if event.time + self.simulator.settings.period <= self.simulator.settings.duration:
@@ -61,7 +62,8 @@ class GossipClient(BaseClient):
             self.own_model = self.aggregate_models(model_names, self.age, weights)
 
             # Schedule a train action
-            start_train_event = Event(event.time, self.index, START_TRAIN, data={"model": self.own_model, "round": self.age})
+            start_train_event = Event(event.time, self.index, START_TRAIN, data={
+                "model": self.own_model, "round": self.age})
             self.simulator.schedule(start_train_event)
 
     def disseminate(self, event: Event):
@@ -83,14 +85,16 @@ class GossipClient(BaseClient):
 
     def test(self, event: Event):
         """
-        Send the model to a random peer.
+        Test model's performance
         """
         # Check if the model is initialized
         if self.age > 0:
             self.client_log("Client %d will test its model %s" % (self.index, self.own_model))
 
             test_task_name = "test_%d_%d" % (self.index, event.time // MICROSECONDS)
-            task = Task(test_task_name, "test", data={"model": self.own_model, "time": self.simulator.current_time, "peer": self.index, "round": self.age})
+            task = Task(test_task_name, "test", data={
+                "model": self.own_model, "time": self.simulator.current_time,
+                "peer": self.index, "round": self.age})
             self.add_compute_task(task)
             self.own_model = test_task_name
 

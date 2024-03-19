@@ -46,7 +46,7 @@ def run():
         duration=args.duration * MICROSECONDS,
         period=args.period * MICROSECONDS,
         test_period=args.test_period * MICROSECONDS,
-        compute_graph_plot_size=args.compute_graph_plot_size
+        compute_graph_plot_size=args.compute_graph_plot_size,
     )
 
     if settings.algorithm == "fl":

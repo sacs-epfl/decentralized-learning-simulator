@@ -236,6 +236,10 @@ class Simulation:
 
     def plot_compute_graph(self):
         self.logger.info("Plotting compute graph")
-        graph, position = self.workflow_dag.to_nx(self.settings.compute_graph_plot_size)
-        nx.draw(graph, position, with_labels=True, node_color='red', node_size=50, font_size=8, arrows=True)
+        graph, position, colors, color_key = self.workflow_dag.to_nx(self.settings.compute_graph_plot_size)
+        nx.draw(graph, position, node_color=colors, node_size=50, arrows=True)
+        # Dummy points for legend
+        dummy_points = [plt.Line2D([0], [-1], marker='o', color='w', markerfacecolor=color, markersize=10,
+                                   label=f'{node}') for node, color in color_key.items()]
+        plt.legend(handles=dummy_points)
         plt.savefig(os.path.join(self.settings.data_dir, "compute_graph.png"))

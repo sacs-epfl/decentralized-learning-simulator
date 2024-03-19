@@ -88,32 +88,38 @@ class WorkflowDAG:
                     raise RuntimeError("Data of output task %s does not contain dependency on task %s!" %
                                        (output_task.name, task_name))
 
-    def to_nx(self, max_size: int) -> tuple[DiGraph, dict[str, tuple[float, float]]]:
+    def to_nx(self, max_size: int) -> tuple[DiGraph, dict[str, tuple[float, float]], list[str], dict[str, str]]:
         """
         Converts DAG to a networkx directed graph and computes the positions of nodes in a plot.
-        The positioning might not work for future algorithms!
         """
         graph = DiGraph()
-        # Position of nodes in the plot
         position = {}
-        # Y coordinate
-        level = {}
+        colors = []
+        color_key = {"train": "red", "aggregate": "orange", "test": "green"}
+        x_coordinate = {}
+        # y coordinate is the peer ID
+
         for task in self.tasks.values():
             # Stop when we reached maximum size
             if max_size <= 0:
                 break
+            max_size -= 1
+            # Add initial nodes to the graph
             if len(task.inputs) == 0:
-                level[task.name] = 0
+                x_coordinate[task.name] = 0
                 graph.add_node(task.name)
             else:
-                # Position the node below its inputs
-                level[task.name] = min(map(lambda x: level[x.name], task.inputs)) - 1
+                # Position the node after its inputs
+                x_coordinate[task.name] = max(map(lambda x: x_coordinate[x.name], task.inputs)) + 1
+                # Add edges to the task's inputs
                 for inp in task.inputs:
                     graph.add_edge(task.name, inp.name)
-            max_size -= 1
-            # Shift test tasks slightly from the main flow for better visibility
+            # Shift test tasks for better visibility
             if task.func == "test":
-                position[task.name] = task.data["peer"] + 0.5, level[task.name]
+                position[task.name] = x_coordinate[task.name], task.data["peer"] + 0.5
             else:
-                position[task.name] = task.data["peer"], level[task.name]
-        return graph, position
+                position[task.name] = x_coordinate[task.name], task.data["peer"]
+            # Color according to the key
+            colors.append(color_key[task.func])
+
+        return graph, position, colors, color_key
