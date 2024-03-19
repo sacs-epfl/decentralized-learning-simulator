@@ -20,11 +20,14 @@ def get_args():
     parser.add_argument('--log-level', type=str, default="INFO")
     parser.add_argument('--torch-threads', type=int, default=4)
     parser.add_argument('--dry-run', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--compute_graph_plot_size', type=int, default=0)
 
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
     parser.add_argument('--algorithm', type=str, default="dpsgd")
     parser.add_argument('--sample-size', type=int, default=10)
+    parser.add_argument('--duration', type=int, default=100)
+    parser.add_argument('--period', type=int, default=10)
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
@@ -33,6 +36,7 @@ def get_args():
     parser.add_argument('--validation-set-fraction', type=float, default=0.0)
     parser.add_argument('--compute-validation-loss-global-model', action=argparse.BooleanOptionalAction)
     parser.add_argument('--test-interval', type=int, default=5)
+    parser.add_argument('--test-period', type=int, default=60)
 
     # Broker-related parameters
     parser.add_argument('--brokers', type=int, default=1)

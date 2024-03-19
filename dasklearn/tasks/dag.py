@@ -1,6 +1,7 @@
 from typing import Dict, List, Set
 
 from torch import nn
+from networkx import DiGraph
 
 from dasklearn.tasks.task import Task
 
@@ -86,3 +87,33 @@ class WorkflowDAG:
                 if replaced == 0:
                     raise RuntimeError("Data of output task %s does not contain dependency on task %s!" %
                                        (output_task.name, task_name))
+
+    def to_nx(self, max_size: int) -> tuple[DiGraph, dict[str, tuple[float, float]]]:
+        """
+        Converts DAG to a networkx directed graph and computes the positions of nodes in a plot.
+        The positioning might not work for future algorithms!
+        """
+        graph = DiGraph()
+        # Position of nodes in the plot
+        position = {}
+        # Y coordinate
+        level = {}
+        for task in self.tasks.values():
+            # Stop when we reached maximum size
+            if max_size <= 0:
+                break
+            if len(task.inputs) == 0:
+                level[task.name] = 0
+                graph.add_node(task.name)
+            else:
+                # Position the node below its inputs
+                level[task.name] = min(map(lambda x: level[x.name], task.inputs)) - 1
+                for inp in task.inputs:
+                    graph.add_edge(task.name, inp.name)
+            max_size -= 1
+            # Shift test tasks slightly from the main flow for better visibility
+            if task.func == "test":
+                position[task.name] = task.data["peer"] + 0.5, level[task.name]
+            else:
+                position[task.name] = task.data["peer"], level[task.name]
+        return graph, position

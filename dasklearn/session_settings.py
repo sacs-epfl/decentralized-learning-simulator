@@ -50,3 +50,7 @@ class SessionSettings:
     torch_threads: int = 4
     dry_run: bool = False
     unit_testing: bool = False
+    duration: int = 100
+    period: int = 10
+    test_period: int = 100
+    compute_graph_plot_size: int = 0
