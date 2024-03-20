@@ -12,6 +12,9 @@ class GossipSimulation(Simulation):
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
 
+        if settings.period == 0:
+            raise RuntimeError("Period needs to be larger than 0 for gossip to work")
+
         self.register_event_callback(FINISH_TRAIN, "finish_train")
         self.register_event_callback(DISSEMINATE, "disseminate")
         self.register_event_callback(TEST, "test")
