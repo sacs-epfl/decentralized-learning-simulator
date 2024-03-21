@@ -111,7 +111,6 @@ class GossipClient(BaseClient):
                 "model": self.own_model, "time": self.simulator.current_time,
                 "peer": self.index, "round": self.age})
             self.add_compute_task(task)
-            self.own_model = test_task_name
 
         # Schedule next test action
         test_event = Event(event.time + self.simulator.settings.test_period, self.index, TEST)
