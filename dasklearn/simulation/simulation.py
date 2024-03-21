@@ -227,11 +227,21 @@ class Simulation:
             self.schedule_tasks_on_broker(tasks, broker)
 
     def plot_loss(self):
+        # Read the data
         data = pd.read_csv(os.path.join(self.settings.data_dir, "accuracies.csv"), header=None,
                            names=['peer', 'round', 'time', 'accuracy', 'loss'])
+        # Create all combinations of time and peer and fill the missing values from previous measurements
+        # This ensures the plot correctly shows std for algorithms which test at not exactly the same time for all peers
+        all_combinations = data['peer'].drop_duplicates().to_frame().merge(data['time'], how='cross')
+        all_combinations = pd.merge(data, all_combinations, on=['peer', 'time'], how='outer')
+        all_combinations.sort_values('time', inplace=True)
+        all_combinations = all_combinations.groupby('peer').ffill()
+        # Convert to hours
+        all_combinations['hours'] = all_combinations['time'] / MICROSECONDS / 3600
+        # Plot
         fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-        sns.lineplot(data, x='time', y='loss', ax=ax[0])
-        sns.lineplot(data, x='time', y='accuracy', ax=ax[1])
+        sns.lineplot(all_combinations, x='hours', y='loss', ax=ax[0])
+        sns.lineplot(all_combinations, x='hours', y='accuracy', ax=ax[1])
         plt.savefig(os.path.join(self.settings.data_dir, "accuracies.png"))
 
     def plot_compute_graph(self):
