@@ -232,7 +232,7 @@ class Simulation:
                            names=['peer', 'round', 'time', 'accuracy', 'loss'])
         # Create all combinations of time and peer and fill the missing values from previous measurements
         # This ensures the plot correctly shows std for algorithms which test at not exactly the same time for all peers
-        all_combinations = data['peer'].drop_duplicates().to_frame().merge(data['time'], how='cross')
+        all_combinations = data['peer'].drop_duplicates().to_frame().merge(data['time'].drop_duplicates(), how='cross')
         all_combinations = pd.merge(data, all_combinations, on=['peer', 'time'], how='outer')
         all_combinations.sort_values('time', inplace=True)
         all_combinations = all_combinations.groupby('peer').ffill()
