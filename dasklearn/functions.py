@@ -59,10 +59,8 @@ def aggregate(settings: SessionSettings, params: Dict):
         model_manager.process_incoming_trained_model(idx, model)
 
     start_time = time.time()
-    if weights:
-        agg_model = model_manager.aggregate_trained_models(weights)
-    else:
-        agg_model = model_manager.aggregate_trained_models()
+    agg_model = model_manager.aggregate_trained_models(weights)
+
     logger.info("Model aggregation took %f s.", time.time() - start_time)
     return agg_model
 
