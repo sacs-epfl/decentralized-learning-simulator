@@ -6,6 +6,7 @@ import torch
 
 from args import get_args
 from dasklearn.session_settings import SessionSettings, LearningSettings
+from dasklearn.util import MICROSECONDS
 
 
 def run():
@@ -42,6 +43,10 @@ def run():
         log_level=args.log_level,
         torch_threads=args.torch_threads,
         dry_run=args.dry_run,
+        duration=args.duration * MICROSECONDS,
+        gl_period=args.gl_period * MICROSECONDS,
+        test_period=args.test_period * MICROSECONDS,
+        compute_graph_plot_size=args.compute_graph_plot_size,
     )
 
     if settings.algorithm == "fl":
@@ -53,6 +58,9 @@ def run():
     elif settings.algorithm == "subset":
         from dasklearn.simulation.subset.simulation import SubsetDLSimulation
         simulation = SubsetDLSimulation(settings, args.sample_size)
+    elif settings.algorithm == "gossip":
+        from dasklearn.simulation.gossip.simulation import GossipSimulation
+        simulation = GossipSimulation(settings)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
     ensure_future(simulation.run())

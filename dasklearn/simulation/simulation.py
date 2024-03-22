@@ -7,6 +7,11 @@ from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Tuple
 
+import networkx as nx
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
 from dasklearn.communication import Communication
 from dasklearn.models import create_model, serialize_model
 from dasklearn.session_settings import SessionSettings
@@ -97,6 +102,8 @@ class Simulation:
                 self.logger.info("All sink tasks completed - shutting down brokers")
                 out_msg = pickle.dumps({"type": "shutdown"})
                 self.communication.send_message_to_all_brokers(out_msg)
+                self.logger.info("Plotting accuracies")
+                self.plot_loss()
                 asyncio.get_event_loop().call_later(2, asyncio.get_event_loop().stop)
         elif msg["type"] == "shutdown":
             self.logger.info("Received shutdown signal - stopping")
@@ -158,6 +165,8 @@ class Simulation:
         if not self.settings.dry_run:
             await self.solve_workflow_graph()
 
+        self.plot_compute_graph()
+
         # Done! Sanity checks
         for client in self.clients:
             assert len(client.bw_scheduler.incoming_requests) == 0
@@ -216,3 +225,31 @@ class Simulation:
         for broker, tasks in brokers_to_tasks.items():
             self.logger.info("Scheduling %d task(s) on broker %s", len(tasks), broker)
             self.schedule_tasks_on_broker(tasks, broker)
+
+    def plot_loss(self):
+        # Read the data
+        data = pd.read_csv(os.path.join(self.settings.data_dir, "accuracies.csv"), header=None,
+                           names=['peer', 'round', 'time', 'accuracy', 'loss'])
+        # Create all combinations of time and peer and fill the missing values from previous measurements
+        # This ensures the plot correctly shows std for algorithms which test at not exactly the same time for all peers
+        all_combinations = data['peer'].drop_duplicates().to_frame().merge(data['time'].drop_duplicates(), how='cross')
+        all_combinations = pd.merge(data, all_combinations, on=['peer', 'time'], how='outer')
+        all_combinations.sort_values('time', inplace=True)
+        all_combinations = all_combinations.groupby('peer').ffill()
+        # Convert to hours
+        all_combinations['hours'] = all_combinations['time'] / MICROSECONDS / 3600
+        # Plot
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        sns.lineplot(all_combinations, x='hours', y='loss', ax=ax[0])
+        sns.lineplot(all_combinations, x='hours', y='accuracy', ax=ax[1])
+        plt.savefig(os.path.join(self.settings.data_dir, "accuracies.png"))
+
+    def plot_compute_graph(self):
+        self.logger.info("Plotting compute graph")
+        graph, position, colors, color_key = self.workflow_dag.to_nx(self.settings.compute_graph_plot_size)
+        nx.draw(graph, position, node_color=colors, node_size=50, arrows=True)
+        # Dummy points for legend
+        dummy_points = [plt.Line2D([0], [-1], marker='o', color='w', markerfacecolor=color, markersize=10,
+                                   label=f'{node}') for node, color in color_key.items()]
+        plt.legend(handles=dummy_points)
+        plt.savefig(os.path.join(self.settings.data_dir, "compute_graph.png"))

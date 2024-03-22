@@ -26,5 +26,6 @@ START_TRANSFER = "start_transfer"
 FINISH_OUTGOING_TRANSFER = "finish_outgoing_transfer"
 INCOMING_MODEL = "incoming_model"
 AGGREGATE = "aggregate"
-
+DISSEMINATE = "disseminate"
+TEST = "test"
 START_ROUND = "start_round"
