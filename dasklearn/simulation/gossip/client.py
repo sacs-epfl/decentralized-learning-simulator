@@ -24,7 +24,7 @@ class GossipClient(BaseClient):
                                   data={"model": self.own_model, "round": self.age})
         self.simulator.schedule(start_train_event)
 
-        disseminate_event = Event(event.time + self.simulator.settings.period, self.index, DISSEMINATE)
+        disseminate_event = Event(event.time + self.simulator.settings.gl_period, self.index, DISSEMINATE)
         self.simulator.schedule(disseminate_event)
 
         # No testing when test_period == 0
@@ -91,7 +91,7 @@ class GossipClient(BaseClient):
             self.send_model(peer, self.own_model, metadata)
 
         # Schedule next disseminate action
-        disseminate_event = Event(event.time + self.simulator.settings.period, self.index, DISSEMINATE)
+        disseminate_event = Event(event.time + self.simulator.settings.gl_period, self.index, DISSEMINATE)
         self.simulator.schedule(disseminate_event)
 
     def test(self, event: Event):

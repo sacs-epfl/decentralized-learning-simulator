@@ -26,7 +26,7 @@ def get_args():
     parser.add_argument('--algorithm', type=str, default="dpsgd")
     parser.add_argument('--sample-size', type=int, default=10)
     parser.add_argument('--duration', type=int, default=100)
-    parser.add_argument('--period', type=int, default=10)
+    parser.add_argument('--gl-period', type=int, default=10)
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
