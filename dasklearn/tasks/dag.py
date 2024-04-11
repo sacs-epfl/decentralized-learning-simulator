@@ -95,7 +95,12 @@ class WorkflowDAG:
         graph = DiGraph()
         position = {}
         colors = []
-        color_key = {"train": "red", "aggregate": "orange", "test": "green"}
+        color_key = {"train": "red",
+                     "compute_gradient": "pink",
+                     "gradient_update": "orange",
+                     "aggregate": "blue",
+                     "test": "green"
+                     }
         x_coordinate = {}
         # y coordinate is the peer ID
 

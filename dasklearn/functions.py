@@ -20,19 +20,31 @@ def train(settings: SessionSettings, params: Dict):
     round_nr = params["round"]
     cur_time = params["time"]
     peer_id = params["peer"]
+    compute_gradient = params["compute_gradient"] if "compute_gradient" in params else False
+    gradient_model = params["gradient_model"] if "gradient_model" in params else None
 
     if not model:
         torch.manual_seed(settings.seed)
         model = create_model(settings.dataset, architecture=settings.model)
 
     model_manager = ModelManager(model, settings, peer_id)
-    train_info = model_manager.train()
+    if gradient_model:
+        model_manager.gradient_update(gradient_model)
+    else:
+        train_info = model_manager.train(compute_gradient)
+        if train_info["validation_loss_global"] is not None:
+            with open(os.path.join(settings.data_dir, "validation_losses.csv"), "a") as loss_file:
+                loss_file.write("%d,%d,%f,%f\n" % (peer_id, round_nr, cur_time, train_info["validation_loss_global"]))
 
-    if train_info["validation_loss_global"] is not None:
-        with open(os.path.join(settings.data_dir, "validation_losses.csv"), "a") as loss_file:
-            loss_file.write("%d,%d,%f,%f\n" % (peer_id, round_nr, cur_time, train_info["validation_loss_global"]))
-
-    detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+    if compute_gradient:
+        grad = model.gradient
+        detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+        detached_model.gradient = []
+        for g in grad:
+            g = g.cpu()
+            detached_model.gradient.append(g)
+    else:
+        detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
 
     del model_manager.model
     del model_manager
@@ -42,6 +54,15 @@ def train(settings: SessionSettings, params: Dict):
     logger.info("Peer %d training in round %d...", peer_id, round_nr)
 
     return detached_model
+
+
+def compute_gradient(settings: SessionSettings, params: Dict):
+    params["compute_gradient"] = True
+    return train(settings, params)
+
+
+def gradient_update(settings: SessionSettings, params: Dict):
+    return train(settings, params)
 
 
 def aggregate(settings: SessionSettings, params: Dict):
@@ -60,7 +81,6 @@ def aggregate(settings: SessionSettings, params: Dict):
 
     start_time = time.time()
     agg_model = model_manager.aggregate_trained_models(weights)
-
     logger.info("Model aggregation took %f s.", time.time() - start_time)
     return agg_model
 

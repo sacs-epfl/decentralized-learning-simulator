@@ -11,7 +11,8 @@ class GossipSimulation(Simulation):
 
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
-
+        if settings.agg == "default":
+            settings.agg = "age"
         if settings.gl_period == 0:
             raise RuntimeError("Period needs to be larger than 0 for gossip to work")
 

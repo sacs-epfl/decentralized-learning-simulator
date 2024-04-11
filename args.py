@@ -27,6 +27,7 @@ def get_args():
     parser.add_argument('--sample-size', type=int, default=10)
     parser.add_argument('--duration', type=int, default=100)
     parser.add_argument('--gl-period', type=int, default=10)
+    parser.add_argument('--agg', type=str, default="default")
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
@@ -38,7 +39,7 @@ def get_args():
     parser.add_argument('--test-period', type=int, default=60)
 
     # Plots
-    parser.add_argument('--compute-graph-plot-size', type=int, default=0)
+    parser.add_argument('--compute-graph-plot-size', type=int, default=100)
 
     # Broker-related parameters
     parser.add_argument('--brokers', type=int, default=1)
