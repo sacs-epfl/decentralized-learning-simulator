@@ -19,7 +19,6 @@ def run():
         batch_size=args.batch_size,
         local_steps=args.local_steps,
     )
-
     # TODO add availability traces
     settings = SessionSettings(
         synchronous=args.synchronous,
@@ -47,6 +46,7 @@ def run():
         gl_period=args.gl_period * MICROSECONDS,
         test_period=args.test_period * MICROSECONDS,
         compute_graph_plot_size=args.compute_graph_plot_size,
+        agg=args.agg,
     )
 
     if settings.algorithm == "fl":
@@ -61,6 +61,9 @@ def run():
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation
         simulation = GossipSimulation(settings)
+    elif settings.algorithm == "adpsgd":
+        from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation
+        simulation = ADPSGDSimulation(settings)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
     ensure_future(simulation.run())

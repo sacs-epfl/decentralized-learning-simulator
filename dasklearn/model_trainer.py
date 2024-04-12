@@ -61,7 +61,7 @@ class ModelTrainer:
         avg_loss = total_loss / len(validation_set)
         return float(avg_loss)
 
-    def train(self, model, device_name: str = "cpu") -> Dict:
+    def train(self, model, gradient_only: bool = False, device_name: str = "cpu") -> Dict:
         """
         Train the model on a batch. Return an integer that indicates how many local steps we have done.
         """
@@ -110,9 +110,24 @@ class ModelTrainer:
             loss = lossf(output, target)
             self.logger.debug('d-sgd.next node backward propagation (step %d/%d)', local_step, local_steps)
             loss.backward()
+            if gradient_only:
+                model.gradient = [param.grad.detach() for param in model.parameters()]
+                break
             optimizer.optimizer.step()
 
         self.is_training = False
         model.to("cpu")
 
         return {"samples": samples_trained_on, "validation_loss_global": validation_loss_global_model}
+
+    def gradient_update(self, model, gradient_model):
+        """
+        Manually set the gradient and perform a single training step
+        """
+        optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum,
+                                 self.settings.learning.weight_decay)
+
+        for param, grad in zip(model.parameters(), gradient_model.gradient):
+            param.grad = grad
+
+        optimizer.optimizer.step()

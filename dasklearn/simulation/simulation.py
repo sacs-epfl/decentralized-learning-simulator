@@ -227,9 +227,12 @@ class Simulation:
             self.schedule_tasks_on_broker(tasks, broker)
 
     def plot_loss(self):
+        # Check if the accuracies file exists
+        path = os.path.join(self.settings.data_dir, "accuracies.csv")
+        if not os.path.exists(path):
+            return
         # Read the data
-        data = pd.read_csv(os.path.join(self.settings.data_dir, "accuracies.csv"), header=None,
-                           names=['peer', 'round', 'time', 'accuracy', 'loss'])
+        data = pd.read_csv(path, header=None, names=['peer', 'round', 'time', 'accuracy', 'loss'])
         # Create all combinations of time and peer and fill the missing values from previous measurements
         # This ensures the plot correctly shows std for algorithms which test at not exactly the same time for all peers
         all_combinations = data['peer'].drop_duplicates().to_frame().merge(data['time'].drop_duplicates(), how='cross')
