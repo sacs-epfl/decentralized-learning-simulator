@@ -28,6 +28,7 @@ def get_args():
     parser.add_argument('--duration', type=int, default=100)
     parser.add_argument('--gl-period', type=int, default=10)
     parser.add_argument('--agg', type=str, default="default")
+    parser.add_argument('--stop', type=str, default="rounds")
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")

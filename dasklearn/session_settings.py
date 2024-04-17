@@ -55,3 +55,4 @@ class SessionSettings:
     test_period: int = 100
     compute_graph_plot_size: int = 0
     agg: str = "default" # default, average or age
+    stop: str = "rounds"  # rounds, duration

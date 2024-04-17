@@ -19,6 +19,12 @@ class DPSGDSimulation(Simulation):
         self.topology = nx.random_regular_graph(self.k, self.settings.participants, seed=self.settings.seed)
         self.clients_ready_for_round: Dict[int, List[Tuple[int, Dict]]] = defaultdict(lambda: [])
 
+        # Set the other stopping condition to a very large value (we cannot use inf because it's float)
+        if self.settings.stop == "duration":
+            self.settings.rounds = 10 ** 7
+        else:
+            self.settings.duration = 10 ** 15
+
         self.register_event_callback(START_ROUND, "start_round")
         self.register_event_callback(FINISH_TRAIN, "finish_train")
         self.register_event_callback(AGGREGATE, "aggregate")
@@ -47,3 +53,10 @@ class DPSGDSimulation(Simulation):
                 start_round_event = Event(self.current_time, client_id, START_ROUND, data=info)
                 self.schedule(start_round_event)
             self.clients_ready_for_round.pop(round_nr)
+
+    def schedule(self, event: Event):
+        # Don't schedule events after the running duration elapses, transfers are allowed to satisfy sanity checks,
+        # but their results are not considered
+        if event.time > self.settings.duration and event.action != "start_transfer" and event.action != "finish_outgoing_transfer":
+            return
+        super().schedule(event)
