@@ -95,15 +95,17 @@ class WorkflowDAG:
         graph = DiGraph()
         position = {}
         colors = []
-        color_key = {"train": "red",
-                     "compute_gradient": "pink",
-                     "gradient_update": "orange",
-                     "aggregate": "blue",
-                     "test": "green"
-                     }
+        color_key = {
+            "train": "red",
+            "compute_gradient": "pink",
+            "gradient_update": "orange",
+            "aggregate": "blue",
+            "test": "green",
+        }
         x_coordinate = {}
         # y coordinate is the peer ID
 
+        task_types = set()
         for task in self.tasks.values():
             # Stop when we reached maximum size
             if max_size <= 0:
@@ -126,5 +128,11 @@ class WorkflowDAG:
                 position[task.name] = x_coordinate[task.name], task.data["peer"]
             # Color according to the key
             colors.append(color_key[task.func])
+            task_types.add(task.func)
+
+        # Remove unused tasks from the legend
+        unused_keys = set(color_key.keys()) - task_types
+        for key in unused_keys:
+            del color_key[key]
 
         return graph, position, colors, color_key
