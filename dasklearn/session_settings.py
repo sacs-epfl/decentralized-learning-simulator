@@ -56,3 +56,4 @@ class SessionSettings:
     compute_graph_plot_size: int = 0
     agg: str = "default" # default, average or age
     stop: str = "rounds"  # rounds, duration
+    queue_max_size: int = 0

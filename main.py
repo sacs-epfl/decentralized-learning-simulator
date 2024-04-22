@@ -48,6 +48,7 @@ def run():
         compute_graph_plot_size=args.compute_graph_plot_size,
         agg=args.agg,
         stop=args.stop,
+        queue_max_size=args.queue_max_size,
     )
 
     if settings.algorithm == "fl":
@@ -62,6 +63,9 @@ def run():
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation
         simulation = GossipSimulation(settings)
+    elif settings.algorithm == "super_gossip":
+        from dasklearn.simulation.super_gossip.simulation import SuperGossipSimulation
+        simulation = SuperGossipSimulation(settings)
     elif settings.algorithm == "adpsgd":
         from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation
         simulation = ADPSGDSimulation(settings)
