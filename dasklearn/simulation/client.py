@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from typing import Optional, Any, List, Tuple
 
 from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
@@ -21,8 +20,9 @@ class BaseClient:
         self.simulated_speed: Optional[float] = None
 
         self.latest_task: Optional[str] = None  # Keep track of the latest task
+        self.train_function: str = "train"
         self.compute_time: int = 0  # Total time spent training
-        self.aggregations: List[Tuple[int, int, int]] = []  # Log of aggregations (client b, round a, round b)
+        self.aggregations: List[List[Tuple[int, str, int]]] = []  # Log of aggregations (client, model, age)
 
     def client_log(self, msg: str):
         self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
@@ -40,7 +40,7 @@ class BaseClient:
         We started training. Schedule when the training has ended.
         """
         task_name = Task.generate_name("train")
-        task = Task(task_name, "train", data={
+        task = Task(task_name, self.train_function, data={
             "model": event.data["model"], "round": event.data["round"],
             "time": self.simulator.current_time, "peer": self.index})
         self.add_compute_task(task)

@@ -267,7 +267,8 @@ class Simulation:
                 file.write("%d,%d,%d\n" % (client.index, client.compute_time, self.settings.duration))
         # Write aggregation log
         with open(os.path.join(self.data_dir, "aggregations.csv"), "w") as file:
-            file.write("client_to,client_from,age_to,age_from\n")
+            file.write("client,clients,ages\n")
             for client in self.clients:
-                for client_from, age_to, age_from in client.aggregations:
-                    file.write("%d,%d,%d,%d\n" % (client.index, client_from, age_to, age_from))
+                for aggregation in client.aggregations:
+                    file.write("%d,%s,%s\n" % (client.index, list(map(lambda x: x[0], aggregation)),
+                                               list(map(lambda x: x[2], aggregation))))
