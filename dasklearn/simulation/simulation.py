@@ -158,6 +158,7 @@ class Simulation:
             self.process_event(event)
 
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
+        self.save_measurements()
 
         # Sanity check the DAG
         self.workflow_dag.check_validity()
@@ -256,3 +257,17 @@ class Simulation:
                                    label=f'{node}') for node, color in color_key.items()]
         plt.legend(handles=dummy_points)
         plt.savefig(os.path.join(self.settings.data_dir, "compute_graph.png"))
+
+    def save_measurements(self) -> None:
+        # Write time utilization
+        with open(os.path.join(self.data_dir, "time_utilisation.csv"), "w") as file:
+            file.write("client,compute_time,total_time\n")
+            for client in self.clients:
+                # Supports only duration based algorithms
+                file.write("%d,%d,%d\n" % (client.index, client.compute_time, self.settings.duration))
+        # Write aggregation log
+        with open(os.path.join(self.data_dir, "aggregations.csv"), "w") as file:
+            file.write("client_to,client_from,age_to,age_from\n")
+            for client in self.clients:
+                for client_from, age_to, age_from in client.aggregations:
+                    file.write("%d,%d,%d,%d\n" % (client.index, client_from, age_to, age_from))

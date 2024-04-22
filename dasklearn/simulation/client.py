@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Tuple
 
 from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
@@ -21,6 +21,8 @@ class BaseClient:
         self.simulated_speed: Optional[float] = None
 
         self.latest_task: Optional[str] = None  # Keep track of the latest task
+        self.compute_time: int = 0  # Total time spent training
+        self.aggregations: List[Tuple[int, int, int]] = []  # Log of aggregations (client b, round a, round b)
 
     def client_log(self, msg: str):
         self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
@@ -43,8 +45,9 @@ class BaseClient:
             "time": self.simulator.current_time, "peer": self.index})
         self.add_compute_task(task)
 
-        finish_train_event = Event(self.simulator.current_time + self.get_train_time(), self.index, FINISH_TRAIN,
-                                   data={"model": task_name, "round": event.data["round"]})
+        train_time: int = self.get_train_time()
+        finish_train_event = Event(self.simulator.current_time + train_time, self.index, FINISH_TRAIN,
+                                   data={"model": task_name, "round": event.data["round"], "train_time": train_time})
         self.simulator.schedule(finish_train_event)
 
     def send_model(self, to: int, model: str, metadata: Optional[Dict[Any, Any]] = None, send_time: Optional[int] = None) -> None:

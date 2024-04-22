@@ -36,10 +36,7 @@ class GossipClient(BaseClient):
         """
         We finished training. Update the model after the training was finished
         """
-        # Check if we are still running
-        if event.time > self.simulator.settings.duration:
-            return
-
+        self.compute_time += event.data["train_time"]
         self.own_model = event.data["model"]
         self.available = True
         self.age += 1
@@ -48,10 +45,6 @@ class GossipClient(BaseClient):
         """
         We received a model. Perform one aggregate and training step.
         """
-        # Check if we are still running
-        if event.time > self.simulator.settings.duration:
-            return
-
         self.client_log("Client %d received from %d model %s" % (self.index, event.data["from"], event.data["model"]))
 
         # Accept the incoming model if available
@@ -65,6 +58,7 @@ class GossipClient(BaseClient):
 
             # Compute weights
             rounds = [event.data["metadata"]["rounds"], self.age]
+            self.aggregations.append((event.data["metadata"]["index"], self.age, event.data["metadata"]["rounds"]))
             weights = list(map(lambda x: x / sum(rounds), rounds))
             self.age = max(rounds)
             self.own_model = self.aggregate_models(model_names, self.age, weights)
@@ -78,14 +72,10 @@ class GossipClient(BaseClient):
         """
         Send the model to a random peer.
         """
-        # Check if we are still running
-        if event.time > self.simulator.settings.duration:
-            return
-
         # Check if the model is initialized
         if self.age > 0:
             peer = self.simulator.get_random_participant(self.index)
-            metadata = dict(rounds=self.age)
+            metadata = dict(rounds=self.age, index=self.index)
 
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, peer))
             self.send_model(peer, self.own_model, metadata)
@@ -98,10 +88,6 @@ class GossipClient(BaseClient):
         """
         Test model's performance
         """
-        # Check if we are still running
-        if event.time > self.simulator.settings.duration:
-            return
-
         # Check if the model is initialized
         if self.age > 0:
             self.client_log("Client %d will test its model %s" % (self.index, self.own_model))

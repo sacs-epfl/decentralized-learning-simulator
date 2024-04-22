@@ -17,6 +17,7 @@ class ADPSGDClient(BaseClient):
         # active/passive peer
         self.active: bool = True
         self.steps_remaining: int = 0
+        self.train_time: int = 0
 
     def init_client(self, event: Event):
         """
@@ -42,12 +43,12 @@ class ADPSGDClient(BaseClient):
             "time": self.simulator.current_time, "peer": self.index})
         self.add_compute_task(task)
 
-        end_time: int = (self.simulator.current_time + self.get_train_time() //
-                         self.simulator.settings.learning.local_steps) if \
-            self.simulator.settings.learning.local_steps > 0 else self.simulator.current_time
-        # Divide time by number of local steps, because we schedule only 1 at a time
-        gradient_update_event = Event(end_time, self.index, GRADIENT_UPDATE,
-                                      data={"model": task_name, "round": event.data["round"]})
+        if self.age % self.simulator.settings.learning.local_steps == 0:
+            # Divide time by number of local steps, because we schedule only 1 at a time
+            self.train_time = self.get_train_time()
+            self.train_time //= self.simulator.settings.learning.local_steps
+        gradient_update_event = Event(self.simulator.current_time + self.train_time, self.index, GRADIENT_UPDATE,
+                                      data={"model": task_name, "round": event.data["round"], "train_time": self.train_time})
         self.simulator.schedule(gradient_update_event)
 
     def gradient_update(self, event: Event):
@@ -57,6 +58,8 @@ class ADPSGDClient(BaseClient):
         # Special case for model initialization
         if self.age == 0:
             self.own_model = event.data["model"]
+        self.compute_time += event.data["train_time"]
+
         task_name = Task.generate_name("gradient_update")
         task = Task(task_name, "gradient_update", data={
             "model": self.own_model, "round": event.data["round"],
@@ -80,7 +83,7 @@ class ADPSGDClient(BaseClient):
             # Active peer send the model to a random neighbour to aggregate
             neighbour = self.simulator.get_random_participant(self.active)
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, neighbour))
-            metadata = dict(age=self.age // 5) if self.simulator.settings.agg == "age" else None
+            metadata = dict(age=self.age // self.simulator.settings.learning.local_steps, index=self.index)
             self.send_model(neighbour, self.own_model, metadata=metadata)
         elif self.steps_remaining > 0:
             # Schedule a next local steps
@@ -97,22 +100,21 @@ class ADPSGDClient(BaseClient):
         if not self.active:
             # Passive peer sends back its own model
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, event.data["from"]))
-            metadata = dict(age=self.age // 5) if self.simulator.settings.agg == "age" else None
+            metadata = dict(age=self.age // self.simulator.settings.learning.local_steps, index=self.index)
             self.send_model(event.data["from"], self.own_model, metadata=metadata)
+
+        # Compute weights
+        weights = None
+        if self.simulator.settings.agg == "age":
+            ages = [event.data["metadata"]["age"], self.age]
+            weights = list(map(lambda x: x / sum(ages), ages))
+            self.age = max(ages)
 
         # Aggregate the incoming and own models
         model_names = [event.data["model"], self.own_model]
-
-        # Apply weights if applicable
-        if self.simulator.settings.agg == "age":
-            ages = [event.data["metadata"]["age"], self.age]
-            self.client_log("Client %d will aggregate and train (%s) of ages (%s)" % (self.index, model_names, ages))
-            weights = list(map(lambda x: x / sum(ages), ages))
-            self.age = max(ages)
-            self.own_model = self.aggregate_models(model_names, self.age, weights)
-        else:
-            self.client_log("Client %d will aggregate and train (%s)" % (self.index, model_names))
-            self.own_model = self.aggregate_models(model_names, self.age)
+        self.client_log("Client %d will aggregate and train (%s)" % (self.index, model_names))
+        self.aggregations.append((event.data["metadata"]["index"], self.age, event.data["metadata"]["age"]))
+        self.own_model = self.aggregate_models(model_names, self.age, weights)
 
         # Schedule the next training step
         if self.active or self.steps_remaining == 0:

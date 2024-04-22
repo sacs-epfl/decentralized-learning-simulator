@@ -19,9 +19,15 @@ class GossipSimulation(Simulation):
         self.register_event_callback(FINISH_TRAIN, "finish_train")
         self.register_event_callback(DISSEMINATE, "disseminate")
         self.register_event_callback(TEST, "test")
-        self.register_event_callback(AGGREGATE, "aggregate")
 
         random.seed(settings.seed)
+
+    def schedule(self, event: Event):
+        # Don't schedule events after the running duration elapses, transfers are allowed to satisfy sanity checks,
+        # but their results are not considered
+        if event.time > self.settings.duration and event.action != "start_transfer" and event.action != "finish_outgoing_transfer":
+            return
+        super().schedule(event)
 
     def get_random_participant(self, index: int):
         """

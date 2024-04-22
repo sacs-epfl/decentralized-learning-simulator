@@ -51,6 +51,7 @@ class DPSGDClient(BaseClient):
         We finished training. Select a neighbour node and send it the model.
         """
         cur_round: int = event.data["round"]
+        self.compute_time += event.data["train_time"]
         self.client_log("Client %d finished model training in round %d" % (self.index, cur_round))
         if cur_round not in self.round_info:
             raise RuntimeError("Client %d does not know about round %d after training finished!" %
