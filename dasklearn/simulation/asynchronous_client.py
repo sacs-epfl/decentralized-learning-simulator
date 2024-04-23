@@ -57,6 +57,9 @@ class AsynchronousClient(BaseClient, ABC):
         Aggregate the incoming and own models
         @models: tuple of - index of the sender, model of the sender, age of the sender
         """
+        # No need to aggregate with only 1 model
+        if len(models) == 0:
+            return
         # Add own model to the aggregation
         models.append((self.index, self.own_model, self.age))
         model_names: List[str] = list(map(lambda x: x[1], models))

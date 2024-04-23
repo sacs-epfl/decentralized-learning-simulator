@@ -2,6 +2,7 @@ import pytest
 
 from dasklearn.session_settings import SessionSettings, LearningSettings
 from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation
+from dasklearn.util import MICROSECONDS
 
 
 @pytest.fixture
@@ -14,6 +15,8 @@ def session_settings(tmpdir):
         learning=LearningSettings(batch_size=0, learning_rate=0, momentum=0, weight_decay=0, local_steps=1),
         participants=10,
         rounds=5,
+        duration=100 * MICROSECONDS,
+        test_period=60 * MICROSECONDS,
         dry_run=True,
         brokers=1,
         unit_testing=True,
