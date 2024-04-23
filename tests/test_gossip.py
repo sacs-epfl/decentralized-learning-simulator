@@ -16,7 +16,7 @@ def session_settings(tmpdir):
         learning=LearningSettings(batch_size=0, learning_rate=0, momentum=0, weight_decay=0, local_steps=0),
         participants=10,
         duration=100,
-        period=10,
+        gl_period=10,
         test_period=60,
         dry_run=True,
         brokers=1,

@@ -12,7 +12,7 @@ class ADPSGDClient(AsynchronousClient):
         self.active: bool = True
         self.steps_remaining: int = self.simulator.settings.learning.local_steps
         self.last_train_time: int = 0
-        self.train_task = "compute_gradient"
+        self.train_function = "compute_gradient"
 
     def get_train_time(self) -> int:
         if self.steps_remaining % self.simulator.settings.learning.local_steps == 0:

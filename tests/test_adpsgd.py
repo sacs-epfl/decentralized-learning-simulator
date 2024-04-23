@@ -11,7 +11,7 @@ def session_settings(tmpdir):
         seed=3,
         work_dir=tmpdir,
         dataset="cifar10",
-        learning=LearningSettings(batch_size=0, learning_rate=0, momentum=0, weight_decay=0, local_steps=0),
+        learning=LearningSettings(batch_size=0, learning_rate=0, momentum=0, weight_decay=0, local_steps=1),
         participants=10,
         rounds=5,
         dry_run=True,
