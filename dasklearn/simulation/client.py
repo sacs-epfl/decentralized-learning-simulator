@@ -1,4 +1,5 @@
 from typing import Optional, Any, List, Tuple
+from collections import Counter
 
 from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
@@ -21,8 +22,10 @@ class BaseClient:
 
         self.latest_task: Optional[str] = None  # Keep track of the latest task
         self.train_function: str = "train"
+
         self.compute_time: int = 0  # Total time spent training
         self.aggregations: List[List[Tuple[int, str, int]]] = []  # Log of aggregations (client, model, age)
+        self.incoming_counter: Dict[int, int] = Counter()
 
     def client_log(self, msg: str):
         self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)

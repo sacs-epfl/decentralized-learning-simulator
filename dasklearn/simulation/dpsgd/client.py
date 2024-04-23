@@ -85,6 +85,7 @@ class DPSGDClient(BaseClient):
         round_nr: int = event.data["metadata"]["round"]
         self.client_log("Client %d received from %d model %s in round %d" %
                         (self.index, event.data["from"], event.data["model"], round_nr))
+        self.incoming_counter[event.data["from"]] += 1
 
         if round_nr not in self.round_info:
             # We do not know about this round yet - start it.

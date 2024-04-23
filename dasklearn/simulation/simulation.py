@@ -272,3 +272,9 @@ class Simulation:
                 for aggregation in client.aggregations:
                     file.write("%d,%s,%s\n" % (client.index, list(map(lambda x: x[0], aggregation)),
                                                list(map(lambda x: x[2], aggregation))))
+        # Write incoming counter log
+        with open(os.path.join(self.data_dir, "incoming.csv"), "w") as file:
+            file.write("client,from,count\n")
+            for client in self.clients:
+                for sender, count in client.incoming_counter.items():
+                    file.write("%d,%d,%d\n" % (client.index, sender, count))

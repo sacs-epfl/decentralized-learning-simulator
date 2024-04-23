@@ -46,6 +46,7 @@ class AsynchronousClient(BaseClient, ABC):
         if event.time > self.simulator.settings.duration:
             return
         self.client_log("Client %d received from %d model %s" % (self.index, event.data["from"], event.data["model"]))
+        self.incoming_counter[event.data["from"]] += 1
         self.process_incoming_model(event)
 
     def process_incoming_model(self, event: Event):
