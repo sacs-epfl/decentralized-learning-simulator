@@ -109,6 +109,8 @@ class DPSGDClient(BaseClient):
         round_info: Round = self.round_info[round_nr]
         model_names = [model_name for model_name in round_info.incoming_models.values()] + [round_info.model]
         self.client_log("Client %d will aggregate in round %d (%s)" % (self.index, round_nr, model_names))
+        other = [(sender_id, model_name, round_nr) for sender_id, model_name in round_info.incoming_models.items()]
+        self.aggregations.append(other + [(self.index, round_info.model, round_nr)])
         round_info.model = self.aggregate_models(model_names, round_nr)
 
         # Should we test?
