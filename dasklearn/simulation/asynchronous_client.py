@@ -60,7 +60,7 @@ class AsynchronousClient(BaseClient, ABC):
         models.append((self.index, self.own_model, self.age))
         model_names: List[str] = list(map(lambda x: x[1], models))
         self.aggregations.append(models)
-        self.client_log("Client %d will aggregate and train (%s)" % (self.index, model_names))
+        self.client_log("Client %d will aggregate (%s)" % (self.index, model_names))
 
         if self.simulator.settings.agg == "age":
             # Compute weights
@@ -85,7 +85,7 @@ class AsynchronousClient(BaseClient, ABC):
         Test model's performance
         """
         # Check if the model is initialized
-        if self.age > 0:
+        if self.own_model is not None:
             self.client_log("Client %d will test its model %s" % (self.index, self.own_model))
 
             test_task_name = "test_%d_%d" % (self.index, event.time // MICROSECONDS)

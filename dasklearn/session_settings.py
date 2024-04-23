@@ -57,3 +57,4 @@ class SessionSettings:
     agg: str = "default" # default, average or age
     stop: str = "rounds"  # rounds, duration
     queue_max_size: int = 0
+    wait: bool = False

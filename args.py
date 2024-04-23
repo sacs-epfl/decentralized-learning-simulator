@@ -30,6 +30,7 @@ def get_args():
     parser.add_argument('--agg', type=str, default="default")
     parser.add_argument('--stop', type=str, default="rounds")
     parser.add_argument('--queue-max-size', type=int, default=0)
+    parser.add_argument('--wait', action=argparse.BooleanOptionalAction, default=False)
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")

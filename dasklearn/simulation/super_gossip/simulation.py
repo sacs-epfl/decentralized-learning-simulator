@@ -1,4 +1,3 @@
-import os
 import random
 
 from dasklearn.session_settings import SessionSettings

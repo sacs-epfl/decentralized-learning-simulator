@@ -49,6 +49,7 @@ def run():
         agg=args.agg,
         stop=args.stop,
         queue_max_size=args.queue_max_size,
+        wait=args.wait,
     )
 
     if settings.algorithm == "fl":
