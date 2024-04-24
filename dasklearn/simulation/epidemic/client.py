@@ -33,9 +33,8 @@ class EpidemicClient(BaseClient):
         # Round has already started
         if round_nr in self.round_info:
             self.round_info[round_nr].incoming_models.update(incoming_models)
-            if self.round_info[round_nr].model is not None:
-                self.round_info[round_nr].model = model
             if model:
+                self.round_info[round_nr].model = model
                 self.schedule_train(self.round_info[round_nr])
             return
 

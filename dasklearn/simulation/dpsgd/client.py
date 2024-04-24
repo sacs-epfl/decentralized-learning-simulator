@@ -29,11 +29,20 @@ class DPSGDClient(BaseClient):
 
     def start_round(self, event: Event):
         round_nr: int = event.data["round"]
-        self.client_log("Client %d starting round %d" % (self.index, round_nr))
+        model: str = event.data["model"]
+        incoming_models: Dict[int, str] = event.data["incoming_models"] if "incoming_models" in event.data else {}
+        # Round has already started
+        if round_nr in self.round_info:
+            self.round_info[round_nr].incoming_models.update(incoming_models)
+            if model:
+                self.round_info[round_nr].model = model
+                self.schedule_train(self.round_info[round_nr])
+            return
 
+        self.client_log("Client %d starting round %d" % (self.index, round_nr))
         new_round = Round(round_nr)
-        new_round.model = event.data["model"]
-        new_round.incoming_models = event.data["incoming_models"] if "incoming_models" in event.data else {}
+        new_round.model = model
+        new_round.incoming_models = incoming_models
         self.round_info[round_nr] = new_round
 
         if new_round.model or round_nr == 1:
