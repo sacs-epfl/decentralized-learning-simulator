@@ -50,6 +50,7 @@ def run():
         stop=args.stop,
         queue_max_size=args.queue_max_size,
         wait=args.wait,
+        el=args.el,
     )
 
     if settings.algorithm == "fl":
@@ -70,6 +71,9 @@ def run():
     elif settings.algorithm == "adpsgd":
         from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation
         simulation = ADPSGDSimulation(settings)
+    elif settings.algorithm == "epidemic":
+        from dasklearn.simulation.epidemic.simulation import EpidemicSimulation
+        simulation = EpidemicSimulation(settings)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
     ensure_future(simulation.run())
