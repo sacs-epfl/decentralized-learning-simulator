@@ -1,7 +1,9 @@
 import math
 import random
+import os
 from collections import defaultdict
 from typing import List, Tuple
+from datetime import datetime
 
 import networkx as nx
 
@@ -32,6 +34,12 @@ class EpidemicSimulation(Simulation):
         self.register_event_callback(START_ROUND, "start_round")
         self.register_event_callback(FINISH_TRAIN, "finish_train")
         self.register_event_callback(AGGREGATE, "aggregate")
+
+    def setup_data_dir(self, settings: SessionSettings) -> None:
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_%s_n%d_b%d_s%d_%s" %
+                                     (settings.algorithm, settings.el, settings.dataset, settings.participants,
+                                      settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
+        settings.data_dir = self.data_dir
 
     def add_topology(self) -> None:
         # Generate a topology

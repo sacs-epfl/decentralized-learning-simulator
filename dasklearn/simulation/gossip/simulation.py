@@ -1,4 +1,6 @@
 import random
+import os
+from datetime import datetime
 
 from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.gossip.client import GossipClient
@@ -17,6 +19,12 @@ class GossipSimulation(AsynchronousSimulation):
             raise RuntimeError("Period needs to be larger than 0 for gossip to work")
 
         self.register_event_callback(DISSEMINATE, "disseminate")
+
+    def setup_data_dir(self, settings: SessionSettings) -> None:
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%d_%s_n%d_b%d_s%d_%s" %
+                                     (settings.algorithm, settings.gl_period, settings.dataset, settings.participants,
+                                      settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
+        settings.data_dir = self.data_dir
 
     def get_send_set(self, index: int):
         """

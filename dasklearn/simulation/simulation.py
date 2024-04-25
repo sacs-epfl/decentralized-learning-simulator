@@ -6,6 +6,7 @@ import shutil
 from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Tuple
+from datetime import datetime
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -33,10 +34,8 @@ class Simulation:
     def __init__(self, settings: SessionSettings):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d" %
-                                     (settings.algorithm, settings.dataset, settings.participants,
-                                      settings.brokers, settings.seed))
-        settings.data_dir = self.data_dir
+        self.data_dir = ""
+        self.setup_data_dir(settings)
 
         self.settings = settings
         self.events: List[Tuple[int, int, Event]] = []
@@ -57,6 +56,12 @@ class Simulation:
         self.register_event_callback(START_TRAIN, "start_train")
         self.register_event_callback(START_TRANSFER, "start_transfer")
         self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
+
+    def setup_data_dir(self, settings: SessionSettings) -> None:
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
+                                     (settings.algorithm, settings.dataset, settings.participants,
+                                      settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
+        settings.data_dir = self.data_dir
 
     def setup_directories(self):
         if os.path.exists(self.data_dir):

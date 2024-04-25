@@ -2,6 +2,7 @@ import os
 import random
 from typing import Set
 
+from datetime import datetime
 from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.adpsgd.client import ADPSGDClient
 from dasklearn.simulation.asynchronous_simulation import AsynchronousSimulation
@@ -19,6 +20,12 @@ class ADPSGDSimulation(AsynchronousSimulation):
         peers = list(range(settings.participants))
         self.active_peers = random.sample(peers, len(peers) // 2)
         self.passive_peers = list(filter(lambda x: x not in self.active_peers, peers))
+
+    def setup_data_dir(self, settings: SessionSettings) -> None:
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_%s_n%d_b%d_s%d_%s" %
+                                     (settings.algorithm, settings.agg, settings.dataset, settings.participants,
+                                      settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
+        settings.data_dir = self.data_dir
 
     def initialize_clients(self):
         super().initialize_clients()
