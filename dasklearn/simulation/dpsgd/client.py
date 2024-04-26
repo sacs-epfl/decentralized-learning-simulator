@@ -2,6 +2,7 @@ from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.dpsgd.round import Round
 from dasklearn.simulation.events import *
 from dasklearn.tasks.task import Task
+from dasklearn.util import MICROSECONDS
 
 
 class DPSGDClient(BaseClient):
@@ -11,8 +12,12 @@ class DPSGDClient(BaseClient):
         self.topology = None
         self.round_info: Dict[int, Round] = {}
 
-    def init_client(self, _: Event):
+    def init_client(self, event: Event):
         self.schedule_next_round({"round": 1, "model": None})
+        # Schedule time based testing if we use time based stopping
+        if self.simulator.settings.stop == "duration" and self.simulator.settings.test_period > 0:
+            test_event = Event(event.time + self.simulator.settings.test_period, self.index, TEST)
+            self.simulator.schedule(test_event)
 
     def is_training(self) -> bool:
         return any([r.is_training for r in self.round_info.values()])
@@ -123,7 +128,8 @@ class DPSGDClient(BaseClient):
         round_info.model = self.aggregate_models(model_names, round_nr)
 
         # Should we test?
-        if self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0:
+        if self.simulator.settings.stop == "rounds" and self.simulator.settings.test_interval > 0 \
+                and round_nr % self.simulator.settings.test_interval == 0:
             test_task_name = "test_%d_%d" % (self.index, round_nr)
             task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index})
             self.add_compute_task(task)
@@ -140,3 +146,25 @@ class DPSGDClient(BaseClient):
             next_round_info.model = round_info.model
             if not self.is_training():
                 self.schedule_train(next_round_info)
+
+    def test(self, event: Event):
+        """
+        Test model's performance
+        """
+        # Find latest round with model
+        latest_model_round: int = -1
+        for round_nr, info in self.round_info.items():
+            if info.model is not None:
+                latest_model_round = max(latest_model_round, round_nr)
+        # Test the model if it exists
+        if latest_model_round > -1:
+            self.client_log("Client %d will test its model %s" % (self.index, self.round_info[latest_model_round].model))
+            test_task_name = "test_%d_%d" % (self.index, event.time // MICROSECONDS)
+            task = Task(test_task_name, "test", data={
+                "model": self.round_info[latest_model_round].model, "time": self.simulator.current_time,
+                "peer": self.index, "round": latest_model_round})
+            self.add_compute_task(task)
+
+        # Schedule next test action
+        test_event = Event(event.time + self.simulator.settings.test_period, self.index, TEST)
+        self.simulator.schedule(test_event)

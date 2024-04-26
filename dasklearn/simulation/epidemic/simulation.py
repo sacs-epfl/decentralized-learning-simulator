@@ -26,6 +26,7 @@ class EpidemicSimulation(Simulation):
         # Set the other stopping condition to a very large value (we cannot use inf because it's float)
         if self.settings.stop == "duration":
             self.settings.rounds = 10 ** 7
+            self.register_event_callback(TEST, "test")
         else:
             self.settings.duration = 10 ** 15
 
