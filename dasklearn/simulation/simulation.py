@@ -179,6 +179,10 @@ class Simulation:
             assert len(client.bw_scheduler.incoming_transfers) == 0
             assert len(client.bw_scheduler.outgoing_transfers) == 0
 
+        if self.settings.dry_run:
+            self.logger.info("Dry run - shutdown")
+            asyncio.get_event_loop().stop()
+
     def cur_time_in_sec(self) -> float:
         return self.current_time / MICROSECONDS
 
