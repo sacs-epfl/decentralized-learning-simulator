@@ -15,7 +15,7 @@ class GossipSimulation(AsynchronousSimulation):
         super().__init__(settings)
         if self.settings.agg == "default":
             self.settings.agg = "age"
-        if self.settings.gl_period == 0:
+        if self.settings.gl_period <= 0:
             raise RuntimeError("Period needs to be larger than 0 for gossip to work")
 
         self.register_event_callback(DISSEMINATE, "disseminate")

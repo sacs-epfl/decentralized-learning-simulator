@@ -74,6 +74,9 @@ def run():
     elif settings.algorithm == "epidemic":
         from dasklearn.simulation.epidemic.simulation import EpidemicSimulation
         simulation = EpidemicSimulation(settings)
+    elif settings.algorithm == "lubor":
+        from dasklearn.simulation.lubor.simulation import LuborSimulation
+        simulation = LuborSimulation(settings)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
     ensure_future(simulation.run())
