@@ -1,15 +1,14 @@
 from dasklearn.simulation.client import BaseClient
-from dasklearn.simulation.dpsgd.round import Round
+from dasklearn.simulation.epidemic.round import Round
 from dasklearn.simulation.events import *
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS
 
 
-class DPSGDClient(BaseClient):
+class EpidemicClient(BaseClient):
 
     def __init__(self, simulator, index: int):
         super().__init__(simulator, index)
-        self.topology = None
         self.round_info: Dict[int, Round] = {}
 
     def init_client(self, event: Event):
@@ -62,7 +61,7 @@ class DPSGDClient(BaseClient):
 
     def finish_train(self, event: Event):
         """
-        We finished training. Select a neighbour node and send it the model.
+        We finished training. Send the model to the selected nodes
         """
         cur_round: int = event.data["round"]
         self.compute_time += event.data["train_time"]
@@ -76,11 +75,13 @@ class DPSGDClient(BaseClient):
         round_info.is_training = False
         round_info.train_done = True
 
-        for index, neighbour in enumerate(list(self.simulator.topology.neighbors(self.index))):
+        if len(self.simulator.topologies) < cur_round:
+            self.simulator.add_topology()
+        for neighbour in self.simulator.topologies[cur_round - 1].successors(self.index):
             self.send_model(neighbour, event.data["model"], metadata={"round": event.data["round"]})
 
         # Do we have all incoming models for this round? If so, aggregate.
-        num_nb = len(list(self.simulator.topology.neighbors(self.index)))
+        num_nb = len(list(self.simulator.topologies[cur_round - 1].predecessors(self.index)))
         if len(round_info.incoming_models) == num_nb:
             aggregate_event = Event(self.simulator.current_time, self.index, AGGREGATE, data={"round": cur_round})
             self.simulator.schedule(aggregate_event)
@@ -96,6 +97,8 @@ class DPSGDClient(BaseClient):
         """
         We received a model.
         """
+        if event.time > self.simulator.settings.duration:
+            return
         round_nr: int = event.data["metadata"]["round"]
         self.client_log("Client %d received from %d model %s in round %d" %
                         (self.index, event.data["from"], event.data["model"], round_nr))
@@ -109,7 +112,9 @@ class DPSGDClient(BaseClient):
         else:
             round_info: Round = self.round_info[round_nr]
 
-            num_nb = len(list(self.simulator.topology.neighbors(self.index)))
+            if len(self.simulator.topologies) < round_nr:
+                self.simulator.add_topology()
+            num_nb = len(list(self.simulator.topologies[round_nr - 1].predecessors(self.index)))
             round_info.incoming_models[event.data["from"]] = event.data["model"]
 
             # Are we done training our own model in this round and have we received all nb models?

@@ -3,26 +3,22 @@ import os
 from datetime import datetime
 
 from dasklearn.session_settings import SessionSettings
-from dasklearn.simulation.gossip.client import GossipClient
-from dasklearn.simulation.events import *
+from dasklearn.simulation.super_gossip.client import SuperGossipClient
 from dasklearn.simulation.asynchronous_simulation import AsynchronousSimulation
 
 
-class GossipSimulation(AsynchronousSimulation):
-    CLIENT_CLASS = GossipClient
+class SuperGossipSimulation(AsynchronousSimulation):
+    CLIENT_CLASS = SuperGossipClient
 
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
-        if self.settings.agg == "default":
-            self.settings.agg = "age"
-        if self.settings.gl_period == 0:
-            raise RuntimeError("Period needs to be larger than 0 for gossip to work")
-
-        self.register_event_callback(DISSEMINATE, "disseminate")
+        if settings.agg == "default":
+            settings.agg = "age"
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
-        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%d_%s_n%d_b%d_s%d_%s" %
-                                     (settings.algorithm, settings.gl_period, settings.dataset, settings.participants,
+        wait_string: str = "wait" if settings.wait else "no_wait"
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_%s_n%d_b%d_s%d_%s" %
+                                     (settings.algorithm, wait_string, settings.dataset, settings.participants,
                                       settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
         settings.data_dir = self.data_dir
 

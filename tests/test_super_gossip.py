@@ -3,7 +3,7 @@ from collections import Counter
 import pytest
 
 from dasklearn.session_settings import SessionSettings, LearningSettings
-from dasklearn.simulation.gossip.simulation import GossipSimulation
+from dasklearn.simulation.super_gossip.simulation import SuperGossipSimulation
 from dasklearn.util import MICROSECONDS
 
 
@@ -14,10 +14,9 @@ def session_settings(tmpdir):
         seed=3,
         work_dir=tmpdir,
         dataset="cifar10",
-        learning=LearningSettings(batch_size=0, learning_rate=0, momentum=0, weight_decay=0, local_steps=1),
+        learning=LearningSettings(batch_size=1, learning_rate=0, momentum=0, weight_decay=0, local_steps=1),
         participants=10,
         duration=100 * MICROSECONDS,
-        gl_period=10 * MICROSECONDS,
         test_period=60 * MICROSECONDS,
         dry_run=True,
         brokers=1,
@@ -30,7 +29,7 @@ def sanity_check(workflow_dag):
     task_counter = Counter()
     for task in workflow_dag.tasks.values():
         if task.func == "aggregate":
-            assert len(task.inputs) == 2
+            assert len(task.inputs) >= 2
         elif task.func == "train":
             assert len(task.inputs) == 1 or task.data["time"] == 0
         elif task.func == "test":
@@ -42,9 +41,11 @@ def sanity_check(workflow_dag):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("seed", [0, 1, 2, 3])
 @pytest.mark.parametrize("participants", [10, 50, 100, 200])
-async def test_gossip(seed, participants, session_settings):
+@pytest.mark.parametrize("wait", [True, False])
+async def test_super_gossip(seed, participants, session_settings, wait):
     session_settings.seed = seed
     session_settings.participants = participants
-    sim = GossipSimulation(session_settings)
+    session_settings.wait = wait
+    sim = SuperGossipSimulation(session_settings)
     await sim.run()
     sanity_check(sim.workflow_dag)

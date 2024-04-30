@@ -6,6 +6,7 @@ import shutil
 from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Tuple
+from datetime import datetime
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -33,10 +34,8 @@ class Simulation:
     def __init__(self, settings: SessionSettings):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d" %
-                                     (settings.algorithm, settings.dataset, settings.participants,
-                                      settings.brokers, settings.seed))
-        settings.data_dir = self.data_dir
+        self.data_dir = ""
+        self.setup_data_dir(settings)
 
         self.settings = settings
         self.events: List[Tuple[int, int, Event]] = []
@@ -57,6 +56,12 @@ class Simulation:
         self.register_event_callback(START_TRAIN, "start_train")
         self.register_event_callback(START_TRANSFER, "start_transfer")
         self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
+
+    def setup_data_dir(self, settings: SessionSettings) -> None:
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
+                                     (settings.algorithm, settings.dataset, settings.participants,
+                                      settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
+        settings.data_dir = self.data_dir
 
     def setup_directories(self):
         if os.path.exists(self.data_dir):
@@ -158,14 +163,14 @@ class Simulation:
             self.process_event(event)
 
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
+        self.save_measurements()
 
         # Sanity check the DAG
         self.workflow_dag.check_validity()
+        self.plot_compute_graph()
 
         if not self.settings.dry_run:
             await self.solve_workflow_graph()
-
-        self.plot_compute_graph()
 
         # Done! Sanity checks
         for client in self.clients:
@@ -173,6 +178,10 @@ class Simulation:
             assert len(client.bw_scheduler.outgoing_requests) == 0
             assert len(client.bw_scheduler.incoming_transfers) == 0
             assert len(client.bw_scheduler.outgoing_transfers) == 0
+
+        if self.settings.dry_run:
+            self.logger.info("Dry run - shutdown")
+            asyncio.get_event_loop().stop()
 
     def cur_time_in_sec(self) -> float:
         return self.current_time / MICROSECONDS
@@ -256,3 +265,24 @@ class Simulation:
                                    label=f'{node}') for node, color in color_key.items()]
         plt.legend(handles=dummy_points)
         plt.savefig(os.path.join(self.settings.data_dir, "compute_graph.png"))
+
+    def save_measurements(self) -> None:
+        # Write time utilization
+        with open(os.path.join(self.data_dir, "time_utilisation.csv"), "w") as file:
+            file.write("client,compute_time,total_time\n")
+            for client in self.clients:
+                # Supports only duration based algorithms
+                file.write("%d,%d,%d\n" % (client.index, client.compute_time, self.settings.duration))
+        # Write aggregation log
+        with open(os.path.join(self.data_dir, "aggregations.csv"), "w") as file:
+            file.write("client;clients;ages\n")
+            for client in self.clients:
+                for aggregation in client.aggregations:
+                    file.write("%d;%s;%s\n" % (client.index, list(map(lambda x: x[0], aggregation)),
+                                               list(map(lambda x: x[2], aggregation))))
+        # Write incoming counter log
+        with open(os.path.join(self.data_dir, "incoming.csv"), "w") as file:
+            file.write("client,from,count\n")
+            for client in self.clients:
+                for sender, count in client.incoming_counter.items():
+                    file.write("%d,%d,%d\n" % (client.index, sender, count))

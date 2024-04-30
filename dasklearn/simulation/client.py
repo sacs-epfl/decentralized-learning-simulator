@@ -1,5 +1,5 @@
-from abc import abstractmethod
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Tuple
+from collections import Counter
 
 from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
@@ -21,6 +21,11 @@ class BaseClient:
         self.simulated_speed: Optional[float] = None
 
         self.latest_task: Optional[str] = None  # Keep track of the latest task
+        self.train_function: str = "train"
+
+        self.compute_time: int = 0  # Total time spent training
+        self.aggregations: List[List[Tuple[int, str, int]]] = []  # Log of aggregations (client, model, age)
+        self.incoming_counter: Dict[int, int] = Counter()
 
     def client_log(self, msg: str):
         self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
@@ -38,13 +43,14 @@ class BaseClient:
         We started training. Schedule when the training has ended.
         """
         task_name = Task.generate_name("train")
-        task = Task(task_name, "train", data={
+        task = Task(task_name, self.train_function, data={
             "model": event.data["model"], "round": event.data["round"],
             "time": self.simulator.current_time, "peer": self.index})
         self.add_compute_task(task)
 
-        finish_train_event = Event(self.simulator.current_time + self.get_train_time(), self.index, FINISH_TRAIN,
-                                   data={"model": task_name, "round": event.data["round"]})
+        train_time: int = self.get_train_time()
+        finish_train_event = Event(self.simulator.current_time + train_time, self.index, FINISH_TRAIN,
+                                   data={"model": task_name, "round": event.data["round"], "train_time": train_time})
         self.simulator.schedule(finish_train_event)
 
     def send_model(self, to: int, model: str, metadata: Optional[Dict[Any, Any]] = None, send_time: Optional[int] = None) -> None:

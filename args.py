@@ -27,7 +27,11 @@ def get_args():
     parser.add_argument('--sample-size', type=int, default=10)
     parser.add_argument('--duration', type=int, default=100)
     parser.add_argument('--gl-period', type=int, default=10)
-    parser.add_argument('--agg', type=str, default="default")
+    parser.add_argument('--agg', type=str, default="default", choices=["default", "average", "age"])
+    parser.add_argument('--stop', type=str, default="rounds", choices=["rounds", "duration"])
+    parser.add_argument('--queue-max-size', type=int, default=0)
+    parser.add_argument('--wait', action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument('--el', type=str, default="oracle", choices=["oracle", "local"])
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
