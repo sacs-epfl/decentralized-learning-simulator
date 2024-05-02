@@ -286,3 +286,9 @@ class Simulation:
             for client in self.clients:
                 for sender, count in client.incoming_counter.items():
                     file.write("%d,%d,%d\n" % (client.index, sender, count))
+        # Write contributions log
+        with open(os.path.join(self.data_dir, "contributions.csv"), "w") as file:
+            file.write("client,contributing_client,value\n")
+            for client in self.clients:
+                for contributor, value in client.contribution.items():
+                    file.write("%d,%d,%f\n" % (client.index, contributor, value))

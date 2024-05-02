@@ -9,7 +9,7 @@ class SuperGossipClient(AsynchronousClient):
     def __init__(self, simulator, index: int):
         super().__init__(simulator, index)
 
-        self.queue: Dict[int, Tuple[int, str, int]] = {}  # sender, [sender, model, age]
+        self.queue: Dict[int, Tuple[int, str, int, Dict[int, float]]] = {}  # sender, [sender, model, age, contribution]
         self.waiting: bool = False
 
     def finish_train(self, event: Event):
@@ -32,7 +32,8 @@ class SuperGossipClient(AsynchronousClient):
         We received a model. Put it into a queue
         """
         sender_id: int = event.data["from"]
-        self.queue[sender_id] = sender_id, event.data["model"], event.data["metadata"]["age"]
+        self.queue[sender_id] = (sender_id, event.data["model"], event.data["metadata"]["age"],
+                                 event.data["metadata"]["contribution"])
         # We were previously waiting to receive a model, aggregate and continue training
         if self.waiting:
             self.clear_queue()

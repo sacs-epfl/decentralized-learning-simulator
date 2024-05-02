@@ -35,7 +35,8 @@ class GossipClient(AsynchronousClient):
             # Lock
             self.available = False
 
-            self.aggregate([(event.data["from"], event.data["model"], event.data["metadata"]["age"])])
+            self.aggregate([(event.data["from"], event.data["model"], event.data["metadata"]["age"],
+                             event.data["metadata"]["contribution"])])
 
             # Schedule a train action
             start_train_event = Event(event.time, self.index, START_TRAIN, data={
