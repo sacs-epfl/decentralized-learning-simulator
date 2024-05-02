@@ -1,3 +1,5 @@
+from typing import Tuple, List
+
 from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.epidemic.round import Round
 from dasklearn.simulation.events import *
@@ -34,7 +36,8 @@ class EpidemicClient(BaseClient):
     def start_round(self, event: Event):
         round_nr: int = event.data["round"]
         model: str = event.data["model"]
-        incoming_models: Dict[int, str] = event.data["incoming_models"] if "incoming_models" in event.data else {}
+        incoming_models: Dict[int, Tuple[str, List[float]]] = event.data["incoming_models"]\
+            if "incoming_models" in event.data else {}
         # Round has already started
         if round_nr in self.round_info:
             self.round_info[round_nr].incoming_models.update(incoming_models)
@@ -65,6 +68,7 @@ class EpidemicClient(BaseClient):
         """
         cur_round: int = event.data["round"]
         self.compute_time += event.data["train_time"]
+        self.contribution[self.index] += 1
         self.client_log("Client %d finished model training in round %d" % (self.index, cur_round))
         if cur_round not in self.round_info:
             raise RuntimeError("Client %d does not know about round %d after training finished!" %
@@ -78,7 +82,8 @@ class EpidemicClient(BaseClient):
         if len(self.simulator.topologies) < cur_round:
             self.simulator.add_topology()
         for neighbour in self.simulator.topologies[cur_round - 1].successors(self.index):
-            self.send_model(neighbour, event.data["model"], metadata={"round": event.data["round"]})
+            self.send_model(neighbour, event.data["model"], metadata={"round": event.data["round"],
+                                                                      "contribution": self.contribution})
 
         # Do we have all incoming models for this round? If so, aggregate.
         num_nb = len(list(self.simulator.topologies[cur_round - 1].predecessors(self.index)))
@@ -107,7 +112,8 @@ class EpidemicClient(BaseClient):
         if round_nr not in self.round_info:
             # We do not know about this round yet - start it.
             round_data: Dict = {"round": round_nr, "model": None,
-                                "incoming_models": {event.data["from"]: event.data["model"]}}
+                                "incoming_models": {event.data["from"]: (event.data["model"],
+                                                                         event.data["metadata"]["contribution"])}}
             self.schedule_next_round(round_data)
         else:
             round_info: Round = self.round_info[round_nr]
@@ -115,7 +121,7 @@ class EpidemicClient(BaseClient):
             if len(self.simulator.topologies) < round_nr:
                 self.simulator.add_topology()
             num_nb = len(list(self.simulator.topologies[round_nr - 1].predecessors(self.index)))
-            round_info.incoming_models[event.data["from"]] = event.data["model"]
+            round_info.incoming_models[event.data["from"]] = event.data["model"], event.data["metadata"]["contribution"]
 
             # Are we done training our own model in this round and have we received all nb models?
             # If so, aggregate everything. Otherwise, wait until we are done training.
@@ -126,11 +132,13 @@ class EpidemicClient(BaseClient):
     def aggregate(self, event: Event):
         round_nr = event.data["round"]
         round_info: Round = self.round_info[round_nr]
-        model_names = [model_name for model_name in round_info.incoming_models.values()] + [round_info.model]
+        model_names = [model_name for model_name, _ in round_info.incoming_models.values()] + [round_info.model]
         self.client_log("Client %d will aggregate in round %d (%s)" % (self.index, round_nr, model_names))
-        other = [(sender_id, model_name, round_nr) for sender_id, model_name in round_info.incoming_models.items()]
-        self.aggregations.append(other + [(self.index, round_info.model, round_nr)])
+        other = [(sender_id, model_name, round_nr, contribution)
+                 for sender_id, (model_name, contribution) in round_info.incoming_models.items()]
+        self.aggregations.append(other + [(self.index, round_info.model, round_nr, self.contribution)])
         round_info.model = self.aggregate_models(model_names, round_nr)
+        self.merge_contributions(list(map(lambda x: x[3], self.aggregations[-1])))
 
         # Should we test?
         if self.simulator.settings.stop == "rounds" and self.simulator.settings.test_interval > 0 \

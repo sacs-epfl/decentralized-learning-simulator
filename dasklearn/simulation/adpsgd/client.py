@@ -64,10 +64,11 @@ class ADPSGDClient(AsynchronousClient):
         if not self.active:
             # Passive peer sends back its own model
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, event.data["from"]))
-            metadata = dict(age=self.age)
+            metadata = dict(age=self.age, contribution=self.contribution)
             self.send_model(event.data["from"], self.own_model, metadata=metadata)
 
-        self.aggregate([(event.data["from"], event.data["model"], event.data["metadata"]["age"])])
+        self.aggregate([(event.data["from"], event.data["model"], event.data["metadata"]["age"],
+                         event.data["metadata"]["contribution"])])
 
         # Schedule next local step
         if self.active or self.steps_remaining == 0:

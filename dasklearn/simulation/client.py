@@ -24,8 +24,10 @@ class BaseClient:
         self.train_function: str = "train"
 
         self.compute_time: int = 0  # Total time spent training
-        self.aggregations: List[List[Tuple[int, str, int]]] = []  # Log of aggregations (client, model, age)
+        # Log of aggregations (client, model, age, contribution)
+        self.aggregations: List[List[Tuple[int, str, int, Dict[int, float]]]] = []
         self.incoming_counter: Dict[int, int] = Counter()
+        self.contribution: Dict[int, float] = Counter()  # Contribution of clients to the current model
 
     def client_log(self, msg: str):
         self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
@@ -82,6 +84,15 @@ class BaseClient:
         task = Task(task_name, "aggregate", data=data)
         self.add_compute_task(task)
         return task_name
+
+    def merge_contributions(self, contributions: List[Dict[int, float]], weights: Optional[List[float]] = None) -> None:
+        result_contribution: Dict[int, float] = Counter()
+        if weights is None:
+            weights = [1 / len(contributions)] * len(contributions)
+        for cont_dict, weight in zip(contributions, weights):
+            for client, contribution in cont_dict.items():
+                result_contribution[client] += (contribution * weight)
+        self.contribution = result_contribution
 
     def add_compute_task(self, task: Task):
         self.simulator.workflow_dag.tasks[task.name] = task
