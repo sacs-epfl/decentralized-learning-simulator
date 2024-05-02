@@ -29,6 +29,7 @@ class ADPSGDClient(AsynchronousClient):
         """
         self.compute_time += event.data["train_time"]
         self.steps_remaining -= 1
+        self.contribution[self.index] += 1
         # Special case for model initialization
         if self.own_model is None:
             self.own_model = event.data["model"]
