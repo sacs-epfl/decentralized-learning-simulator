@@ -8,7 +8,7 @@ class LuborClient(AsynchronousClient):
 
     def __init__(self, simulator, index: int):
         super().__init__(simulator, index)
-        self.queue: Dict[int, Tuple[int, str, int]] = {}
+        self.queue: Dict[int, Tuple[int, str, int, Dict[int, float]]] = {}  # sender, [sender, model, age, contribution]
         self.send_period: Optional[int] = None
 
     def init_client(self, event: Event):
@@ -36,7 +36,8 @@ class LuborClient(AsynchronousClient):
         """
         We received a model. Update the queue
         """
-        self.queue[event.data["from"]] = event.data["from"], event.data["model"], event.data["metadata"]["age"]
+        self.queue[event.data["from"]] = (event.data["from"], event.data["model"], event.data["metadata"]["age"],
+                                          event.data["metadata"]["contribution"])
 
     def disseminate(self, event: Event):
         """
