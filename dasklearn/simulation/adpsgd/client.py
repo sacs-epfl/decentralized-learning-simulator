@@ -1,3 +1,5 @@
+from typing import List
+
 from dasklearn.simulation.asynchronous_client import AsynchronousClient
 from dasklearn.simulation.events import *
 from dasklearn.tasks.task import Task
@@ -11,6 +13,7 @@ class ADPSGDClient(AsynchronousClient):
         # active/passive peer
         self.active: bool = True
         self.steps_remaining: int = self.simulator.settings.learning.local_steps
+        self.waiting: List[Event] = []
         self.last_train_time: int = 0
         self.train_function = "compute_gradient"
 
@@ -29,6 +32,7 @@ class ADPSGDClient(AsynchronousClient):
         # Special case for model initialization
         if self.own_model is None:
             self.own_model = event.data["model"]
+            self.process_waiting()
         if self.steps_remaining % self.simulator.settings.learning.local_steps == 0:
             self.age += 1
 
@@ -52,6 +56,11 @@ class ADPSGDClient(AsynchronousClient):
         """
         We received a model. Aggregate with own model and schedule training again
         """
+        # Wait for initialization
+        if self.own_model is None:
+            self.waiting.append(event)
+            return
+
         if not self.active:
             # Passive peer sends back its own model
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, event.data["from"]))
@@ -68,3 +77,11 @@ class ADPSGDClient(AsynchronousClient):
 
         # Increase the remaining steps count
         self.steps_remaining += self.simulator.settings.learning.local_steps
+
+    def process_waiting(self):
+        """
+        Process all incoming models waiting in the queue
+        """
+        for event in self.waiting:
+            self.process_incoming_model(event)
+        self.waiting = []
