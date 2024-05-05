@@ -23,7 +23,7 @@ class SuperGossipSimulation(AsynchronousSimulation):
     def setup_data_dir(self, settings: SessionSettings) -> None:
         wait_string: str = "wait" if settings.wait else "no_wait"
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_%s_n%d_b%d_s%d_%s" %
-                                     (settings.algorithm, wait_string, settings.dataset, settings.participants,
+                                     ("super_gossip", wait_string, settings.dataset, settings.participants,
                                       settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
         settings.data_dir = self.data_dir
 

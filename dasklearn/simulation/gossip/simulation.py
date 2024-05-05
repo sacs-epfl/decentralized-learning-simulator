@@ -6,6 +6,7 @@ from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.gossip.client import GossipClient
 from dasklearn.simulation.events import *
 from dasklearn.simulation.asynchronous_simulation import AsynchronousSimulation
+from dasklearn.util import MICROSECONDS
 
 
 class GossipSimulation(AsynchronousSimulation):
@@ -22,8 +23,9 @@ class GossipSimulation(AsynchronousSimulation):
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%d_%s_n%d_b%d_s%d_%s" %
-                                     (settings.algorithm, settings.gl_period, settings.dataset, settings.participants,
-                                      settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
+                                     (settings.algorithm, settings.gl_period // MICROSECONDS, settings.dataset,
+                                      settings.participants, settings.brokers,
+                                      settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
         settings.data_dir = self.data_dir
 
     def get_send_set(self, index: int):
