@@ -32,7 +32,7 @@ def run():
         work_dir="",
         learning=learning_settings,
         participants=args.peers,
-        partitioner="iid",
+        partitioner=args.partitioner,
         model=args.model,
         test_interval=args.test_interval,
         brokers=args.brokers,

@@ -12,6 +12,7 @@ def get_args():
     parser.add_argument('--local-steps', type=int, default=5)
 
     parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist"])
+    parser.add_argument('--partitioner', type=str, default="iid", choices=["iid", "shards", "dirichlet"])
     parser.add_argument('--dataset-base-path', type=str, default=None)
     parser.add_argument('--peers', type=int, default=2)
     parser.add_argument('--rounds', type=int, default=1)
