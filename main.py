@@ -65,7 +65,7 @@ def run():
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation
         simulation = GossipSimulation(settings)
-    elif settings.algorithm == "super_gossip":
+    elif settings.algorithm == "super-gossip":
         from dasklearn.simulation.super_gossip.simulation import SuperGossipSimulation
         simulation = SuperGossipSimulation(settings)
     elif settings.algorithm == "adpsgd":
