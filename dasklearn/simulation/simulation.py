@@ -3,6 +3,7 @@ import bisect
 import os
 import pickle
 import shutil
+import resource
 from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Tuple
@@ -297,3 +298,7 @@ class Simulation:
             file.write("client,training_time\n")
             for client in self.clients:
                 file.write("%d,%d\n" % (client.index, client.simulated_speed))
+        # Write memory log
+        with open(os.path.join(self.data_dir, "memory.csv"), "w") as file:
+            file.write("memory_usage_mb\n")
+            file.write("%d\n" % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
