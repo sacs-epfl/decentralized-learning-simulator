@@ -292,3 +292,8 @@ class Simulation:
             for client in self.clients:
                 for contributor, value in client.contribution.items():
                     file.write("%d,%d,%f\n" % (client.index, contributor, value))
+        # Write client speed log
+        with open(os.path.join(self.data_dir, "speeds.csv"), "w") as file:
+            file.write("client,training_time\n")
+            for client in self.clients:
+                file.write("%d,%d\n" % (client.index, client.simulated_speed))
