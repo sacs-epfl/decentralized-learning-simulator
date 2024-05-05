@@ -1,5 +1,6 @@
 import random
 import math
+from typing import List, Set
 
 from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.lubor.client import LuborClient
@@ -18,7 +19,7 @@ class LuborSimulation(AsynchronousSimulation):
         self.speeds: Dict[int, int] = {}
         self.register_event_callback(DISSEMINATE, "disseminate")
 
-    def get_send_period(self, index: int):
+    def get_send_period(self, index: int) -> int:
         """
         Initialize the clients
         """
@@ -27,11 +28,11 @@ class LuborSimulation(AsynchronousSimulation):
             self.speeds = {client.index: client.get_train_time() for client in self.clients}
         client_speed: int = self.speeds[index]
         del self.speeds[index]
-        average_speed: int = int(sum(self.speeds.values()) / len(self.speeds) / math.log2(self.settings.participants))
+        average_speed: int = int(sum(self.speeds.values()) / len(self.speeds))
         self.speeds[index] = client_speed
         return average_speed
 
-    def get_send_set(self, index: int):
+    def get_send_set(self, index: int) -> Set[int]:
         """
         Returns a set of a single index, who will receive a model
         @index - index of the sender
@@ -39,5 +40,6 @@ class LuborSimulation(AsynchronousSimulation):
         weights: Dict[int, float] = {client: 1 / speed for client, speed in self.speeds.items()}
         del weights[index]
         weights = {client: x / sum(weights.values()) for client, x in weights.items()}
-        peer: int = random.choices(list(weights.keys()), list(weights.values()))[0]
-        return {peer}
+        k: int = math.floor(math.log2(self.settings.participants))
+        peers: List[int] = random.choices(list(weights.keys()), list(weights.values()), k=k)
+        return set(peers)

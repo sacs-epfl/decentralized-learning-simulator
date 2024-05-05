@@ -27,6 +27,7 @@ class LuborClient(AsynchronousClient):
         """
         super().finish_train(event)
         self.aggregate(list(self.queue.values()))
+        self.queue = {}
 
         start_train_event = Event(event.time, self.index, START_TRAIN,
                                   data={"model": self.own_model, "round": self.age})
@@ -46,7 +47,6 @@ class LuborClient(AsynchronousClient):
         # Check if the model is initialized
         if self.own_model is not None:
             self.send()
-            self.queue = {}
 
         # Schedule next disseminate action
         disseminate_event = Event(event.time + self.send_period, self.index, DISSEMINATE)
