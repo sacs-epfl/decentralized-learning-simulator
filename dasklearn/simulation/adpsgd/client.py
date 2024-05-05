@@ -29,7 +29,7 @@ class ADPSGDClient(AsynchronousClient):
         """
         self.compute_time += event.data["train_time"]
         self.steps_remaining -= 1
-        self.contribution[self.index] += 1
+        self.opportunity[self.index] += 1
         # Special case for model initialization
         if self.own_model is None:
             self.own_model = event.data["model"]
@@ -65,11 +65,11 @@ class ADPSGDClient(AsynchronousClient):
         if not self.active:
             # Passive peer sends back its own model
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, event.data["from"]))
-            metadata = dict(age=self.age, contribution=self.contribution)
+            metadata = dict(age=self.age, opportunity=self.opportunity)
             self.send_model(event.data["from"], self.own_model, metadata=metadata)
 
         self.aggregate([(event.data["from"], event.data["model"], event.data["metadata"]["age"],
-                         event.data["metadata"]["contribution"])])
+                         event.data["metadata"]["opportunity"])])
 
         # Schedule next local step
         if self.active or self.steps_remaining == 0:

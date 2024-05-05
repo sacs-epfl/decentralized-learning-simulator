@@ -24,10 +24,10 @@ class BaseClient:
         self.train_function: str = "train"
 
         self.compute_time: int = 0  # Total time spent training
-        # Log of aggregations (client, model, age, contribution)
+        # Log of aggregations (client, model, age, opportunity)
         self.aggregations: List[List[Tuple[int, str, int, Dict[int, float]]]] = []
         self.incoming_counter: Dict[int, int] = Counter()
-        self.contribution: Dict[int, float] = Counter()  # Contribution of clients to the current model
+        self.opportunity: Dict[int, float] = Counter()  # Opportunity of clients to contribute to the model
 
     def client_log(self, msg: str):
         self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
@@ -85,14 +85,14 @@ class BaseClient:
         self.add_compute_task(task)
         return task_name
 
-    def merge_contributions(self, contributions: List[Dict[int, float]], weights: Optional[List[float]] = None) -> None:
-        result_contribution: Dict[int, float] = Counter()
+    def merge_opportunity(self, opportunities: List[Dict[int, float]], weights: Optional[List[float]] = None) -> None:
+        result_opportunity: Dict[int, float] = Counter()
         if weights is None:
-            weights = [1 / len(contributions)] * len(contributions)
-        for cont_dict, weight in zip(contributions, weights):
-            for client, contribution in cont_dict.items():
-                result_contribution[client] += (contribution * weight)
-        self.contribution = result_contribution
+            weights = [1 / len(opportunities)] * len(opportunities)
+        for cont_dict, weight in zip(opportunities, weights):
+            for client, opportunity in cont_dict.items():
+                result_opportunity[client] += (opportunity * weight)
+        self.opportunity = result_opportunity
 
     def add_compute_task(self, task: Task):
         self.simulator.workflow_dag.tasks[task.name] = task
