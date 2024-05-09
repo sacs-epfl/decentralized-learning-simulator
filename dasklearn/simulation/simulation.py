@@ -4,6 +4,7 @@ import os
 import pickle
 import shutil
 import resource
+import psutil
 from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Tuple
@@ -52,6 +53,8 @@ class Simulation:
         self.clients_to_brokers: Dict = {}
 
         self.communication: Optional[Communication] = None
+
+        self.memory_log: List[Tuple[int, psutil.pmem]] = []  # time, memory info
 
         self.register_event_callback(INIT_CLIENT, "init_client")
         self.register_event_callback(START_TRAIN, "start_train")
@@ -157,11 +160,15 @@ class Simulation:
         self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
         self.logger.info("Determine model size: %d bytes", self.model_size)
 
+        process = psutil.Process()
+        self.memory_log.append((self.current_time, process.memory_info()))
+
         while self.events:
             _, _, event = self.events.pop(0)
             assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
             self.current_time = event.time
             self.process_event(event)
+            self.memory_log.append((self.current_time, process.memory_info()))
 
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
         self.save_measurements()
@@ -291,14 +298,22 @@ class Simulation:
         with open(os.path.join(self.data_dir, "opportunities.csv"), "w") as file:
             file.write("client,contributing_client,value\n")
             for client in self.clients:
+                total_opportunity: int = sum(client.opportunity.values())
                 for contributor, value in client.opportunity.items():
-                    file.write("%d,%d,%f\n" % (client.index, contributor, value))
+                    file.write("%d,%d,%f\n" % (client.index, contributor, value / total_opportunity))
         # Write client speed log
         with open(os.path.join(self.data_dir, "speeds.csv"), "w") as file:
             file.write("client,training_time\n")
             for client in self.clients:
                 file.write("%d,%d\n" % (client.index, client.simulated_speed))
+        # Write max memory log
+        with open(os.path.join(self.data_dir, "max_memory.csv"), "w") as file:
+            file.write("max_memory_usage_kb\n")
+            file.write("%d\n" % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         # Write memory log
         with open(os.path.join(self.data_dir, "memory.csv"), "w") as file:
-            file.write("memory_usage_mb\n")
-            file.write("%d\n" % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+            # In bytes
+            file.write("time,physical,virtual,shared\n")
+            for time, mem_info in self.memory_log:
+                shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
+                file.write("%d,%d,%d,%d\n" % (time, mem_info.rss, mem_info.vms, shared_mem))
