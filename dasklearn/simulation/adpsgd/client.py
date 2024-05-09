@@ -12,16 +12,11 @@ class ADPSGDClient(AsynchronousClient):
 
         # active/passive peer
         self.active: bool = True
-        self.steps_remaining: int = self.simulator.settings.learning.local_steps
+        self.local_steps = self.simulator.settings.learning.local_steps
+        self.simulator.settings.learning.local_steps = 1
+        self.steps_remaining: int = self.local_steps
         self.waiting: List[Event] = []
-        self.last_train_time: int = 0
         self.train_function = "compute_gradient"
-
-    def get_train_time(self) -> int:
-        if self.steps_remaining % self.simulator.settings.learning.local_steps == 0:
-            # Divide time by number of local steps, because we schedule only 1 at a time
-            self.last_train_time = super().get_train_time() // self.simulator.settings.learning.local_steps
-        return self.last_train_time
 
     def finish_train(self, event: Event):
         """
@@ -33,8 +28,8 @@ class ADPSGDClient(AsynchronousClient):
         # Special case for model initialization
         if self.own_model is None:
             self.own_model = event.data["model"]
-            self.process_waiting()
-        if self.steps_remaining % self.simulator.settings.learning.local_steps == 0:
+            self.process_waiting(event)
+        if self.steps_remaining % self.local_steps == 0:
             self.age += 1
 
         task_name = Task.generate_name("gradient_update")
@@ -78,12 +73,13 @@ class ADPSGDClient(AsynchronousClient):
             self.simulator.schedule(start_train_event)
 
         # Increase the remaining steps count
-        self.steps_remaining += self.simulator.settings.learning.local_steps
+        self.steps_remaining += self.local_steps
 
-    def process_waiting(self):
+    def process_waiting(self, event: Event):
         """
         Process all incoming models waiting in the queue
         """
-        for event in self.waiting:
-            self.process_incoming_model(event)
+        for waiting_event in self.waiting:
+            waiting_event.time = event.time
+            self.process_incoming_model(waiting_event)
         self.waiting = []

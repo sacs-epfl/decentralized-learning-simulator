@@ -51,6 +51,8 @@ class BaseClient:
         self.add_compute_task(task)
 
         train_time: int = self.get_train_time()
+        if train_time < 0:
+            x = 1
         finish_train_event = Event(self.simulator.current_time + train_time, self.index, FINISH_TRAIN,
                                    data={"model": task_name, "round": event.data["round"], "train_time": train_time})
         self.simulator.schedule(finish_train_event)
