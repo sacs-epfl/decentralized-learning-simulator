@@ -1,5 +1,7 @@
 import random
 import math
+import os
+from datetime import datetime
 from typing import List, Set
 
 from dasklearn.session_settings import SessionSettings
@@ -18,6 +20,12 @@ class LuborSimulation(AsynchronousSimulation):
 
         self.speeds: Dict[int, int] = {}
         self.register_event_callback(DISSEMINATE, "disseminate")
+
+    def setup_data_dir(self, settings: SessionSettings) -> None:
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_%s_n%d_b%d_s%d_%s" %
+                                     (settings.algorithm, settings.agg, settings.dataset, settings.participants,
+                                      settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
+        settings.data_dir = self.data_dir
 
     def get_send_period(self, index: int) -> int:
         """
