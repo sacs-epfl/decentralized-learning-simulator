@@ -51,6 +51,7 @@ def run():
         queue_max_size=args.queue_max_size,
         wait=args.wait,
         el=args.el,
+        k=args.k,
     )
 
     if settings.algorithm == "fl":

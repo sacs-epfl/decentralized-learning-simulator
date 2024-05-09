@@ -59,3 +59,4 @@ class SessionSettings:
     queue_max_size: int = 0
     wait: bool = False
     el: str = "oracle"  # oracle, local
+    k: int = 0

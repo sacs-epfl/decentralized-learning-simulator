@@ -33,6 +33,7 @@ def get_args():
     parser.add_argument('--queue-max-size', type=int, default=0)
     parser.add_argument('--wait', action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument('--el', type=str, default="oracle", choices=["oracle", "local"])
+    parser.add_argument('--k', type=int, default=0)
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
