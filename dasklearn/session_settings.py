@@ -60,3 +60,4 @@ class SessionSettings:
     wait: bool = False
     el: str = "oracle"  # oracle, local
     k: int = 0
+    no_weights: bool = False

@@ -52,6 +52,7 @@ def run():
         wait=args.wait,
         el=args.el,
         k=args.k,
+        no_weights=args.no_weights,
     )
 
     if settings.algorithm == "fl":

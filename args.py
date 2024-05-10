@@ -34,6 +34,7 @@ def get_args():
     parser.add_argument('--wait', action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument('--el', type=str, default="oracle", choices=["oracle", "local"])
     parser.add_argument('--k', type=int, default=0)
+    parser.add_argument('--no_weights', action=argparse.BooleanOptionalAction, default=False)
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")

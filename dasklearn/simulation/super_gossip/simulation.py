@@ -18,7 +18,7 @@ class SuperGossipSimulation(AsynchronousSimulation):
             settings.agg = "age"
         self.participants: List[int] = [i for i in range(self.settings.participants)]
         self.weights: List[float] = [1 / (self.settings.participants - 1) for _ in range(self.settings.participants)]
-        self.k: int = math.floor(math.log2(self.settings.participants)) if settings.k <= 0 else settings.k
+        self.settings.k = math.floor(math.log2(self.settings.participants)) if self.settings.k <= 0 else self.settings.k
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
         wait_string: str = "wait" if settings.wait else "no_wait"
@@ -33,6 +33,6 @@ class SuperGossipSimulation(AsynchronousSimulation):
         @index - index of the sender
         """
         self.weights[index] = 0
-        peers: List[int] = random.choices(self.participants, weights=self.weights, k=self.k)
+        peers: List[int] = random.choices(self.participants, weights=self.weights, k=self.settings.k)
         self.weights[index] = 1 / (self.settings.participants - 1)
         return set(peers)
