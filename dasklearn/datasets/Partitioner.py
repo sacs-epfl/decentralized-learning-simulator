@@ -226,7 +226,7 @@ class DirichletDataPartitioner(DataPartitioner):
                     idx_end = idx_start + int(split_arr[cls_idx][i] * totaln)
                     cur_idx = idx[idx_start: idx_end]
                     idx_start = idx_end
-                if cur_idx == ():
+                if cur_idx.size == 0:
                     continue
                 if self.partitions[i] is None:
                     self.partitions[i] = cur_idx
