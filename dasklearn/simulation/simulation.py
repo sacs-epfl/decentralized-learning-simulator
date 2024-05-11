@@ -205,8 +205,6 @@ class Simulation:
         callback(event)
 
     def schedule(self, event: Event):
-        if event.time < self.current_time:
-            x = 0
         assert event.time >= self.current_time, "Cannot schedule event %s in the past!" % event
         bisect.insort(self.events, (event.time, event.index, event))
 

@@ -31,6 +31,8 @@ class ADPSGDSimulation(AsynchronousSimulation):
         super().initialize_clients()
         for client in self.clients:
             client.active = client.index in self.active_peers
+            if not client.active:
+                client.train_function = "compute_gradient"
 
     def get_send_set(self, index: int) -> Set[int]:
         """

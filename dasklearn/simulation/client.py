@@ -44,15 +44,13 @@ class BaseClient:
         """
         We started training. Schedule when the training has ended.
         """
-        task_name = Task.generate_name("train")
+        task_name = Task.generate_name(self.train_function)
         task = Task(task_name, self.train_function, data={
             "model": event.data["model"], "round": event.data["round"],
             "time": self.simulator.current_time, "peer": self.index})
         self.add_compute_task(task)
 
         train_time: int = self.get_train_time()
-        if train_time < 0:
-            x = 1
         finish_train_event = Event(self.simulator.current_time + train_time, self.index, FINISH_TRAIN,
                                    data={"model": task_name, "round": event.data["round"], "train_time": train_time})
         self.simulator.schedule(finish_train_event)
