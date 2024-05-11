@@ -213,7 +213,7 @@ class DirichletDataPartitioner(DataPartitioner):
         num_peers = len(sizes)
 
         self.partitions = [None] * num_peers
-        np.random.seed(43)
+        np.random.seed(seed)
         split_arr = np.random.dirichlet([alpha] * num_peers, num_classes)
         for cls_idx in range(num_classes):
             idx = np.where(np.asarray(data.targets) == cls_idx)[0]

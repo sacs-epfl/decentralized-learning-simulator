@@ -123,7 +123,7 @@ class CIFAR10(Dataset):
         self.uid = self.mapping.get_uid(self.rank, self.machine_id)
 
         if self.partitioner == "iid":
-            self.trainset = DataPartitioner(trainset, self.sizes).use(self.uid)
+            self.trainset = DataPartitioner(trainset, self.sizes, seed=self.seed).use(self.uid)
         elif self.partitioner == "shards":
             train_data = {key: [] for key in range(10)}
             for x, y in trainset:
@@ -131,9 +131,9 @@ class CIFAR10(Dataset):
             all_trainset = []
             for y, x in train_data.items():
                 all_trainset.extend([(a, y) for a in x])
-            self.trainset = KShardDataPartitioner(all_trainset, self.sizes, shards=self.shards).use(self.uid)
+            self.trainset = KShardDataPartitioner(all_trainset, self.sizes, shards=self.shards, seed=self.seed).use(self.uid)
         elif self.partitioner == "dirichlet":
-            self.trainset = DirichletDataPartitioner(trainset, self.sizes, alpha=self.alpha).use(self.uid)
+            self.trainset = DirichletDataPartitioner(trainset, self.sizes, alpha=self.alpha, seed=self.seed).use(self.uid)
         else:
             raise RuntimeError("Unknown partitioner %s for CIFAR10 dataset", self.partitioner)
 
@@ -162,7 +162,7 @@ class CIFAR10(Dataset):
         self.logger.info("Creating validation set (samples: %d)", val_len)
 
         self.validationset, self.trainset = torch.utils.data.random_split(
-            self.trainset, [val_len, dataset_len - val_len], torch.Generator().manual_seed(42),
+            self.trainset, [val_len, dataset_len - val_len], torch.Generator().manual_seed(self.seed+1),
         )
 
     def get_trainset(self, batch_size=1, shuffle=False):
