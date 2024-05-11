@@ -18,11 +18,11 @@ class SuperGossipSimulation(AsynchronousSimulation):
             settings.agg = "age"
         self.participants: List[int] = [i for i in range(self.settings.participants)]
         self.weights: List[float] = [1 / (self.settings.participants - 1) for _ in range(self.settings.participants)]
-        self.settings.k = math.floor(math.log2(self.settings.participants)) if self.settings.k <= 0 else self.settings.k
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
+        settings.k = math.floor(math.log2(settings.participants)) if settings.k <= 0 else settings.k
         wait_string: str = "wait" if settings.wait else "no_wait"
-        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%d_%s_%s_n%d_b%d_s%d_%s" %
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_k%d_%s_%s_n%d_b%d_s%d_%s" %
                                      ("super_gossip", settings.k, wait_string, settings.dataset, settings.participants,
                                       settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
         settings.data_dir = self.data_dir

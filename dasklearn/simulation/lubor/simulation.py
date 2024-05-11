@@ -22,13 +22,13 @@ class LuborSimulation(AsynchronousSimulation):
         self.speeds: Optional[List[float]] = None
         self.participants: List[int] = [i for i in range(self.settings.participants)]
         self.weights: List[float] = [1 / (self.settings.participants - 1) for _ in range(self.settings.participants)]
-        self.settings.k = math.floor(math.log2(self.settings.participants)) if self.settings.k <= 0 else self.settings.k
 
         self.register_event_callback(DISSEMINATE, "disseminate")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
+        settings.k = math.floor(math.log2(settings.participants)) if settings.k <= 0 else settings.k
         weights_string: str = "no_weights" if settings.no_weights else "weights"
-        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_%d_%s_%s_n%d_b%d_s%d_%s" %
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_k%d_%s_%s_n%d_b%d_s%d_%s" %
                                      (settings.algorithm, settings.agg, settings.k, weights_string,
                                       settings.dataset, settings.participants, settings.brokers, settings.seed,
                                       datetime.now().strftime("%Y%m%d%H%M")))
