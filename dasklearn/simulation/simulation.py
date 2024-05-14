@@ -5,6 +5,7 @@ import pickle
 import shutil
 import resource
 import psutil
+import random
 from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Tuple
@@ -168,8 +169,11 @@ class Simulation:
             assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
             self.current_time = event.time
             self.process_event(event)
-            self.memory_log.append((self.current_time, process.memory_info()))
+            # No need to track memory at every event
+            if random.random() < 0.1 / self.settings.participants:
+                self.memory_log.append((self.current_time, process.memory_info()))
 
+        self.memory_log.append((self.current_time, process.memory_info()))
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
         self.save_measurements()
 
