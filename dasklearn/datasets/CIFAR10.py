@@ -131,9 +131,10 @@ class CIFAR10(Dataset):
             all_trainset = []
             for y, x in train_data.items():
                 all_trainset.extend([(a, y) for a in x])
-            self.trainset = KShardDataPartitioner(all_trainset, self.sizes, shards=self.shards, seed=self.seed).use(self.uid)
+            self.trainset = KShardDataPartitioner(all_trainset, self.sizes, self.shards, self.seed).use(self.uid)
         elif self.partitioner == "dirichlet":
-            self.trainset = DirichletDataPartitioner(trainset, self.sizes, alpha=self.alpha, seed=self.seed).use(self.uid)
+            self.trainset = DirichletDataPartitioner(trainset, self.sizes, seed=self.seed, alpha=self.alpha,
+                                                     num_classes=NUM_CLASSES).use(self.uid)
         else:
             raise RuntimeError("Unknown partitioner %s for CIFAR10 dataset", self.partitioner)
 
