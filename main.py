@@ -48,7 +48,6 @@ def run():
         compute_graph_plot_size=args.compute_graph_plot_size,
         agg=args.agg,
         stop=args.stop,
-        queue_max_size=args.queue_max_size,
         wait=args.wait,
         el=args.el,
         k=args.k,

@@ -30,7 +30,6 @@ def get_args():
     parser.add_argument('--gl-period', type=int, default=10)
     parser.add_argument('--agg', type=str, default="default", choices=["default", "average", "age"])
     parser.add_argument('--stop', type=str, default="rounds", choices=["rounds", "duration"])
-    parser.add_argument('--queue-max-size', type=int, default=0)
     parser.add_argument('--wait', action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument('--el', type=str, default="oracle", choices=["oracle", "local"])
     parser.add_argument('--k', type=int, default=0)
