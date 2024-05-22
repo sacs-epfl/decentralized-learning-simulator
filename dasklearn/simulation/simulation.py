@@ -55,6 +55,8 @@ class Simulation:
         self.clients_to_brokers: Dict = {}
 
         self.communication: Optional[Communication] = None
+        self.n_sink_tasks: int = 0
+        self.sink_tasks_counter: int = 0
 
         self.memory_log: List[Tuple[int, psutil.pmem]] = []  # time, memory info
 
@@ -104,12 +106,10 @@ class Simulation:
                 self.logger.error("Task %s not in the DAG!", completed_task_name)
                 return
 
-            sink_tasks: List[Task] = self.workflow_dag.get_sink_tasks()
-            for task in sink_tasks:
-                if task.name == completed_task_name:
-                    task.done = True
+            self.workflow_dag.tasks[completed_task_name].done = True
+            self.sink_tasks_counter += 1
 
-            if all([task.done for task in sink_tasks]):
+            if self.sink_tasks_counter == self.n_sink_tasks:
                 self.logger.info("All sink tasks completed - shutting down brokers")
                 out_msg = pickle.dumps({"type": "shutdown"})
                 self.communication.send_message_to_all_brokers(out_msg)
@@ -193,6 +193,7 @@ class Simulation:
         # Sanity check the DAG
         self.workflow_dag.check_validity()
         self.plot_compute_graph()
+        self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())
 
         if not self.settings.dry_run:
             await self.solve_workflow_graph()
