@@ -19,6 +19,7 @@ class BaseClient:
         self.other_nodes_bws: Dict[bytes, int] = {}
 
         self.simulated_speed: Optional[float] = None
+        self.struggler = False
 
         self.latest_task: Optional[str] = None  # Keep track of the latest task
         self.train_function: str = "train"

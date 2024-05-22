@@ -53,6 +53,8 @@ def run():
         k=args.k,
         no_weights=args.no_weights,
         alpha=args.alpha,
+        stragglers_ratio=args.stragglers_ratio,
+        stragglers_proportion=args.stragglers_proportion,
     )
 
     if settings.algorithm == "fl":

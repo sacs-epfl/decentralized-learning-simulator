@@ -60,6 +60,8 @@ class SessionSettings:
     el: str = "oracle"  # oracle, local
     k: int = 0
     no_weights: bool = False
+    stragglers_proportion: float = 0.0  # value between 0=none and 1=all
+    stragglers_ratio: float = 0.1  # value between 0=no_action and 1=no_struggle
 
     def save_to_file(self, path: str) -> None:
         with open(path, "w") as file:
@@ -97,3 +99,5 @@ class SessionSettings:
             file.write("el,%s\n" % self.el)
             file.write("k,%d\n" % self.k)
             file.write("no_weights,%s\n" % self.no_weights)
+            file.write("stragglers,%f\n" % self.stragglers_proportion)
+            file.write("stragglers_ratio,%f\n" % self.stragglers_ratio)
