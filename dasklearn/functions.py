@@ -112,7 +112,7 @@ def test(settings: SessionSettings, params: Dict):
     if not evaluator:
         evaluator = ModelEvaluator(data_dir, settings)
     accuracy, loss = evaluator.evaluate_accuracy(model, device_name=settings.torch_device_name)
-    with open(os.path.join(settings.data_dir, "accuracies.csv"), "a") as accuracies_file:
+    with open(os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv"), "a") as accuracies_file:
         accuracies_file.write("%d,%d,%f,%f,%f\n" % (peer_id, round_nr, cur_time, accuracy, loss))
     logger.info("Model accuracy: %f, loss: %f", accuracy, loss)
 

@@ -114,6 +114,7 @@ class Simulation:
                 out_msg = pickle.dumps({"type": "shutdown"})
                 self.communication.send_message_to_all_brokers(out_msg)
                 self.logger.info("Plotting accuracies")
+                self.merge_accuracies_files()
                 self.plot_loss()
                 asyncio.get_event_loop().call_later(2, asyncio.get_event_loop().stop)
         elif msg["type"] == "shutdown":
@@ -291,6 +292,16 @@ class Simulation:
                                    label=f'{node}') for node, color in color_key.items()]
         plt.legend(handles=dummy_points)
         plt.savefig(os.path.join(self.settings.data_dir, "compute_graph.png"))
+
+    def merge_accuracies_files(self):
+        paths = [os.path.join(self.settings.data_dir, "accuracies_" + str(i) + ".csv")
+                 for i in range(self.settings.participants)]
+
+        with open(os.path.join(self.settings.data_dir, "accuracies.csv"), "w") as output_file:
+            for path in paths:
+                with open(path, "r") as input_file:
+                    output_file.write(input_file.read())
+                os.remove(path)
 
     def save_measurements(self) -> None:
         # Write time utilization
