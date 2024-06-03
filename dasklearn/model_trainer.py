@@ -61,7 +61,7 @@ class ModelTrainer:
         avg_loss = total_loss / len(validation_set)
         return float(avg_loss)
 
-    def train(self, model, gradient_only: bool = False, device_name: str = "cpu") -> Dict:
+    def train(self, model, local_steps: int, gradient_only: bool = False, device_name: str = "cpu") -> Dict:
         """
         Train the model on a batch. Return an integer that indicates how many local steps we have done.
         """
@@ -74,7 +74,6 @@ class ModelTrainer:
         if self.settings.compute_validation_loss_global_model and len(self.dataset.validationset) > 0:
             validation_loss_global_model = self.get_validation_loss(model)
 
-        local_steps: int = self.settings.learning.local_steps
         device = torch.device(device_name)
         model = model.to(device)
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)

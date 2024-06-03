@@ -26,6 +26,7 @@ def train(settings: SessionSettings, params: Dict):
     peer_id = params["peer"]
     compute_gradient = params["compute_gradient"] if "compute_gradient" in params else False
     gradient_model = params["gradient_model"] if "gradient_model" in params else None
+    local_steps = params["local_steps"] if "local_steps" in params else settings.learning.local_steps
 
     with lock:
         if model_managers is None:
@@ -41,7 +42,7 @@ def train(settings: SessionSettings, params: Dict):
     if gradient_model:
         model_managers[peer_id].gradient_update(gradient_model)
     else:
-        train_info = model_managers[peer_id].train(compute_gradient)
+        train_info = model_managers[peer_id].train(local_steps, compute_gradient)
         if train_info["validation_loss_global"] is not None:
             with open(os.path.join(settings.data_dir, "validation_losses.csv"), "a") as loss_file:
                 loss_file.write("%d,%d,%f,%f\n" % (peer_id, round_nr, cur_time, train_info["validation_loss_global"]))
