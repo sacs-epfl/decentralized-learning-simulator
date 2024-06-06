@@ -32,6 +32,7 @@ class ModelTrainer:
         else:
             self.train_dir = os.path.join(data_dir, "per_user_data", "train")
         self.dataset: Optional[Dataset] = None
+        self.optimizer: Optional[SGDOptimizer] = None
 
     def get_validation_loss(self, model) -> float:
         validation_set = self.dataset.get_validationset()
@@ -77,6 +78,9 @@ class ModelTrainer:
         device = torch.device(device_name)
         model = model.to(device)
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
+        if self.optimizer is not None:
+            optimizer.optimizer.load_state_dict(self.optimizer.optimizer.state_dict())
+        self.optimizer = optimizer
 
         self.logger.info("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
                          local_steps, device_name, self.settings.learning.batch_size,
