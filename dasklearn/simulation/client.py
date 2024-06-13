@@ -26,6 +26,7 @@ class BaseClient:
         self.compute_time: int = 0  # Total time spent training
         self.aggregations: List[List[Tuple[int, str, int]]] = []  # Log of aggregations (client, model, age)
         self.incoming_counter: Dict[int, int] = Counter()
+        self.round_durations: Dict[int, int] = {}  # Duration per round
 
     def client_log(self, msg: str):
         self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)

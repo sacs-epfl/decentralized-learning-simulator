@@ -136,6 +136,10 @@ class DPSGDClient(BaseClient):
             round_info.model = test_task_name
 
         self.logger.info("Client %d finished round %d" % (self.index, round_nr))
+        if round_nr == 1:
+            self.round_durations[round_nr] = self.simulator.current_time
+        else:
+            self.round_durations[round_nr] = self.simulator.current_time - self.round_durations[round_nr - 1]
         self.round_info.pop(round_nr)
 
         next_round_nr: int = round_nr + 1

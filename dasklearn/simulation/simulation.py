@@ -146,6 +146,12 @@ class Simulation:
                 client.bw_scheduler.bw_limit = bw_limit
                 nodes_bws[ind] = bw_limit
 
+            # Log the bandwidth capabilities of individual nodes
+            with open(os.path.join(self.settings.data_dir, "bandwidth.csv"), "w") as out_file:
+                out_file.write("client,bandwidth\n")
+                for node, bw in nodes_bws.items():
+                    out_file.write("%d,%d\n" % (node, bw))
+
             for client in self.clients:
                 client.other_nodes_bws = nodes_bws
         else:
@@ -286,3 +292,9 @@ class Simulation:
             for client in self.clients:
                 for sender, count in client.incoming_counter.items():
                     file.write("%d,%d,%d\n" % (client.index, sender, count))
+        # Write durations per round
+        with open(os.path.join(self.data_dir, "round_duration.csv"), "w") as file:
+            file.write("client,round,time\n")
+            for client in self.clients:
+                for round_nr, round_time in client.round_durations.items():
+                    file.write("%d,%d,%d\n" % (client.index, round_nr, round_time))
