@@ -19,13 +19,16 @@ class BaseClient:
         self.other_nodes_bws: Dict[bytes, int] = {}
 
         self.simulated_speed: Optional[float] = None
+        self.struggler = False
 
         self.latest_task: Optional[str] = None  # Keep track of the latest task
         self.train_function: str = "train"
 
         self.compute_time: int = 0  # Total time spent training
-        self.aggregations: List[List[Tuple[int, str, int]]] = []  # Log of aggregations (client, model, age)
+        # Log of aggregations (client, model, age, opportunity)
+        self.aggregations: List[List[Tuple[int, str, int, Dict[int, float]]]] = []
         self.incoming_counter: Dict[int, int] = Counter()
+        self.opportunity: Dict[int, float] = Counter()  # Opportunity of clients to contribute to the model
 
     def client_log(self, msg: str):
         self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
@@ -42,7 +45,7 @@ class BaseClient:
         """
         We started training. Schedule when the training has ended.
         """
-        task_name = Task.generate_name("train")
+        task_name = Task.generate_name(self.train_function)
         task = Task(task_name, self.train_function, data={
             "model": event.data["model"], "round": event.data["round"],
             "time": self.simulator.current_time, "peer": self.index})
@@ -82,6 +85,15 @@ class BaseClient:
         task = Task(task_name, "aggregate", data=data)
         self.add_compute_task(task)
         return task_name
+
+    def merge_opportunity(self, opportunities: List[Dict[int, float]], weights: Optional[List[float]] = None) -> None:
+        result_opportunity: Dict[int, float] = Counter()
+        if weights is None:
+            weights = [1 / len(opportunities)] * len(opportunities)
+        for cont_dict, weight in zip(opportunities, weights):
+            for client, opportunity in cont_dict.items():
+                result_opportunity[client] += (opportunity * weight)
+        self.opportunity = result_opportunity
 
     def add_compute_task(self, task: Task):
         self.simulator.workflow_dag.tasks[task.name] = task

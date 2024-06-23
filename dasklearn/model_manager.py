@@ -51,8 +51,8 @@ class ModelManager:
         models = [model for model in self.incoming_trained_models.values()]
         return self.get_aggregation_method().aggregate(models, weights=weights)
 
-    def train(self, gradient_only: bool = False) -> Dict:
-        return self.model_trainer.train(self.model, gradient_only, device_name=self.settings.torch_device_name)
+    def train(self, local_steps: int, gradient_only: bool = False) -> Dict:
+        return self.model_trainer.train(self.model, local_steps, gradient_only, self.settings.torch_device_name)
 
     def gradient_update(self, gradient_model):
         self.model_trainer.gradient_update(self.model, gradient_model)

@@ -32,5 +32,8 @@ def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
     elif dataset == "femnist":
         from dasklearn.models.femnist import CNN
         return CNN()
+    elif dataset == "movielens":
+        from dasklearn.models.MovieLens import MatrixFactorization
+        return MatrixFactorization()
     else:
         raise RuntimeError("Unknown dataset %s" % dataset)

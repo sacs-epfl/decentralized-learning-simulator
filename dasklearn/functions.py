@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import threading
 from typing import Dict
 
 import torch
@@ -12,26 +13,36 @@ from dasklearn.session_settings import SessionSettings
 
 
 logger = logging.getLogger(__name__)
+model_managers = None
 evaluator = None
+lock = threading.Lock()
 
 
 def train(settings: SessionSettings, params: Dict):
+    global model_managers
     model = params["model"]
     round_nr = params["round"]
     cur_time = params["time"]
     peer_id = params["peer"]
     compute_gradient = params["compute_gradient"] if "compute_gradient" in params else False
     gradient_model = params["gradient_model"] if "gradient_model" in params else None
+    local_steps = params["local_steps"] if "local_steps" in params else settings.learning.local_steps
 
+    with lock:
+        if model_managers is None:
+            model_managers = [None] * settings.participants
     if not model:
         torch.manual_seed(settings.seed)
         model = create_model(settings.dataset, architecture=settings.model)
 
-    model_manager = ModelManager(model, settings, peer_id)
-    if gradient_model:
-        model_manager.gradient_update(gradient_model)
+    if model_managers[peer_id] is None:
+        model_managers[peer_id] = ModelManager(model, settings, peer_id)
     else:
-        train_info = model_manager.train(compute_gradient)
+        model_managers[peer_id].model = model
+    if gradient_model:
+        model_managers[peer_id].gradient_update(gradient_model)
+    else:
+        train_info = model_managers[peer_id].train(local_steps, compute_gradient)
         if train_info["validation_loss_global"] is not None:
             with open(os.path.join(settings.data_dir, "validation_losses.csv"), "a") as loss_file:
                 loss_file.write("%d,%d,%f,%f\n" % (peer_id, round_nr, cur_time, train_info["validation_loss_global"]))
@@ -46,8 +57,7 @@ def train(settings: SessionSettings, params: Dict):
     else:
         detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
 
-    del model_manager.model
-    del model_manager
+    del model_managers[peer_id].model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
@@ -103,7 +113,7 @@ def test(settings: SessionSettings, params: Dict):
     if not evaluator:
         evaluator = ModelEvaluator(data_dir, settings)
     accuracy, loss = evaluator.evaluate_accuracy(model, device_name=settings.torch_device_name)
-    with open(os.path.join(settings.data_dir, "accuracies.csv"), "a") as accuracies_file:
+    with open(os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv"), "a") as accuracies_file:
         accuracies_file.write("%d,%d,%f,%f,%f\n" % (peer_id, round_nr, cur_time, accuracy, loss))
     logger.info("Model accuracy: %f, loss: %f", accuracy, loss)
 

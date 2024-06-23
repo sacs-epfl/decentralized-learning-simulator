@@ -11,7 +11,8 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--local-steps', type=int, default=5)
 
-    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist"])
+    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist", "movielens"])
+    parser.add_argument('--partitioner', type=str, default="iid", choices=["iid", "shards", "dirichlet"])
     parser.add_argument('--dataset-base-path', type=str, default=None)
     parser.add_argument('--peers', type=int, default=2)
     parser.add_argument('--rounds', type=int, default=1)
@@ -20,6 +21,9 @@ def get_args():
     parser.add_argument('--log-level', type=str, default="INFO")
     parser.add_argument('--torch-threads', type=int, default=4)
     parser.add_argument('--dry-run', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--alpha', type=float, default=0.1)
+    parser.add_argument('--stragglers-proportion', type=float, default=0.0)
+    parser.add_argument('--stragglers-ratio', type=float, default=0.1)
 
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
@@ -29,9 +33,10 @@ def get_args():
     parser.add_argument('--gl-period', type=int, default=10)
     parser.add_argument('--agg', type=str, default="default", choices=["default", "average", "age"])
     parser.add_argument('--stop', type=str, default="rounds", choices=["rounds", "duration"])
-    parser.add_argument('--queue-max-size', type=int, default=0)
     parser.add_argument('--wait', action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument('--el', type=str, default="oracle", choices=["oracle", "local"])
+    parser.add_argument('--k', type=int, default=0)
+    parser.add_argument('--no_weights', action=argparse.BooleanOptionalAction, default=False)
 
     # Traces
     parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")

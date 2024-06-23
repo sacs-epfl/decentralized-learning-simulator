@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import Dict, List, Set
 
 from torch import nn
@@ -103,6 +104,7 @@ class WorkflowDAG:
             "test": "green",
         }
         x_coordinate = {}
+        x_last = Counter()
         # y coordinate is the peer ID
 
         task_types = set()
@@ -117,7 +119,9 @@ class WorkflowDAG:
                 graph.add_node(task.name)
             else:
                 # Position the node after its inputs
-                x_coordinate[task.name] = max(map(lambda x: x_coordinate[x.name], task.inputs)) + 1
+                max_input_pos: int = max(map(lambda x: x_coordinate[x.name], task.inputs))
+                x_coordinate[task.name] = max(max_input_pos, x_last[task.data["peer"]]) + 1
+                x_last[task.data["peer"]] = x_coordinate[task.name]
                 # Add edges to the task's inputs
                 for inp in task.inputs:
                     graph.add_edge(task.name, inp.name)

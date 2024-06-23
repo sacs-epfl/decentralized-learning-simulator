@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import pickle
-import socket
+import subprocess
 from typing import Callable, Dict
 
 import zmq
@@ -55,8 +55,7 @@ class Communication:
         self.coordinator_connection.setsockopt(zmq.IDENTITY, self.identity.encode())
         self.coordinator_connection.connect(coordinator_address)
 
-        hostname = socket.gethostname()
-        ip = socket.gethostbyname(hostname)
+        ip = subprocess.check_output(['hostname', '-I']).decode('utf-8').strip().split()[0]
         msg = pickle.dumps({"type": "hello", "address": "tcp://%s:%d" % (ip, self.listen_port)})
         self.send_message_to_coordinator(msg)
 

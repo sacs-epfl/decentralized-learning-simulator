@@ -15,5 +15,9 @@ def create_dataset(settings: SessionSettings, participant_index: int = 0, train_
     elif settings.dataset == "femnist":
         from dasklearn.datasets.femnist import Femnist
         return Femnist(participant_index, 0, mapping, train_dir=train_dir, test_dir=test_dir)
+    elif settings.dataset == "movielens":
+        from dasklearn.datasets.MovieLens import MovieLens
+        return MovieLens(participant_index, 0, mapping, train_dir=train_dir, test_dir=test_dir,
+                         random_seed=settings.seed)
     else:
         raise RuntimeError("Unknown dataset %s" % settings.dataset)

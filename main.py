@@ -32,7 +32,7 @@ def run():
         work_dir="",
         learning=learning_settings,
         participants=args.peers,
-        partitioner="iid",
+        partitioner=args.partitioner,
         model=args.model,
         test_interval=args.test_interval,
         brokers=args.brokers,
@@ -48,9 +48,13 @@ def run():
         compute_graph_plot_size=args.compute_graph_plot_size,
         agg=args.agg,
         stop=args.stop,
-        queue_max_size=args.queue_max_size,
         wait=args.wait,
         el=args.el,
+        k=args.k,
+        no_weights=args.no_weights,
+        alpha=args.alpha,
+        stragglers_ratio=args.stragglers_ratio,
+        stragglers_proportion=args.stragglers_proportion,
     )
 
     if settings.algorithm == "fl":
@@ -65,7 +69,7 @@ def run():
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation
         simulation = GossipSimulation(settings)
-    elif settings.algorithm == "super_gossip":
+    elif settings.algorithm == "super-gossip":
         from dasklearn.simulation.super_gossip.simulation import SuperGossipSimulation
         simulation = SuperGossipSimulation(settings)
     elif settings.algorithm == "adpsgd":
@@ -74,6 +78,9 @@ def run():
     elif settings.algorithm == "epidemic":
         from dasklearn.simulation.epidemic.simulation import EpidemicSimulation
         simulation = EpidemicSimulation(settings)
+    elif settings.algorithm == "lubor":
+        from dasklearn.simulation.lubor.simulation import LuborSimulation
+        simulation = LuborSimulation(settings)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
     ensure_future(simulation.run())

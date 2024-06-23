@@ -8,3 +8,5 @@ dataclasses-json~=0.6.4
 matplotlib~=3.8.3
 seaborn~=0.13.2
 pandas~=1.5.2
+pytest~=8.1.1
+requests~=2.31.0

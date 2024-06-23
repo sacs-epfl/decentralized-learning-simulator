@@ -3,10 +3,14 @@ import bisect
 import os
 import pickle
 import shutil
+import resource
+import psutil
+import random
 from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Tuple
 from datetime import datetime
+from heapq import nlargest
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -51,6 +55,10 @@ class Simulation:
         self.clients_to_brokers: Dict = {}
 
         self.communication: Optional[Communication] = None
+        self.n_sink_tasks: int = 0
+        self.sink_tasks_counter: int = 0
+
+        self.memory_log: List[Tuple[int, psutil.pmem]] = []  # time, memory info
 
         self.register_event_callback(INIT_CLIENT, "init_client")
         self.register_event_callback(START_TRAIN, "start_train")
@@ -98,16 +106,15 @@ class Simulation:
                 self.logger.error("Task %s not in the DAG!", completed_task_name)
                 return
 
-            sink_tasks: List[Task] = self.workflow_dag.get_sink_tasks()
-            for task in sink_tasks:
-                if task.name == completed_task_name:
-                    task.done = True
+            self.workflow_dag.tasks[completed_task_name].done = True
+            self.sink_tasks_counter += 1
 
-            if all([task.done for task in sink_tasks]):
+            if self.sink_tasks_counter == self.n_sink_tasks:
                 self.logger.info("All sink tasks completed - shutting down brokers")
                 out_msg = pickle.dumps({"type": "shutdown"})
                 self.communication.send_message_to_all_brokers(out_msg)
                 self.logger.info("Plotting accuracies")
+                self.merge_accuracies_files()
                 self.plot_loss()
                 asyncio.get_event_loop().call_later(2, asyncio.get_event_loop().stop)
         elif msg["type"] == "shutdown":
@@ -126,6 +133,7 @@ class Simulation:
             setup_logging(self.data_dir, "coordinator.log")
             self.communication = Communication("coordinator", self.settings.port, self.on_message)
             self.communication.start()
+            self.settings.save_to_file(os.path.join(self.data_dir, "settings.csv"))
 
         # Initialize the clients
         self.initialize_clients()
@@ -152,22 +160,41 @@ class Simulation:
             for client in self.clients:
                 client.bw_scheduler.bw_limit = 100000000000
 
+        # Apply strugglers
+        n_strugglers: int = int(self.settings.participants * self.settings.stragglers_proportion + 0.0000001)
+        strugglers = nlargest(n_strugglers, self.clients, key=lambda x: x.simulated_speed)
+        for client in strugglers:
+            client.struggler = True
+            if self.settings.stragglers_ratio == 0.0:
+                # arbitrary large int
+                client.simulated_speed = 1000000000000
+            else:
+                client.simulated_speed /= self.settings.stragglers_ratio
+
         # Determine the size of the model, which will be used to determine the duration of model transfers
         self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
         self.logger.info("Determine model size: %d bytes", self.model_size)
+
+        process = psutil.Process()
+        self.memory_log.append((self.current_time, process.memory_info()))
 
         while self.events:
             _, _, event = self.events.pop(0)
             assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
             self.current_time = event.time
             self.process_event(event)
+            # No need to track memory at every event
+            if random.random() < 0.1 / self.settings.participants:
+                self.memory_log.append((self.current_time, process.memory_info()))
 
+        self.memory_log.append((self.current_time, process.memory_info()))
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
         self.save_measurements()
 
         # Sanity check the DAG
         self.workflow_dag.check_validity()
         self.plot_compute_graph()
+        self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())
 
         if not self.settings.dry_run:
             await self.solve_workflow_graph()
@@ -266,6 +293,16 @@ class Simulation:
         plt.legend(handles=dummy_points)
         plt.savefig(os.path.join(self.settings.data_dir, "compute_graph.png"))
 
+    def merge_accuracies_files(self):
+        paths = [os.path.join(self.settings.data_dir, "accuracies_" + str(i) + ".csv")
+                 for i in range(self.settings.participants)]
+
+        with open(os.path.join(self.settings.data_dir, "accuracies.csv"), "w") as output_file:
+            for path in paths:
+                with open(path, "r") as input_file:
+                    output_file.write(input_file.read())
+                os.remove(path)
+
     def save_measurements(self) -> None:
         # Write time utilization
         with open(os.path.join(self.data_dir, "time_utilisation.csv"), "w") as file:
@@ -286,3 +323,32 @@ class Simulation:
             for client in self.clients:
                 for sender, count in client.incoming_counter.items():
                     file.write("%d,%d,%d\n" % (client.index, sender, count))
+        # Write opportunity log
+        with open(os.path.join(self.data_dir, "opportunities.csv"), "w") as file:
+            file.write("client,contributing_client,value\n")
+            for client in self.clients:
+                total_opportunity: int = sum(client.opportunity.values())
+                for contributor, value in client.opportunity.items():
+                    file.write("%d,%d,%f\n" % (client.index, contributor, value / total_opportunity))
+        # Write client speed log
+        with open(os.path.join(self.data_dir, "speeds.csv"), "w") as file:
+            file.write("client,training_time\n")
+            for client in self.clients:
+                file.write("%d,%d\n" % (client.index, client.simulated_speed))
+        # Write max memory log
+        with open(os.path.join(self.data_dir, "max_memory.csv"), "w") as file:
+            file.write("max_memory_usage_kb\n")
+            file.write("%d\n" % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+        # Write memory log
+        with open(os.path.join(self.data_dir, "memory.csv"), "w") as file:
+            # In bytes
+            file.write("time,physical,virtual,shared\n")
+            for time, mem_info in self.memory_log:
+                shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
+                file.write("%d,%d,%d,%d\n" % (time, mem_info.rss, mem_info.vms, shared_mem))
+        # Write strugglers log
+        if self.settings.stragglers_ratio > 0.0:
+            with open(os.path.join(self.data_dir, "strugglers.csv"), "w") as file:
+                file.write("client,struggler\n")
+                for client in self.clients:
+                    file.write("%d,%s\n" % (client.index, client.struggler))
