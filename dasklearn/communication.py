@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import pickle
+import platform
 import subprocess
 from typing import Callable, Dict
 
@@ -49,14 +50,20 @@ class Communication:
     def start(self):
         self.setup_server()
 
+    def get_ip_address(self):
+        if platform.system() == "Darwin":  # Check if the OS is macOS
+            result = subprocess.check_output("ifconfig | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}'", shell=True)
+        else:  # Assume Linux for any other OS
+            result = subprocess.check_output(['hostname', '-I'])
+        return result.decode('utf-8').strip().split()[0]
+
     def connect_to_coordinator(self, coordinator_address: str):
         # Connect to the coordinator
         self.coordinator_connection = ctx.socket(zmq.DEALER)
         self.coordinator_connection.setsockopt(zmq.IDENTITY, self.identity.encode())
         self.coordinator_connection.connect(coordinator_address)
 
-        ip = subprocess.check_output(['hostname', '-I']).decode('utf-8').strip().split()[0]
-        msg = pickle.dumps({"type": "hello", "address": "tcp://%s:%d" % (ip, self.listen_port)})
+        msg = pickle.dumps({"type": "hello", "address": "tcp://%s:%d" % (self.get_ip_address(), self.listen_port)})
         self.send_message_to_coordinator(msg)
 
     def connect_to(self, identity: str, address: str):
