@@ -181,11 +181,15 @@ class Simulation:
         model = create_model(self.settings.dataset, architecture=self.settings.model, pretrained=self.settings.finetune)
         if self.settings.finetune:
             adapter = LORALayer(model.fc)
+            model.fc = adapter
             self.model_size = len(serialize_model(adapter))
             self.logger.info("Determine adapter size: %d bytes", self.model_size)
         else:
             self.model_size = len(serialize_model(model))
             self.logger.info("Determine model size: %d bytes", self.model_size)
+
+        total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        self.logger.info(f'Total number of trainable parameters: {total_params}')
 
         process = psutil.Process()
         self.memory_log.append((self.current_time, process.memory_info()))

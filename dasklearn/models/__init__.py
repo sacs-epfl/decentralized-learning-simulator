@@ -36,6 +36,8 @@ def create_model(dataset: str, architecture: Optional[str] = None, pretrained: b
             if pretrained:
                 from torchvision.models.resnet import ResNet18_Weights
                 model = tormodels.resnet18(weights=ResNet18_Weights.DEFAULT)
+                for param in model.parameters():
+                    param.requires_grad = False
                 model.fc = torch.nn.Linear(model.fc.in_features, 10)
                 return model
             else:
