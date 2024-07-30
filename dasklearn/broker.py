@@ -10,6 +10,8 @@ import random
 from asyncio.subprocess import Process
 from typing import List, Optional, Set, Tuple
 
+import setproctitle
+
 from dasklearn.communication import Communication
 from dasklearn.functions import *
 from dasklearn.tasks.dag import WorkflowDAG
@@ -21,6 +23,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def worker_proc(shared_queue, result_queue, index, settings):
+    setproctitle.setproctitle("[Worker %d]" % index)
     torch.set_num_threads(settings.torch_threads)
     worker = Worker(shared_queue, result_queue, index, settings)
     worker.start()
