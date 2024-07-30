@@ -37,8 +37,7 @@ class DPSGDClient(BaseClient):
     def start_round(self, event: Event):
         round_nr: int = event.data["round"]
         model: str = event.data["model"]
-        incoming_models: Dict[int, Tuple[str, List[float]]] = event.data["incoming_models"]\
-            if "incoming_models" in event.data else {}
+        incoming_models: Dict[int, Tuple[str, List[float]]] = event.data["incoming_models"] if "incoming_models" in event.data else {}
         # Round has already started
         if round_nr in self.round_info:
             self.round_info[round_nr].incoming_models.update(incoming_models)

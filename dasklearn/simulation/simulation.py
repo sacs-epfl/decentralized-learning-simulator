@@ -20,6 +20,7 @@ import seaborn as sns
 
 from dasklearn.communication import Communication
 from dasklearn.models import create_model, serialize_model
+from dasklearn.models.lora import LORALayer
 from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.events import *
 
@@ -68,9 +69,10 @@ class Simulation:
         self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
-        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
+        self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s%s" %
                                      (settings.algorithm, settings.dataset, settings.participants,
-                                      settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
+                                      settings.brokers, settings.seed, "ft_" if settings.finetune else "",
+                                      datetime.now().strftime("%Y%m%d%H%M")))
         settings.data_dir = self.data_dir
 
     def setup_directories(self):
@@ -176,8 +178,14 @@ class Simulation:
                 client.simulated_speed /= self.settings.stragglers_ratio
 
         # Determine the size of the model, which will be used to determine the duration of model transfers
-        self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
-        self.logger.info("Determine model size: %d bytes", self.model_size)
+        model = create_model(self.settings.dataset, architecture=self.settings.model, pretrained=self.settings.finetune)
+        if self.settings.finetune:
+            adapter = LORALayer(model.fc)
+            self.model_size = len(serialize_model(adapter))
+            self.logger.info("Determine adapter size: %d bytes", self.model_size)
+        else:
+            self.model_size = len(serialize_model(model))
+            self.logger.info("Determine model size: %d bytes", self.model_size)
 
         process = psutil.Process()
         self.memory_log.append((self.current_time, process.memory_info()))

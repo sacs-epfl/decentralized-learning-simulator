@@ -24,6 +24,7 @@ def get_args():
     parser.add_argument('--alpha', type=float, default=0.1)
     parser.add_argument('--stragglers-proportion', type=float, default=0.0)
     parser.add_argument('--stragglers-ratio', type=float, default=0.1)
+    parser.add_argument('--finetune', action=argparse.BooleanOptionalAction)
 
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)

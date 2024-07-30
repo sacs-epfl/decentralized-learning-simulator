@@ -55,6 +55,7 @@ def run():
         alpha=args.alpha,
         stragglers_ratio=args.stragglers_ratio,
         stragglers_proportion=args.stragglers_proportion,
+        finetune=args.finetune,
     )
 
     if settings.algorithm == "fl":

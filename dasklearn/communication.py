@@ -43,7 +43,7 @@ class Communication:
         self.listen_socket = ctx.socket(zmq.ROUTER)
         self.listen_socket.setsockopt(zmq.IDENTITY, self.identity.encode())
         self.listen_socket.bind("tcp://*:%d" % self.listen_port)
-        self.logger.info("%s listening on port %d", "Worker" if self.is_broker else "Coordinator", self.listen_port)
+        self.logger.info("%s listening on port %d", "Broker" if self.is_broker else "Coordinator", self.listen_port)
         self.receive_msg_task = asyncio.create_task(self.receive_messages())
 
     def start(self):

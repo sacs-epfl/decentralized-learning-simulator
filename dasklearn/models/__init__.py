@@ -4,6 +4,7 @@ from typing import Optional
 import torch
 
 from dasklearn.models.Model import Model
+from dasklearn.models.lora import LORALayer
 
 
 def serialize_model(model: torch.nn.Module) -> bytes:
@@ -16,7 +17,13 @@ def unserialize_model(serialized_model: bytes, dataset: str, architecture: Optio
     return model
 
 
-def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
+def unserialize_adapter(serialized_adapter: bytes, adapted_layer) -> LORALayer:
+    lora_layer = LORALayer(adapted_layer)
+    lora_layer.load_state_dict(pickle.loads(serialized_adapter))
+    return lora_layer
+
+
+def create_model(dataset: str, architecture: Optional[str] = None, pretrained: bool = False) -> Model:
     if dataset == "cifar10":
         if not architecture or architecture == "lenet":
             from dasklearn.models.cifar10 import LeNet
@@ -26,7 +33,13 @@ def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
             return GNLeNet(input_channel=3, output=10, model_input=(32, 32))
         elif architecture == "resnet18":
             import torchvision.models as tormodels
-            return tormodels.__dict__["resnet18"](num_classes=10)
+            if pretrained:
+                from torchvision.models.resnet import ResNet18_Weights
+                model = tormodels.resnet18(weights=ResNet18_Weights.DEFAULT)
+                model.fc = torch.nn.Linear(model.fc.in_features, 10)
+                return model
+            else:
+                return tormodels.resnet18(num_classes=10)
         else:
             raise RuntimeError("Unknown model architecture for CIFAR10: %s" % architecture)
     elif dataset == "femnist":
