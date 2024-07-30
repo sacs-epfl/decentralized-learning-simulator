@@ -143,7 +143,7 @@ class DPSGDClient(BaseClient):
             self.add_compute_task(task)
             round_info.model = test_task_name
 
-        self.logger.info("Client %d finished round %d" % (self.index, round_nr))
+        self.logger.debug("Client %d finished round %d" % (self.index, round_nr))
         self.round_info.pop(round_nr)
 
         next_round_nr: int = round_nr + 1
