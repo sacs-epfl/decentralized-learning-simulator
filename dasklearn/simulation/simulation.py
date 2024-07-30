@@ -6,6 +6,7 @@ import shutil
 import resource
 import psutil
 import random
+import time
 from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Tuple
@@ -48,6 +49,7 @@ class Simulation:
         self.model_size: int = 0
         self.current_time: int = 0
         self.brokers_available_future: Future = Future()
+        self.simulation_start_time: float = 0
 
         self.clients: List[BaseClient] = []
         self.broker_addresses: Dict[str, str] = {}
@@ -116,6 +118,7 @@ class Simulation:
                 self.logger.info("Plotting accuracies")
                 self.merge_accuracies_files()
                 self.plot_loss()
+                self.logger.info("Simulation took %.2f s.", time.time() - self.simulation_start_time)
                 asyncio.get_event_loop().call_later(2, asyncio.get_event_loop().stop)
         elif msg["type"] == "shutdown":
             self.logger.info("Received shutdown signal - stopping")
@@ -128,6 +131,7 @@ class Simulation:
             self.schedule(init_client_event)
 
     async def run(self):
+        self.simulation_start_time: float = time.time()
         self.setup_directories()
         if not self.settings.unit_testing:
             setup_logging(self.data_dir, "coordinator.log")
@@ -299,9 +303,10 @@ class Simulation:
 
         with open(os.path.join(self.settings.data_dir, "accuracies.csv"), "w") as output_file:
             for path in paths:
-                with open(path, "r") as input_file:
-                    output_file.write(input_file.read())
-                os.remove(path)
+                if os.path.exists(path):
+                    with open(path, "r") as input_file:
+                        output_file.write(input_file.read())
+                    os.remove(path)
 
     def save_measurements(self) -> None:
         # Write time utilization
