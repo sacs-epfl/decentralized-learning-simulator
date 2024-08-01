@@ -62,6 +62,7 @@ class SessionSettings:
     no_weights: bool = False
     stragglers_proportion: float = 0.0  # value between 0=none and 1=all
     stragglers_ratio: float = 0.1  # value between 0=no_action and 1=no_struggle
+    sample_size: int = 0
 
     def save_to_file(self, path: str) -> None:
         with open(path, "w") as file:
