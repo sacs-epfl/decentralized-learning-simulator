@@ -10,9 +10,9 @@ from dasklearn.simulation.subset.client import SubsetDLClient
 class SubsetDLSimulation(Simulation):
     CLIENT_CLASS = SubsetDLClient
 
-    def __init__(self, settings: SessionSettings, sample_size: int):
+    def __init__(self, settings: SessionSettings):
         super().__init__(settings)
-        self.sample_size: int = sample_size
+        self.sample_size: int = settings.sample_size
         self.clients_ready_for_round: Dict[int, List[Tuple[int, Dict]]] = defaultdict(lambda: [])
         self.register_event_callback(START_ROUND, "start_round")
         self.register_event_callback(FINISH_TRAIN, "finish_train")

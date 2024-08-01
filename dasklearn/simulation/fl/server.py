@@ -1,3 +1,4 @@
+from random import sample
 from typing import List
 
 from dasklearn.simulation.client import BaseClient
@@ -19,18 +20,26 @@ class FLServer(BaseClient):
         start_next_round_event = Event(self.simulator.current_time, self.index, START_ROUND)
         self.simulator.schedule(start_next_round_event)
 
+    def sample_clients(self) -> List[int]:
+        sample_size: int = self.simulator.settings.sample_size
+        if sample_size == 0:
+            return list(range(self.simulator.settings.participants))
+
+        clients: List[int] = list(range(self.simulator.settings.participants))
+        return sample(clients, min(self.simulator.settings.participants, sample_size))
+
     def start_next_round(self, event: Event):
         self.round += 1
         self.incoming_models = []
         self.client_log("Server initializing round %d" % self.round)
 
         # Send the model to all clients
-        for client_index in range(self.simulator.settings.participants):
+        for client_index in self.sample_clients():
             self.send_model(client_index, self.global_model, metadata={"round": self.round})
 
     def on_incoming_model(self, event: Event):
         self.incoming_models.append(event.data["model"])
-        if len(self.incoming_models) == self.simulator.settings.participants:
+        if len(self.incoming_models) == min(self.simulator.settings.participants, self.simulator.settings.sample_size):
             self.aggregate()
 
     def aggregate(self):

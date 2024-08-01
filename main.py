@@ -55,6 +55,7 @@ def run():
         alpha=args.alpha,
         stragglers_ratio=args.stragglers_ratio,
         stragglers_proportion=args.stragglers_proportion,
+        sample_size=args.sample_size,
     )
 
     if settings.algorithm == "fl":
@@ -65,7 +66,7 @@ def run():
         simulation = DPSGDSimulation(settings)
     elif settings.algorithm == "subset":
         from dasklearn.simulation.subset.simulation import SubsetDLSimulation
-        simulation = SubsetDLSimulation(settings, args.sample_size)
+        simulation = SubsetDLSimulation(settings)
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation
         simulation = GossipSimulation(settings)
