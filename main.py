@@ -85,5 +85,7 @@ def run():
 if __name__ == "__main__":
     freeze_support()
 
-    asyncio.get_event_loop().call_later(0, run)
-    asyncio.get_event_loop().run_forever()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.call_later(0, run)
+    loop.run_forever()
