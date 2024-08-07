@@ -16,7 +16,11 @@ from heapq import nlargest
 import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
+try:
+    import seaborn as sns
+    seaborn_available = True
+except ImportError:
+    seaborn_available = False
 
 from dasklearn.communication import Communication
 from dasklearn.models import create_model, serialize_model
@@ -267,6 +271,8 @@ class Simulation:
             self.schedule_tasks_on_broker(tasks, broker)
 
     def plot_loss(self):
+        if not seaborn_available:
+            return
         # Check if the accuracies file exists
         path = os.path.join(self.settings.data_dir, "accuracies.csv")
         if not os.path.exists(path):
