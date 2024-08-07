@@ -88,4 +88,13 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.call_later(0, run)
-    loop.run_forever()
+    
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        print("Received exit signal, shutting down...")
+    finally:
+        loop.stop()
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
+
