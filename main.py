@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import ensure_future
 from multiprocessing import freeze_support
+from typing import Dict
 
 import torch
 
@@ -59,31 +60,25 @@ def run():
     )
 
     if settings.algorithm == "fl":
-        from dasklearn.simulation.fl.simulation import FLSimulation
-        simulation = FLSimulation(settings)
+        from dasklearn.simulation.fl.simulation import FLSimulation as SIM
     elif settings.algorithm == "dpsgd":
-        from dasklearn.simulation.dpsgd.simulation import DPSGDSimulation
-        simulation = DPSGDSimulation(settings)
+        from dasklearn.simulation.dpsgd.simulation import DPSGDSimulation as SIM
     elif settings.algorithm == "subset":
-        from dasklearn.simulation.subset.simulation import SubsetDLSimulation
-        simulation = SubsetDLSimulation(settings)
+        from dasklearn.simulation.subset.simulation import SubsetDLSimulation as SIM
     elif settings.algorithm == "gossip":
-        from dasklearn.simulation.gossip.simulation import GossipSimulation
-        simulation = GossipSimulation(settings)
+        from dasklearn.simulation.gossip.simulation import GossipSimulation as SIM
     elif settings.algorithm == "super-gossip":
-        from dasklearn.simulation.super_gossip.simulation import SuperGossipSimulation
-        simulation = SuperGossipSimulation(settings)
+        from dasklearn.simulation.super_gossip.simulation import SuperGossipSimulation as SIM
     elif settings.algorithm == "adpsgd":
-        from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation
-        simulation = ADPSGDSimulation(settings)
+        from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation as SIM
     elif settings.algorithm == "epidemic":
-        from dasklearn.simulation.epidemic.simulation import EpidemicSimulation
-        simulation = EpidemicSimulation(settings)
+        from dasklearn.simulation.epidemic.simulation import EpidemicSimulation as SIM
     elif settings.algorithm == "lubor":
-        from dasklearn.simulation.lubor.simulation import LuborSimulation
-        simulation = LuborSimulation(settings)
+        from dasklearn.simulation.lubor.simulation import LuborSimulation as SIM
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
+    
+    simulation = SIM(settings)
     ensure_future(simulation.run())
 
 
