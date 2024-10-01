@@ -1,12 +1,13 @@
 import pytest
 
-from dasklearn.session_settings import SessionSettings, LearningSettings
+from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.subset.simulation import SubsetDLSimulation
+from dasklearn.simulation.subset.settings import SubsetLearningSettings
 
 
 @pytest.fixture
 def session_settings(tmpdir):
-    return SessionSettings(
+    return SubsetLearningSettings(
         algorithm="subset",
         seed=3,
         work_dir=tmpdir,
@@ -41,6 +42,7 @@ async def test_subset_learning(sync, seed, sample_size, participants, session_se
     session_settings.synchronous = sync
     session_settings.seed = seed
     session_settings.participants = participants
-    sim = SubsetDLSimulation(session_settings, sample_size)
+    session_settings.sample_size = sample_size
+    sim = SubsetDLSimulation(session_settings)
     await sim.run()
     sanity_check(sample_size, sim.workflow_dag)

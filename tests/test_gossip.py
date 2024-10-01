@@ -2,14 +2,15 @@ from collections import Counter
 
 import pytest
 
-from dasklearn.session_settings import SessionSettings, LearningSettings
+from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.gossip.simulation import GossipSimulation
+from dasklearn.simulation.gossip.settings import GLSettings
 from dasklearn.util import MICROSECONDS
 
 
 @pytest.fixture
 def session_settings(tmpdir):
-    return SessionSettings(
+    return GLSettings(
         algorithm="gossip",
         seed=3,
         work_dir=tmpdir,

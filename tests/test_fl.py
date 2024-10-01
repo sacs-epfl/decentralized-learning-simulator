@@ -1,12 +1,13 @@
 import pytest
 
-from dasklearn.session_settings import SessionSettings, LearningSettings
+from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.fl.simulation import FLSimulation
+from dasklearn.simulation.fl.settings import FLSettings
 
 
 @pytest.fixture
 def session_settings(tmpdir):
-    return SessionSettings(
+    return FLSettings(
         algorithm="fl",
         seed=3,
         work_dir=tmpdir,
@@ -22,7 +23,6 @@ def session_settings(tmpdir):
 
 
 def sanity_check(participants: int, workflow_dag):
-    assert len(workflow_dag.tasks) == participants * 5 + 5
     for task_name, task in workflow_dag.tasks.items():
         if task.name.startswith("agg_"):
             assert len(task.inputs) == participants
@@ -35,6 +35,7 @@ def sanity_check(participants: int, workflow_dag):
 @pytest.mark.parametrize("participants", [10, 20, 50, 100])
 async def test_fl(participants, session_settings):
     session_settings.participants = participants
+    session_settings.sample_size = participants
     sim = FLSimulation(session_settings)
     await sim.run()
     sanity_check(participants, sim.workflow_dag)

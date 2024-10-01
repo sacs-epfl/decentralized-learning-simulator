@@ -141,7 +141,6 @@ class Simulation:
             setup_logging(self.data_dir, "coordinator.log")
             self.communication = Communication("coordinator", self.settings.port, self.on_message)
             self.communication.start()
-            self.settings.save_to_file(os.path.join(self.data_dir, "settings.csv"))
 
         # Initialize the clients
         self.initialize_clients()

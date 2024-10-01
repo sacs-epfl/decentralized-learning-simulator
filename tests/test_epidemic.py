@@ -2,13 +2,14 @@ import math
 
 import pytest
 
-from dasklearn.session_settings import SessionSettings, LearningSettings
+from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.epidemic.simulation import EpidemicSimulation
+from dasklearn.simulation.epidemic.settings import ELSettings
 
 
 @pytest.fixture
 def session_settings(tmpdir):
-    return SessionSettings(
+    return ELSettings(
         algorithm="epidemic",
         seed=3,
         work_dir=tmpdir,

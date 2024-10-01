@@ -1,13 +1,14 @@
 import pytest
 
-from dasklearn.session_settings import SessionSettings, LearningSettings
+from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation
+from dasklearn.simulation.adpsgd.settings import ADPSGDSettings
 from dasklearn.util import MICROSECONDS
 
 
 @pytest.fixture
 def session_settings(tmpdir):
-    return SessionSettings(
+    return ADPSGDSettings(
         algorithm="adpsgd",
         seed=3,
         work_dir=tmpdir,
@@ -45,7 +46,7 @@ def sanity_check(participants: int, workflow_dag):
             assert len(task.inputs) == 1
             assert len(task.outputs) == 0
         else:
-            assert False
+            assert False, "Unknown function %s" % task.func
     assert compute_gradient_init == participants
     assert gradient_update_init == participants
 
