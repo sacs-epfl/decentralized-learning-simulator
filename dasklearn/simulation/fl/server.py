@@ -22,9 +22,6 @@ class FLServer(BaseClient):
 
     def sample_clients(self) -> List[int]:
         sample_size: int = self.simulator.settings.sample_size
-        if sample_size == 0:
-            return list(range(self.simulator.settings.participants))
-
         clients: List[int] = list(range(self.simulator.settings.participants))
         return sample(clients, min(self.simulator.settings.participants, sample_size))
 

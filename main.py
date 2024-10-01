@@ -34,6 +34,7 @@ def run():
         learning=learning_settings,
         participants=args.peers,
         partitioner=args.partitioner,
+        alpha=args.alpha,
         model=args.model,
         test_interval=args.test_interval,
         brokers=args.brokers,
@@ -44,40 +45,47 @@ def run():
         torch_threads=args.torch_threads,
         dry_run=args.dry_run,
         duration=args.duration * MICROSECONDS,
-        gl_period=args.gl_period * MICROSECONDS,
         test_period=args.test_period * MICROSECONDS,
         compute_graph_plot_size=args.compute_graph_plot_size,
-        agg=args.agg,
         stop=args.stop,
         wait=args.wait,
-        el=args.el,
-        k=args.k,
-        no_weights=args.no_weights,
-        alpha=args.alpha,
         stragglers_ratio=args.stragglers_ratio,
         stragglers_proportion=args.stragglers_proportion,
-        sample_size=args.sample_size,
     )
 
     if settings.algorithm == "fl":
         from dasklearn.simulation.fl.simulation import FLSimulation as SIM
+        from dasklearn.simulation.fl.settings import FLSettings
+        settings = FLSettings(**settings.__dict__, sample_size=args.sample_size)
     elif settings.algorithm == "dpsgd":
         from dasklearn.simulation.dpsgd.simulation import DPSGDSimulation as SIM
     elif settings.algorithm == "subset":
         from dasklearn.simulation.subset.simulation import SubsetDLSimulation as SIM
+        from dasklearn.simulation.subset.settings import SubsetLearningSettings
+        settings = SubsetLearningSettings(**settings.__dict__, sample_size=args.sample_size)
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation as SIM
+        from dasklearn.simulation.gossip.settings import GLSettings
+        settings = GLSettings(**settings.__dict__, gl_period=args.gl_period, agg=args.agg)
     elif settings.algorithm == "super-gossip":
         from dasklearn.simulation.super_gossip.simulation import SuperGossipSimulation as SIM
+        from dasklearn.simulation.super_gossip.settings import SuperGossipSettings
+        settings = SuperGossipSettings(**settings.__dict__, gl_period=args.gl_period, agg=args.agg, k=args.k)
     elif settings.algorithm == "adpsgd":
         from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation as SIM
+        from dasklearn.simulation.adpsgd.settings import ADPSGDSettings
+        settings = ADPSGDSettings(**settings.__dict__, agg=args.agg)
     elif settings.algorithm == "epidemic":
         from dasklearn.simulation.epidemic.simulation import EpidemicSimulation as SIM
+        from dasklearn.simulation.epidemic.settings import ELSettings
+        settings = ELSettings(**settings.__dict__, el=args.el)
     elif settings.algorithm == "lubor":
         from dasklearn.simulation.lubor.simulation import LuborSimulation as SIM
+        from dasklearn.simulation.lubor.settings import LuborSettings
+        settings = LuborSettings(**settings.__dict__, k=args.k, no_weights=args.no_weights)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
-    
+
     simulation = SIM(settings)
     ensure_future(simulation.run())
 
@@ -97,4 +105,3 @@ if __name__ == "__main__":
         loop.stop()
         loop.run_until_complete(loop.shutdown_asyncgens())
         loop.close()
-
