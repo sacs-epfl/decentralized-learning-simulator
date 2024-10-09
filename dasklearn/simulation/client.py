@@ -1,9 +1,9 @@
-from typing import Optional, Any, List, Tuple
+import logging
+from typing import Optional, Any, Dict, List, Tuple
 from collections import Counter
 
-from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
+from dasklearn import AUGMENTATION_FACTOR_SIM
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
-from dasklearn.functions import *
 from dasklearn.simulation.events import FINISH_TRAIN, Event, START_TRANSFER
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS, time_to_sec
