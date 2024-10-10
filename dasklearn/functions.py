@@ -14,6 +14,7 @@ from dasklearn.model_manager import ModelManager
 from dasklearn.model_trainer import ModelTrainer
 from dasklearn.models import unserialize_model, serialize_model, create_model
 from dasklearn.session_settings import SessionSettings
+from dasklearn.util import MICROSECONDS
 
 
 logger = logging.getLogger(__name__)
@@ -113,8 +114,15 @@ def test(settings: SessionSettings, params: Dict):
     if not evaluator:
         evaluator = ModelEvaluator(dataset, settings)
     accuracy, loss = evaluator.evaluate_accuracy(model, device_name=settings.torch_device_name)
-    with open(os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv"), "a") as accuracies_file:
-        accuracies_file.write("%d,%d,%f,%f,%f\n" % (peer_id, round_nr, cur_time, accuracy, loss))
+
+    accuracies_file_path: str = os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv")
+    if not os.path.exists(accuracies_file_path):
+        with open(accuracies_file_path, "w") as accuracies_file:
+            accuracies_file.write("peer,round,time,accuracy,loss\n")
+
+    with open(accuracies_file_path, "a") as accuracies_file:
+        accuracies_file.write("%d,%d,%.2f,%f,%f\n" % (peer_id, round_nr, cur_time / MICROSECONDS, accuracy, loss))
+
     logger.info("Model accuracy (peer %d, round %d): %f, loss: %f", peer_id, round_nr, accuracy, loss)
 
     detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)

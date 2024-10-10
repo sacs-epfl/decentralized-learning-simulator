@@ -271,13 +271,15 @@ class Simulation:
 
     def plot_loss(self):
         if not seaborn_available:
+            self.logger.warning("Seaborn not available - skipping plotting.")
             return
         # Check if the accuracies file exists
         path = os.path.join(self.settings.data_dir, "accuracies.csv")
         if not os.path.exists(path):
+            self.logger.warning("accuracies.csv not found - skipping plotting.")
             return
         # Read the data
-        data = pd.read_csv(path, header=None, names=['peer', 'round', 'time', 'accuracy', 'loss'])
+        data = pd.read_csv(path)
         # Create all combinations of time and peer and fill the missing values from previous measurements
         # This ensures the plot correctly shows std for algorithms which test at not exactly the same time for all peers
         all_combinations = data['peer'].drop_duplicates().to_frame().merge(data['time'].drop_duplicates(), how='cross')
@@ -307,9 +309,11 @@ class Simulation:
                  for i in range(self.settings.participants)]
 
         with open(os.path.join(self.settings.data_dir, "accuracies.csv"), "w") as output_file:
+            output_file.write("peer,round,time,accuracy,loss\n")
             for path in paths:
                 if os.path.exists(path):
                     with open(path, "r") as input_file:
+                        next(input_file)  # Ignore the header
                         output_file.write(input_file.read())
                     os.remove(path)
 
