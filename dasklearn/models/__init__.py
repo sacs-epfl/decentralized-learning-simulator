@@ -24,9 +24,9 @@ def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
         elif architecture == "gnlenet":
             from dasklearn.models.cifar10 import GNLeNet
             return GNLeNet(input_channel=3, output=10, model_input=(32, 32))
-        elif architecture == "resnet18":
+        elif architecture in ["resnet18", "mobilenet_v3_large"]:
             import torchvision.models as tormodels
-            return tormodels.__dict__["resnet18"](num_classes=10)
+            return tormodels.__dict__[architecture](num_classes=10)
         else:
             raise RuntimeError("Unknown model architecture for CIFAR10: %s" % architecture)
     elif dataset == "femnist":

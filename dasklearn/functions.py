@@ -2,24 +2,30 @@ import logging
 import os
 import time
 import threading
-from typing import Dict
+from typing import Dict, List, Optional
 
 import torch
 
+from flwr_datasets import FederatedDataset
+
+from dasklearn.datasets import create_dataset
 from dasklearn.model_evaluator import ModelEvaluator
 from dasklearn.model_manager import ModelManager
+from dasklearn.model_trainer import ModelTrainer
 from dasklearn.models import unserialize_model, serialize_model, create_model
 from dasklearn.session_settings import SessionSettings
+from dasklearn.util import MICROSECONDS
 
 
 logger = logging.getLogger(__name__)
-model_managers = None
+model_trainers: Optional[List[ModelTrainer]] = None
+dataset: Optional[FederatedDataset] = None
 evaluator = None
 lock = threading.Lock()
 
 
 def train(settings: SessionSettings, params: Dict):
-    global model_managers
+    global dataset, model_trainers
     model = params["model"]
     round_nr = params["round"]
     cur_time = params["time"]
@@ -28,21 +34,24 @@ def train(settings: SessionSettings, params: Dict):
     gradient_model = params["gradient_model"] if "gradient_model" in params else None
     local_steps = params["local_steps"] if "local_steps" in params else settings.learning.local_steps
 
+    if not dataset:
+        dataset = create_dataset(settings)
+
     with lock:
-        if model_managers is None:
-            model_managers = [None] * settings.participants
+        if model_trainers is None:
+            model_trainers = [None] * settings.participants
     if not model:
         torch.manual_seed(settings.seed)
         model = create_model(settings.dataset, architecture=settings.model)
 
-    if model_managers[peer_id] is None:
-        model_managers[peer_id] = ModelManager(model, settings, peer_id)
-    else:
-        model_managers[peer_id].model = model
+    if model_trainers[peer_id] is None:
+        model_trainers[peer_id] = ModelTrainer(dataset, settings, peer_id)
+
+    trainer: ModelTrainer = model_trainers[peer_id]
     if gradient_model:
-        model_managers[peer_id].gradient_update(gradient_model)
+        trainer.gradient_update(model, gradient_model)
     else:
-        train_info = model_managers[peer_id].train(local_steps, compute_gradient)
+        train_info = trainer.train(model, local_steps, compute_gradient, settings.torch_device_name)
         if train_info["validation_loss_global"] is not None:
             with open(os.path.join(settings.data_dir, "validation_losses.csv"), "a") as loss_file:
                 loss_file.write("%d,%d,%f,%f\n" % (peer_id, round_nr, cur_time, train_info["validation_loss_global"]))
@@ -57,11 +66,10 @@ def train(settings: SessionSettings, params: Dict):
     else:
         detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
 
-    del model_managers[peer_id].model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    logger.info("Peer %d training in round %d...", peer_id, round_nr)
+    logger.debug("Peer %d training in round %d...", peer_id, round_nr)
 
     return detached_model
 
@@ -81,9 +89,9 @@ def aggregate(settings: SessionSettings, params: Dict):
     peer_id = params["peer"]
     weights = params["weights"] if "weights" in params else None
     if peer_id is not None:
-        logger.info("Peer %d aggregating %d models in round %d...", peer_id, len(models), round_nr)
+        logger.debug("Peer %d aggregating %d models in round %d...", peer_id, len(models), round_nr)
     else:
-        logger.info("Aggregating %d models in round %d...", len(models), round_nr)
+        logger.debug("Aggregating %d models in round %d...", len(models), round_nr)
 
     model_manager = ModelManager(None, settings, 0)
     for idx, model in enumerate(models):
@@ -91,31 +99,31 @@ def aggregate(settings: SessionSettings, params: Dict):
 
     start_time = time.time()
     agg_model = model_manager.aggregate_trained_models(weights)
-    logger.info("Model aggregation took %f s.", time.time() - start_time)
+    logger.debug("Model aggregation took %f s.", time.time() - start_time)
     return agg_model
 
 
 def test(settings: SessionSettings, params: Dict):
-    global evaluator
+    global dataset, evaluator
     model = params["model"]
     round_nr = params["round"]
     cur_time = params["time"]
     peer_id = params["peer"]
-    logger.info("Testing model in round %d...", round_nr)
-
-    dataset_base_path: str = settings.dataset_base_path or os.environ["HOME"]
-    if settings.dataset in ["cifar10", "mnist", "fashionmnist"]:
-        data_dir = os.path.join(dataset_base_path, "dfl-data")
-    else:
-        # The LEAF dataset
-        data_dir = os.path.join(dataset_base_path, "leaf", "data", settings.dataset)
+    logger.debug("Testing model in round %d...", round_nr)
 
     if not evaluator:
-        evaluator = ModelEvaluator(data_dir, settings)
+        evaluator = ModelEvaluator(dataset, settings)
     accuracy, loss = evaluator.evaluate_accuracy(model, device_name=settings.torch_device_name)
-    with open(os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv"), "a") as accuracies_file:
-        accuracies_file.write("%d,%d,%f,%f,%f\n" % (peer_id, round_nr, cur_time, accuracy, loss))
-    logger.info("Model accuracy: %f, loss: %f", accuracy, loss)
+
+    accuracies_file_path: str = os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv")
+    if not os.path.exists(accuracies_file_path):
+        with open(accuracies_file_path, "w") as accuracies_file:
+            accuracies_file.write("peer,round,time,accuracy,loss\n")
+
+    with open(accuracies_file_path, "a") as accuracies_file:
+        accuracies_file.write("%d,%d,%.2f,%f,%f\n" % (peer_id, round_nr, cur_time / MICROSECONDS, accuracy, loss))
+
+    logger.info("Model accuracy (peer %d, round %d): %f, loss: %f", peer_id, round_nr, accuracy, loss)
 
     detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
     return detached_model

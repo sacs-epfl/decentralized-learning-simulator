@@ -55,7 +55,7 @@ class Communication:
         self.coordinator_connection.setsockopt(zmq.IDENTITY, self.identity.encode())
         self.coordinator_connection.connect(coordinator_address)
 
-        ip = subprocess.check_output(['hostname', '-I']).decode('utf-8').strip().split()[0]
+        ip = subprocess.check_output("ifconfig | grep 'inet ' | grep -v 127.0.0.1 | awk '{print $2}'", shell=True).decode('utf-8').strip().split()[0]
         msg = pickle.dumps({"type": "hello", "address": "tcp://%s:%d" % (ip, self.listen_port)})
         self.send_message_to_coordinator(msg)
 

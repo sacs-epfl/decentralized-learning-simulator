@@ -1,9 +1,9 @@
-from typing import Optional, Any, List, Tuple
+import logging
+from typing import Optional, Any, Dict, List, Tuple
 from collections import Counter
 
-from dasklearn.model_trainer import AUGMENTATION_FACTOR_SIM
+from dasklearn import AUGMENTATION_FACTOR_SIM
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
-from dasklearn.functions import *
 from dasklearn.simulation.events import FINISH_TRAIN, Event, START_TRANSFER
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS, time_to_sec
@@ -31,7 +31,7 @@ class BaseClient:
         self.opportunity: Dict[int, float] = Counter()  # Opportunity of clients to contribute to the model
 
     def client_log(self, msg: str):
-        self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
+        self.logger.debug("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
 
     def get_train_time(self) -> int:
         train_time: float = 0.0

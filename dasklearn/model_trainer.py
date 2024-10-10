@@ -1,37 +1,34 @@
 import logging
-import os
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict
 
 import torch
 from torch.autograd import Variable
 from torch.nn import CrossEntropyLoss, MSELoss, NLLLoss
+from torch.utils.data import DataLoader
 
-from dasklearn.datasets import create_dataset, Dataset
+from flwr_datasets import FederatedDataset
+
 from dasklearn.optimizer.sgd import SGDOptimizer
 from dasklearn.session_settings import SessionSettings
 
-AUGMENTATION_FACTOR_SIM = 3.0
+from datasets import Dataset
 
 
 class ModelTrainer:
     """
     Manager to train a particular model.
-    Runs in a separate process.
     """
 
-    def __init__(self, data_dir, settings: SessionSettings, participant_index: int):
+    def __init__(self, dataset: FederatedDataset, settings: SessionSettings, participant_index: int):
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.dataset: FederatedDataset = dataset
+        self.partition: Optional[Dataset] = None
         self.settings: SessionSettings = settings
         self.participant_index: int = participant_index
         self.simulated_speed: Optional[float] = None
         self.total_training_time: float = 0
         self.is_training: bool = False
 
-        if settings.dataset in ["cifar10", "mnist", "movielens", "spambase"]:
-            self.train_dir = data_dir
-        else:
-            self.train_dir = os.path.join(data_dir, "per_user_data", "train")
-        self.dataset: Optional[Dataset] = None
         self.optimizer: Optional[SGDOptimizer] = None
 
     def get_validation_loss(self, model) -> float:
@@ -68,8 +65,14 @@ class ModelTrainer:
         """
         self.is_training = True
 
-        if not self.dataset:
-            self.dataset = create_dataset(self.settings, participant_index=self.participant_index, train_dir=self.train_dir)
+        # Load the partition if it's not loaded yet
+        if not self.partition:
+            self.partition = self.dataset.load_partition(self.participant_index, "train")
+            if(self.settings.dataset == "cifar10"):
+                from dasklearn.datasets.transforms import apply_transforms_cifar10 as transforms
+                self.partition = self.partition.with_transform(transforms)
+            else:
+                raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
         validation_loss_global_model: Optional[float] = None
         if self.settings.compute_validation_loss_global_model and len(self.dataset.validationset) > 0:
@@ -77,21 +80,24 @@ class ModelTrainer:
 
         device = torch.device(device_name)
         model = model.to(device)
+
+        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True)
+
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
         if self.optimizer is not None:
             optimizer.optimizer.load_state_dict(self.optimizer.optimizer.state_dict())
         self.optimizer = optimizer
 
-        self.logger.info("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
-                         local_steps, device_name, self.settings.learning.batch_size,
-                         self.settings.learning.learning_rate, self.settings.learning.weight_decay)
+        self.logger.debug("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
+                          local_steps, device_name, self.settings.learning.batch_size,
+                          self.settings.learning.learning_rate, self.settings.learning.weight_decay)
 
         samples_trained_on = 0
-        for local_step in range(local_steps):
-            train_set = self.dataset.get_trainset(batch_size=self.settings.learning.batch_size, shuffle=True)
-            train_set_it = iter(train_set)
+        for local_step, batch in enumerate(train_loader):
+            data, target = batch["img"], batch["label"]  # TODO hard-coded, not generic enough for different datasets
+            if local_step >= local_steps:
+                break
 
-            data, target = next(train_set_it)
             model.train()
             data, target = Variable(data.to(device)), Variable(target.to(device))
             samples_trained_on += len(data)
@@ -100,10 +106,8 @@ class ModelTrainer:
             self.logger.debug('d-sgd.next node forward propagation (step %d/%d)', local_step, local_steps)
             output = model.forward(data)
 
-            if self.settings.dataset == "movielens":
-                lossf = MSELoss()
-            elif self.settings.dataset == "cifar10":
-                if self.settings.model in ["resnet8", "resnet18"]:
+            if self.settings.dataset == "cifar10":
+                if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"]:
                     lossf = CrossEntropyLoss()
                 else:
                     lossf = NLLLoss()

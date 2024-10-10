@@ -11,3 +11,4 @@ pandas~=1.5.2
 pytest~=8.1.1
 requests~=2.31.0
 setproctitle~=1.3.3
+flwr_datasets~=0.3.0
