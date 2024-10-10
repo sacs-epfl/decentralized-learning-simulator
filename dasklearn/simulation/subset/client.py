@@ -66,14 +66,20 @@ class SubsetDLClient(BaseClient):
         current_sample: List[int] = SampleManager.get_sample(cur_round, len(self.simulator.clients),
                                                              self.simulator.sample_size)
         index_in_current_sample: int = current_sample.index(self.index)
-        nb_peer = current_sample[(index_in_current_sample + 1) % len(current_sample)]
-        self.client_log("Peer %d finished model training in round %d and sends model to peer %d" %
-                        (self.index, cur_round, nb_peer))
-        self.send_model(nb_peer, round_info.model, metadata={"type": "transfer_in_sample", "round": cur_round})
+
+        # Determine neighbors and send your model to these peers
+        nb_peers: List[int] = SampleManager.get_neighbours_in_round(cur_round, self.simulator.sample_size,
+                                                                    self.simulator.settings.k_in_sample,
+                                                                    index_in_current_sample, current_sample)
+
+        self.client_log("Peer %d finished model training in round %d and sends model to peers %s" %
+                        (self.index, cur_round, str(nb_peers)))
+        for nb_peer in nb_peers:
+            self.send_model(nb_peer, round_info.model, metadata={"type": "transfer_in_sample", "round": cur_round})
 
         # Check if we already received a model from a neighbour - if so, aggregate and proceed.
-        # TODO assume a single incoming model
-        if round_info.incoming_models:
+        # TODO assumed k is a power of 2
+        if len(round_info.incoming_models) == self.simulator.settings.k_in_sample:
             round_info.model = self.aggregate_models(
                 list(round_info.incoming_models.values()) + [round_info.model], round_info.round_nr)
             self.send_aggregated_model_to_next_sample(round_info, current_sample)
@@ -118,14 +124,13 @@ class SubsetDLClient(BaseClient):
         else:
             # We are currently working on this round.
             round_info: Round = self.round_info[model_round]
+            round_info.incoming_models[event.data["from"]] = event.data["model"]
             if round_info.train_done:
-                # We are done with training in this round - aggregate and send the model to the next sample.
-                round_info.incoming_models[event.data["from"]] = event.data["model"]
-                round_info.model = self.aggregate_models(
-                    list(round_info.incoming_models.values()) + [round_info.model], round_info.round_nr)
-                self.send_aggregated_model_to_next_sample(round_info, current_sample)
-            else:
-                round_info.incoming_models[event.data["from"]] = event.data["model"]
+                # We are done with training in this round - check if we have all the models, and if so, aggregate and send the model to the next sample.
+                if len(round_info.incoming_models) == self.simulator.settings.k_in_sample:
+                    round_info.model = self.aggregate_models(
+                        list(round_info.incoming_models.values()) + [round_info.model], round_info.round_nr)
+                    self.send_aggregated_model_to_next_sample(round_info, current_sample)
 
     def handle_incoming_model_next_sample(self, event: Event):
         model_round = event.data["metadata"]["round"]

@@ -8,3 +8,4 @@ from dasklearn.session_settings import SessionSettings
 @dataclass
 class SubsetLearningSettings(SessionSettings):
     sample_size: int = 0
+    k_in_sample: int = 2

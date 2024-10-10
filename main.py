@@ -62,7 +62,7 @@ def run():
     elif settings.algorithm == "subset":
         from dasklearn.simulation.subset.simulation import SubsetDLSimulation as SIM
         from dasklearn.simulation.subset.settings import SubsetLearningSettings
-        settings = SubsetLearningSettings(**settings.__dict__, sample_size=args.sample_size)
+        settings = SubsetLearningSettings(**settings.__dict__, sample_size=args.sample_size, k_in_sample=args.k_in_sample)
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation as SIM
         from dasklearn.simulation.gossip.settings import GLSettings
