@@ -106,10 +106,8 @@ class ModelTrainer:
             self.logger.debug('d-sgd.next node forward propagation (step %d/%d)', local_step, local_steps)
             output = model.forward(data)
 
-            if self.settings.dataset == "movielens":
-                lossf = MSELoss()
-            elif self.settings.dataset == "cifar10":
-                if self.settings.model in ["resnet8", "resnet18"]:
+            if self.settings.dataset == "cifar10":
+                if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"]:
                     lossf = CrossEntropyLoss()
                 else:
                     lossf = NLLLoss()
