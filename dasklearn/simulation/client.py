@@ -31,7 +31,7 @@ class BaseClient:
         self.opportunity: Dict[int, float] = Counter()  # Opportunity of clients to contribute to the model
 
     def client_log(self, msg: str):
-        self.logger.info("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
+        self.logger.debug("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
 
     def get_train_time(self) -> int:
         train_time: float = 0.0

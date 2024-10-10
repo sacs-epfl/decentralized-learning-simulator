@@ -88,9 +88,9 @@ class ModelTrainer:
             optimizer.optimizer.load_state_dict(self.optimizer.optimizer.state_dict())
         self.optimizer = optimizer
 
-        self.logger.info("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
-                         local_steps, device_name, self.settings.learning.batch_size,
-                         self.settings.learning.learning_rate, self.settings.learning.weight_decay)
+        self.logger.debug("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
+                          local_steps, device_name, self.settings.learning.batch_size,
+                          self.settings.learning.learning_rate, self.settings.learning.weight_decay)
 
         samples_trained_on = 0
         for local_step, batch in enumerate(train_loader):

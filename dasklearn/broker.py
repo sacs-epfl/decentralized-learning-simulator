@@ -259,14 +259,14 @@ class Broker:
             self.logger.info("Broker enqueueing task %s since workers are not ready yet", task.name)
             self.pending_tasks.append(task)
         else:
-            self.logger.info("Broker dispatching task %s to workers", task.name)
+            self.logger.debug("Broker dispatching task %s to workers", task.name)
             self.put_in_worker_queue(task)
 
     def handle_task_result(self, task: Task, res):
         """
         We received a task result - either locally or from another worker. Handle it.
         """
-        self.logger.info("Handling result of task %s", task)
+        self.logger.debug("Handling result of task %s", task)
         for next_task in task.outputs:
             if next_task.data["peer"] in self.brokers_to_clients[self.identity]:
                 next_task.set_data(task.name, res)
