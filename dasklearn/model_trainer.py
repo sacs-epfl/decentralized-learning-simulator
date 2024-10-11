@@ -123,7 +123,8 @@ class ModelTrainer:
             optimizer.optimizer.step()
 
         self.is_training = False
-        model.to("cpu")
+        model = model.to("cpu")
+        data, target = data.to("cpu"), target.to("cpu")
 
         return {"samples": samples_trained_on, "validation_loss_global": validation_loss_global_model}
 
