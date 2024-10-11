@@ -4,6 +4,7 @@ from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.events import *
 from dasklearn.simulation.subset.round import Round
 from dasklearn.simulation.subset.sample_manager import SampleManager
+from dasklearn.tasks.task import Task
 
 
 class SubsetDLClient(BaseClient):
@@ -82,6 +83,7 @@ class SubsetDLClient(BaseClient):
         if len(round_info.incoming_models) == self.simulator.settings.k_in_sample:
             round_info.model = self.aggregate_models(
                 list(round_info.incoming_models.values()) + [round_info.model], round_info.round_nr)
+            self.test_if_needed(round_info)
             self.send_aggregated_model_to_next_sample(round_info, current_sample)
 
         # We're now done training. Should we start training in another round?
@@ -130,6 +132,7 @@ class SubsetDLClient(BaseClient):
                 if len(round_info.incoming_models) == self.simulator.settings.k_in_sample:
                     round_info.model = self.aggregate_models(
                         list(round_info.incoming_models.values()) + [round_info.model], round_info.round_nr)
+                    self.test_if_needed(round_info)
                     self.send_aggregated_model_to_next_sample(round_info, current_sample)
 
     def handle_incoming_model_next_sample(self, event: Event):
@@ -149,3 +152,11 @@ class SubsetDLClient(BaseClient):
         else:
             # Start a new round.
             self.schedule_next_round({"round": model_round, "model": event.data["model"]})
+
+    def test_if_needed(self, round_info: Round):
+        if self.simulator.settings.stop == "rounds" and self.simulator.settings.test_interval > 0 \
+                and round_info.round_nr % self.simulator.settings.test_interval == 0:
+            test_task_name = "test_%d_%d" % (self.index, round_info.round_nr)
+            task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_info.round_nr, "time": self.simulator.current_time, "peer": self.index})
+            self.add_compute_task(task)
+            round_info.model = test_task_name
