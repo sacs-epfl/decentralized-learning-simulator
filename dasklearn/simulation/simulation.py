@@ -151,13 +151,23 @@ class Simulation:
             with open(self.settings.capability_traces, "rb") as traces_file:
                 data = pickle.load(traces_file)
 
+            # Filter and convert all bandwidth values to bytes/s.
+            data = {
+                key: {
+                    **value,
+                    "communication": int(value["communication"]) * 1000 // 8  # Convert to bytes/s
+                }
+                for key, value in data.items()
+                if int(value["communication"]) * 1000 // 8 >= self.settings.min_bandwidth  # Filter based on minimum bandwidth
+            }
+
             rand = Random(self.settings.seed)
             device_ids = rand.sample(list(data.keys()), len(self.clients))
             nodes_bws: Dict[int, int] = {}
             for ind, client in enumerate(self.clients):
                 client.simulated_speed = data[device_ids[ind]]["computation"]
                 # Also apply the network latencies
-                bw_limit: int = int(data[ind + 1]["communication"]) * 1024 // 8
+                bw_limit: int = int(data[device_ids[ind]]["communication"])
                 client.bw_scheduler.bw_limit = bw_limit
                 nodes_bws[ind] = bw_limit
 
