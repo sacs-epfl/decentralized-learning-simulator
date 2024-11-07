@@ -157,7 +157,7 @@ class Simulation:
             for ind, client in enumerate(self.clients):
                 client.simulated_speed = data[device_ids[ind]]["computation"]
                 # Also apply the network latencies
-                bw_limit: int = int(data[ind + 1]["communication"]) * 1024 // 8
+                bw_limit: int = int(data[device_ids[ind]]["communication"]) * 1000 // 8
                 client.bw_scheduler.bw_limit = bw_limit
                 nodes_bws[ind] = bw_limit
 
