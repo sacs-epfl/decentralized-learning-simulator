@@ -27,7 +27,7 @@ def get_args():
 
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
-    parser.add_argument('--algorithm', type=str, default="dpsgd")
+    parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "subset", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor"])
     parser.add_argument('--sample-size', type=int, default=10)
     parser.add_argument('--duration', type=int, default=100)
     parser.add_argument('--gl-period', type=int, default=10)
