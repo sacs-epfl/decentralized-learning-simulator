@@ -42,7 +42,7 @@ class SessionSettings:
     test_interval: int = 0
     scheduler: Optional[str] = None
     brokers: Optional[int] = None
-    capability_traces: Optional[str] = None
+    traces: str = "none"
     min_bandwidth: int = 0
     rounds: int = 10
     data_dir: str = ""

@@ -134,6 +134,65 @@ class Simulation:
             init_client_event = Event(0, client_id, INIT_CLIENT)
             self.schedule(init_client_event)
 
+    def apply_fedscale_traces(self):
+        self.logger.info("Applying FedScale capability trace file")
+        with open(os.path.join("data", "fedscale_traces"), "rb") as traces_file:
+            data = pickle.load(traces_file)
+
+        # Filter and convert all bandwidth values to bytes/s.
+        data = {
+            key: {
+                **value,
+                "communication": int(value["communication"]) * 1000 // 8  # Convert to bytes/s
+            }
+            for key, value in data.items()
+            if int(value["communication"]) * 1000 // 8 >= self.settings.min_bandwidth  # Filter based on minimum bandwidth
+        }
+
+        rand = Random(self.settings.seed)
+        device_ids = rand.sample(list(data.keys()), len(self.clients))
+        nodes_bws: Dict[int, int] = {}
+        for ind, client in enumerate(self.clients):
+            client.simulated_speed = data[device_ids[ind]]["computation"]
+            # Also apply the network latencies
+            bw_limit: int = int(data[device_ids[ind]]["communication"])
+            client.bw_scheduler.bw_limit = bw_limit
+            nodes_bws[ind] = bw_limit
+
+        for client in self.clients:
+            client.other_nodes_bws = nodes_bws
+
+    def apply_diablo_traces(self):
+        # Read and process the latency matrix
+        bw_means = []
+        with open(os.path.join("data", "diablo.txt"), "r") as diablo_file:
+            rows = diablo_file.readlines()
+            for row in rows:
+                values = list(map(float, row.strip().split(',')))
+                mean_value = np.mean(values) * 1000 * 1000 // 8
+                bw_means.append(mean_value)
+
+        nodes_bws: Dict[bytes, int] = {}
+        for ind, node in enumerate(self.nodes):
+            # TODO this is rather arbitrary for now
+            node.overlays[0].model_manager.model_trainer.simulated_speed = 100
+            bw_limit: int = bw_means[ind % len(bw_means)]
+            node.overlays[0].bw_scheduler.bw_limit = bw_limit
+            nodes_bws[node.overlays[0].my_peer.public_key.key_to_bin()] = bw_limit
+
+        for node in self.nodes:
+            node.overlays[0].other_nodes_bws = nodes_bws
+
+    def apply_traces(self):
+        if self.settings.traces == "none":
+            return
+        elif self.settings.traces == "fedscale":
+            self.apply_fedscale_traces()
+        elif self.settings.traces == "diablo":
+            self.apply_diablo_traces()
+        else:
+            raise RuntimeError("Unknown traces %s" % self.settings.traces)
+
     async def run(self):
         self.simulation_start_time: float = time.time()
         self.setup_directories()
@@ -145,37 +204,8 @@ class Simulation:
         # Initialize the clients
         self.initialize_clients()
 
-        # Apply traces if applicable
-        if self.settings.capability_traces:
-            self.logger.info("Applying capability trace file %s", self.settings.capability_traces)
-            with open(self.settings.capability_traces, "rb") as traces_file:
-                data = pickle.load(traces_file)
-
-            # Filter and convert all bandwidth values to bytes/s.
-            data = {
-                key: {
-                    **value,
-                    "communication": int(value["communication"]) * 1000 // 8  # Convert to bytes/s
-                }
-                for key, value in data.items()
-                if int(value["communication"]) * 1000 // 8 >= self.settings.min_bandwidth  # Filter based on minimum bandwidth
-            }
-
-            rand = Random(self.settings.seed)
-            device_ids = rand.sample(list(data.keys()), len(self.clients))
-            nodes_bws: Dict[int, int] = {}
-            for ind, client in enumerate(self.clients):
-                client.simulated_speed = data[device_ids[ind]]["computation"]
-                # Also apply the network latencies
-                bw_limit: int = int(data[device_ids[ind]]["communication"])
-                client.bw_scheduler.bw_limit = bw_limit
-                nodes_bws[ind] = bw_limit
-
-            for client in self.clients:
-                client.other_nodes_bws = nodes_bws
-        else:
-            for client in self.clients:
-                client.bw_scheduler.bw_limit = 100000000000
+        # Apply traces
+        self.apply_traces()
 
         # Apply strugglers
         n_strugglers: int = int(self.settings.participants * self.settings.stragglers_proportion + 0.0000001)
