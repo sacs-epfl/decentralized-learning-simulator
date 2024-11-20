@@ -39,8 +39,8 @@ def get_args():
     parser.add_argument('--no_weights', action=argparse.BooleanOptionalAction, default=False)
 
     # Traces
-    parser.add_argument('--capability-traces', type=str, default="data/client_device_capacity")
     parser.add_argument('--min-bandwidth', type=int, default=0)  # The minimum bandwidth a node must have to participate, in bytes/s.
+    parser.add_argument('--traces', type=str, default="none", choices=["none", "fedscale", "diablo"])
 
     # Accuracy checking
     parser.add_argument('--validation-set-fraction', type=float, default=0.0)
