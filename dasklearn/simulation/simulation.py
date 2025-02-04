@@ -1,5 +1,6 @@
 import asyncio
 import bisect
+import inspect
 import os
 import pickle
 import shutil
@@ -7,9 +8,9 @@ import resource
 import psutil
 import random
 import time
-from asyncio import Future
+from asyncio import Future, ensure_future
 from random import Random
-from typing import List, Optional, Callable, Tuple
+from typing import Coroutine, List, Optional, Callable, Set, Tuple
 from datetime import datetime
 from heapq import nlargest
 
@@ -49,6 +50,7 @@ class Simulation:
         self.settings = settings
         self.events: List[Tuple[int, int, Event]] = []
         self.event_callbacks: Dict[str, str] = {}
+        self.pending_tasks: Set[asyncio.Task] = set()
         self.workflow_dag = WorkflowDAG()
         self.model_size: int = 0
         self.current_time: int = 0
@@ -225,14 +227,19 @@ class Simulation:
         process = psutil.Process()
         self.memory_log.append((self.current_time, process.memory_info()))
 
-        while self.events:
-            _, _, event = self.events.pop(0)
-            assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
-            self.current_time = event.time
-            self.process_event(event)
-            # No need to track memory at every event
-            if random.random() < 0.1 / self.settings.participants:
-                self.memory_log.append((self.current_time, process.memory_info()))
+        while self.events or self.pending_tasks:
+
+            # Process synchronous events
+            while self.events:
+                _, _, event = self.events.pop(0)
+                assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
+                self.current_time = event.time
+                self.process_event(event)
+                # No need to track memory at every event
+                if random.random() < 0.1 / self.settings.participants:
+                    self.memory_log.append((self.current_time, process.memory_info()))
+
+            await asyncio.sleep(0.01)
 
         self.memory_log.append((self.current_time, process.memory_info()))
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
@@ -263,12 +270,24 @@ class Simulation:
     def register_event_callback(self, name: str, callback: str):
         self.event_callbacks[name] = callback
 
+    def schedule_async_task(self, coro: Coroutine) -> asyncio.Task:
+        task = asyncio.create_task(coro)
+        self.pending_tasks.add(task)
+        task.add_done_callback(lambda t: self.pending_tasks.discard(t))
+        return task
+
     def process_event(self, event: Event):
         if event.action not in self.event_callbacks:
             raise RuntimeError("Action %s has no callback!" % event.action)
 
         callback: Callable = getattr(self.clients[event.client_id], self.event_callbacks[event.action])
-        callback(event)
+
+        if inspect.iscoroutinefunction(callback):
+            # Run the async callback
+            self.schedule_async_task(callback(event))
+        else:
+            # Run the sync callback
+            callback(event)
 
     def schedule(self, event: Event):
         assert event.time >= self.current_time, "Cannot schedule event %s in the past!" % event

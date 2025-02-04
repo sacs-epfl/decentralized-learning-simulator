@@ -25,8 +25,6 @@ class ModelTrainer:
         self.partition: Optional[Dataset] = None
         self.settings: SessionSettings = settings
         self.participant_index: int = participant_index
-        self.simulated_speed: Optional[float] = None
-        self.total_training_time: float = 0
         self.is_training: bool = False
 
         self.optimizer: Optional[SGDOptimizer] = None

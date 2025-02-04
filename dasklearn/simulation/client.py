@@ -18,7 +18,7 @@ class BaseClient:
         self.bw_scheduler = BWScheduler(self)
         self.other_nodes_bws: Dict[bytes, int] = {}
 
-        self.simulated_speed: Optional[float] = None
+        self.simulated_speed: float = 5  # Simulated speed in milliseconds
         self.struggler = False
 
         self.latest_task: Optional[str] = None  # Keep track of the latest task
@@ -35,10 +35,9 @@ class BaseClient:
 
     def get_train_time(self) -> int:
         train_time: float = 0.0
-        if self.simulated_speed:
-            local_steps: int = self.simulator.settings.learning.local_steps
-            batch_size: int = self.simulator.settings.learning.batch_size
-            train_time = float(AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000))
+        local_steps: int = self.simulator.settings.learning.local_steps
+        batch_size: int = self.simulator.settings.learning.batch_size
+        train_time = float(AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000))
         return int(train_time * MICROSECONDS)
 
     def start_train(self, event: Event):
