@@ -23,13 +23,6 @@ class EpidemicSimulation(Simulation):
         self.s = math.floor(math.log2(self.settings.participants))
         self.clients_ready_for_round: Dict[int, List[Tuple[int, Dict]]] = defaultdict(lambda: [])
 
-        # Set the other stopping condition to a very large value (we cannot use inf because it's float)
-        if self.settings.stop == "duration":
-            self.settings.rounds = 10 ** 7
-            self.register_event_callback(TEST, "test")
-        else:
-            self.settings.duration = 10 ** 15
-
         random.seed(self.settings.seed)
 
         self.register_event_callback(START_ROUND, "start_round")
@@ -79,10 +72,3 @@ class EpidemicSimulation(Simulation):
                 start_round_event = Event(self.current_time, client_id, START_ROUND, data=info)
                 self.schedule(start_round_event)
             self.clients_ready_for_round.pop(round_nr)
-
-    def schedule(self, event: Event):
-        # Don't schedule events after the running duration elapses, transfers are allowed to satisfy sanity checks,
-        # but their results are not considered
-        if event.time > self.settings.duration and event.action != "start_transfer" and event.action != "finish_outgoing_transfer":
-            return
-        super().schedule(event)

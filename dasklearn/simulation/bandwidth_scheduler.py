@@ -14,7 +14,7 @@ class BWScheduler:
 
     def __init__(self, client) -> None:
         super().__init__()
-        self.bw_limit: int = 0  # in bytes/s
+        self.bw_limit: int = 1000000  # in bytes/s, 1 MB/s by default
         self.outgoing_requests: List[Transfer] = []  # Outgoing transfers waiting to be started
         self.incoming_requests: List[Transfer] = []  # Incoming transfers waiting to be started
 

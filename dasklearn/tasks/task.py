@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from collections import Counter
 
 
@@ -10,8 +10,8 @@ class Task:
         self.func = func
         self.data = data
 
-        self.inputs: List[Task] = []
-        self.outputs: List[Task] = []
+        self.inputs: List[Tuple[Task, int]] = []
+        self.outputs: List[Tuple[Task, int]] = []
 
         self.inputs_resolve: int = 0
         self.done: bool = False
@@ -23,21 +23,21 @@ class Task:
         return name
 
     @staticmethod
-    def replace_values_recursively(d, string_to_replace, new_value, do_replace: bool = True) -> int:
+    def replace_values_recursively(d, value_to_replace, new_value, do_replace: bool = True) -> int:
         values_replaced: int = 0
         if isinstance(d, dict):
             for key, value in d.items():
                 if isinstance(value, (dict, list)):
-                    values_replaced += Task.replace_values_recursively(value, string_to_replace, new_value, do_replace)
-                elif value == string_to_replace:
+                    values_replaced += Task.replace_values_recursively(value, value_to_replace, new_value, do_replace)
+                elif value == value_to_replace:
                     if do_replace:
                         d[key] = new_value
                     values_replaced += 1
         elif isinstance(d, list):
             for i, item in enumerate(d):
                 if isinstance(item, (dict, list)):
-                    Task.replace_values_recursively(item, string_to_replace, new_value, do_replace)
-                elif item == string_to_replace:
+                    values_replaced += Task.replace_values_recursively(item, value_to_replace, new_value, do_replace)
+                elif item == value_to_replace:
                     if do_replace:
                         d[i] = new_value
                     values_replaced += 1
@@ -61,8 +61,8 @@ class Task:
             "name": self.name,
             "func": self.func,
             "data": self.data,
-            "inputs": [task.name for task in self.inputs],
-            "outputs": [task.name for task in self.outputs]
+            "inputs": [(task.name, idx) for task, idx in self.inputs],
+            "outputs": [(task.name, idx) for task, idx in self.outputs]
         }
 
     @staticmethod

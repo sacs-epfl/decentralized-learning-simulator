@@ -15,7 +15,7 @@ def get_args():
     parser.add_argument('--partitioner', type=str, default="iid", choices=["iid", "shards", "dirichlet"])
     parser.add_argument('--dataset-base-path', type=str, default=None)
     parser.add_argument('--peers', type=int, default=2)
-    parser.add_argument('--rounds', type=int, default=1)
+    parser.add_argument('--rounds', type=int, default=0)
     parser.add_argument('--model', type=str, default="gnlenet")
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--log-level', type=str, default="INFO")
@@ -27,8 +27,10 @@ def get_args():
 
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
-    parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "subset", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor"])
+    parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "subset", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor", "conflux"])
     parser.add_argument('--sample-size', type=int, default=10)
+    parser.add_argument('--chunks-in-sample', type=int, default=10)
+    parser.add_argument('--success-fraction', type=float, default=1)
     parser.add_argument('--duration', type=int, default=100)
     parser.add_argument('--gl-period', type=int, default=10)
     parser.add_argument('--agg', type=str, default="default", choices=["default", "average", "age"])

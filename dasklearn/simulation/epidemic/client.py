@@ -102,8 +102,6 @@ class EpidemicClient(BaseClient):
         """
         We received a model.
         """
-        if event.time > self.simulator.settings.duration:
-            return
         round_nr: int = event.data["metadata"]["round"]
         self.client_log("Client %d received from %d model %s in round %d" %
                         (self.index, event.data["from"], event.data["model"], round_nr))

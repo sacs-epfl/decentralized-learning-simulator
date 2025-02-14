@@ -22,17 +22,6 @@ class AsynchronousSimulation(Simulation, ABC):
 
         random.seed(settings.seed)
 
-    def schedule(self, event: Event):
-        """
-        Schedule an event as normal, unless it is time to stop.
-        In that case transfers are still allowed to satisfy sanity checks,
-        but their results are won't be considered (other events cannot be scheduled).
-        """
-        if event.time > self.settings.duration and event.action != "start_transfer" and\
-                event.action != "finish_outgoing_transfer":
-            return
-        super().schedule(event)
-
     def get_send_set(self, index: int) -> Set[int]:
         """
         Returns a set of indices of clients, who will receive a model

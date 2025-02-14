@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Optional, Tuple, List
 
 from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.dpsgd.round import Round
@@ -15,7 +15,7 @@ class DPSGDClient(BaseClient):
         self.round_info: Dict[int, Round] = {}
 
     def init_client(self, event: Event):
-        self.schedule_next_round({"round": 1, "model": None})
+        self.schedule_next_round({"round": 1, "model": (None, 0)})
         # Schedule time based testing if we use time based stopping
         if self.simulator.settings.stop == "duration" and self.simulator.settings.test_period > 0:
             test_event = Event(event.time + self.simulator.settings.test_period, self.index, TEST)
@@ -25,24 +25,26 @@ class DPSGDClient(BaseClient):
         return any([r.is_training for r in self.round_info.values()])
 
     def schedule_next_round(self, round_data: Dict):
-        if round_data["round"] <= self.simulator.settings.rounds:
-            is_sync: bool = self.simulator.settings.synchronous
-            if not is_sync:
-                start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round_data)
-                self.simulator.schedule(start_round_event)
-            else:
-                # We operate in synchronous mode, so the start of the next round is initiated by the simulator.
-                self.simulator.client_ready_for_round(self.index, round_data["round"], round_data)
+        if self.simulator.settings.rounds > 0 and round_data["round"] > self.simulator.settings.rounds:
+            return
+
+        is_sync: bool = self.simulator.settings.synchronous
+        if not is_sync:
+            start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round_data)
+            self.simulator.schedule(start_round_event)
+        else:
+            # We operate in synchronous mode, so the start of the next round is initiated by the simulator.
+            self.simulator.client_ready_for_round(self.index, round_data["round"], round_data)
 
     def start_round(self, event: Event):
         round_nr: int = event.data["round"]
-        model: str = event.data["model"]
+        model: Tuple[Optional[str], int] = event.data["model"]
         incoming_models: Dict[int, Tuple[str, List[float]]] = event.data["incoming_models"]\
             if "incoming_models" in event.data else {}
         # Round has already started
         if round_nr in self.round_info:
             self.round_info[round_nr].incoming_models.update(incoming_models)
-            if model:
+            if model[0]:
                 self.round_info[round_nr].model = model
                 self.schedule_train(self.round_info[round_nr])
             return
@@ -141,7 +143,7 @@ class DPSGDClient(BaseClient):
             test_task_name = "test_%d_%d" % (self.index, round_nr)
             task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index})
             self.add_compute_task(task)
-            round_info.model = test_task_name
+            round_info.model = (test_task_name, 0)
 
         self.logger.debug("Client %d finished round %d" % (self.index, round_nr))
         self.round_info.pop(round_nr)

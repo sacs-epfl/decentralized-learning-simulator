@@ -34,8 +34,8 @@ class WorkflowDAG:
         with open(file_path, "w") as dag_file:
             dag_file.write("from,to\n")
             for task_name, task in self.tasks.items():
-                for output in task.outputs:
-                    dag_file.write("%s,%s\n" % (task_name, output.name))
+                for output_task, _ in task.outputs:
+                    dag_file.write("%s,%s\n" % (task_name, output_task.name))
 
     @classmethod
     def unserialize(cls, serialized_tasks):
@@ -47,10 +47,10 @@ class WorkflowDAG:
         # Now that we created all Task objects, fix the inputs and outputs
         for serialized_task in serialized_tasks:
             task = dag.tasks[serialized_task["name"]]
-            for input_task_name in serialized_task["inputs"]:
-                task.inputs.append(dag.tasks[input_task_name])
-            for output_task_name in serialized_task["outputs"]:
-                task.outputs.append(dag.tasks[output_task_name])
+            for input_task_name, input_task_idx in serialized_task["inputs"]:
+                task.inputs.append((dag.tasks[input_task_name], input_task_idx))
+            for output_task_name, output_task_idx in serialized_task["outputs"]:
+                task.outputs.append((dag.tasks[output_task_name], output_task_idx))
 
         return dag
 
@@ -83,8 +83,8 @@ class WorkflowDAG:
         # Check 1 - make sure that the data dependencies are sane, e.g., the data in each task should actually be
         # dependent on its previous (input) tasks.
         for task_name, task in self.tasks.items():
-            for output_task in task.outputs:
-                replaced: int = output_task.set_data(task_name, "dummy", do_replace=False)
+            for output_task, output_index in task.outputs:
+                replaced: int = output_task.set_data((task.name, output_index), "dummy", do_replace=False)
                 if replaced == 0:
                     raise RuntimeError("Data of output task %s does not contain dependency on task %s!" %
                                        (output_task.name, task_name))
@@ -102,6 +102,8 @@ class WorkflowDAG:
             "gradient_update": "orange",
             "aggregate": "blue",
             "test": "green",
+            "chunk": "purple",
+            "reconstruct_from_chunks": "brown"
         }
         x_coordinate = {}
         x_last = Counter()
@@ -119,11 +121,11 @@ class WorkflowDAG:
                 graph.add_node(task.name)
             else:
                 # Position the node after its inputs
-                max_input_pos: int = max(map(lambda x: x_coordinate[x.name], task.inputs))
+                max_input_pos: int = max(map(lambda x: x_coordinate[x[0].name], task.inputs))
                 x_coordinate[task.name] = max(max_input_pos, x_last[task.data["peer"]]) + 1
                 x_last[task.data["peer"]] = x_coordinate[task.name]
                 # Add edges to the task's inputs
-                for inp in task.inputs:
+                for inp, _ in task.inputs:
                     graph.add_edge(task.name, inp.name)
             # Shift test tasks for better visibility
             if task.func == "test":

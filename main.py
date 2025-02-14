@@ -84,6 +84,12 @@ def run():
         from dasklearn.simulation.lubor.simulation import LuborSimulation as SIM
         from dasklearn.simulation.lubor.settings import LuborSettings
         settings = LuborSettings(**settings.__dict__, k=args.k, no_weights=args.no_weights)
+    elif settings.algorithm == "conflux":
+        from dasklearn.simulation.conflux.simulation import ConfluxSimulation as SIM
+        from dasklearn.simulation.conflux.settings import ConfluxSettings
+        settings = ConfluxSettings(**settings.__dict__, sample_size=args.sample_size,
+                                   chunks_in_sample=args.chunks_in_sample,
+                                   success_fraction=args.success_fraction)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
 
