@@ -43,7 +43,6 @@ class ConfluxClient(AsynchronousClient):
         self.client_log(f"Node {self.index} starts training in round {round_nr}")
 
         # 1. Train the model
-        round_info.is_training = True
         self.schedule_train(round_info)
         round_info.model = await round_info.train_future
         round_info.is_training = False

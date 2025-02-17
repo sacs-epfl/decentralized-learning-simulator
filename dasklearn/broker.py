@@ -15,6 +15,7 @@ import setproctitle
 from dasklearn.communication import Communication
 from dasklearn.functions import *
 from dasklearn.simulation.conflux.settings import ConfluxSettings
+from dasklearn.simulation.teleportation.settings import TeleportationSettings
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
 from dasklearn.util.logging import setup_logging
@@ -291,7 +292,7 @@ class Broker:
                     self.clients_to_brokers[client] = broker
 
             # Load the settings based on the class
-            name_to_cls = {"SessionSettings": SessionSettings, "ConfluxSettings": ConfluxSettings}
+            name_to_cls = {"SessionSettings": SessionSettings, "ConfluxSettings": ConfluxSettings, "TeleportationSettings": TeleportationSettings}
             self.settings = name_to_cls[msg["settings_class"]].from_dict(msg["settings"])
             os.makedirs(self.settings.data_dir, exist_ok=True)
             setup_logging(self.settings.data_dir, "%s.log" % self.identity, log_level=self.settings.log_level)
