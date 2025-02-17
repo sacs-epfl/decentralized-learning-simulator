@@ -121,10 +121,10 @@ def test(settings: SessionSettings, params: Dict):
     accuracies_file_path: str = os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv")
     if not os.path.exists(accuracies_file_path):
         with open(accuracies_file_path, "w") as accuracies_file:
-            accuracies_file.write("peer,round,time,accuracy,loss\n")
+            accuracies_file.write("algorithm,peer,round,time,accuracy,loss\n")
 
     with open(accuracies_file_path, "a") as accuracies_file:
-        accuracies_file.write("%d,%d,%.2f,%f,%f\n" % (peer_id, round_nr, cur_time / MICROSECONDS, accuracy, loss))
+        accuracies_file.write("%s,%d,%d,%.2f,%f,%f\n" % (settings.algorithm, peer_id, round_nr, cur_time / MICROSECONDS, accuracy, loss))
 
     logger.info("Model accuracy (peer %d, round %d): %f, loss: %f", peer_id, round_nr, accuracy, loss)
 

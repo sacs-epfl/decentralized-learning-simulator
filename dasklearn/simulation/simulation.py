@@ -374,7 +374,7 @@ class Simulation:
                  for i in range(self.settings.participants)]
 
         with open(os.path.join(self.settings.data_dir, "accuracies.csv"), "w") as output_file:
-            output_file.write("peer,round,time,accuracy,loss\n")
+            output_file.write("algorithm,peer,round,time,accuracy,loss\n")
             for path in paths:
                 if os.path.exists(path):
                     with open(path, "r") as input_file:
