@@ -60,10 +60,6 @@ def run():
         settings = FLSettings(**settings.__dict__, sample_size=args.sample_size)
     elif settings.algorithm == "dpsgd":
         from dasklearn.simulation.dpsgd.simulation import DPSGDSimulation as SIM
-    elif settings.algorithm == "subset":
-        from dasklearn.simulation.subset.simulation import SubsetDLSimulation as SIM
-        from dasklearn.simulation.subset.settings import SubsetLearningSettings
-        settings = SubsetLearningSettings(**settings.__dict__, sample_size=args.sample_size)
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation as SIM
         from dasklearn.simulation.gossip.settings import GLSettings
@@ -90,6 +86,10 @@ def run():
         settings = ConfluxSettings(**settings.__dict__, sample_size=args.sample_size,
                                    chunks_in_sample=args.chunks_in_sample,
                                    success_fraction=args.success_fraction)
+    elif settings.algorithm == "teleportation":
+        from dasklearn.simulation.teleportation.simulation import TeleportationSimulation as SIM
+        from dasklearn.simulation.teleportation.settings import TeleportationSettings
+        settings = TeleportationSettings(**settings.__dict__, sample_size=args.sample_size)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
 

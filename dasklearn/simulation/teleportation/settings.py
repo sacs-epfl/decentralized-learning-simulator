@@ -6,5 +6,5 @@ from dasklearn.session_settings import SessionSettings
 
 @dataclass_json
 @dataclass
-class SubsetLearningSettings(SessionSettings):
+class TeleportationSettings(SessionSettings):
     sample_size: int = 0
