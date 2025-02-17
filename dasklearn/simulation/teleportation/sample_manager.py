@@ -1,3 +1,4 @@
+from functools import lru_cache
 import hashlib
 from typing import List
 
@@ -8,6 +9,7 @@ class SampleManager:
     """
 
     @staticmethod
+    @lru_cache(maxsize=None)
     def get_sample(round: int, total_peers: int, sample_size: int) -> List[int]:
         peers = list(range(total_peers))
         hashes = []
