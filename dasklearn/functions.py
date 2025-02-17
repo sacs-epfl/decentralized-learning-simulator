@@ -14,6 +14,7 @@ from dasklearn.model_manager import ModelManager
 from dasklearn.model_trainer import ModelTrainer
 from dasklearn.models import unserialize_model, serialize_model, create_model
 from dasklearn.session_settings import SessionSettings
+from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.util import MICROSECONDS
 
 
@@ -27,6 +28,8 @@ lock = threading.Lock()
 def train(settings: SessionSettings, params: Dict):
     global dataset, model_trainers
     model = params["model"]
+    if isinstance(model, tuple):  # Happens for the first round, when the model is a tuple (None, 0)
+        model = model[0]
     round_nr = params["round"]
     cur_time = params["time"]
     peer_id = params["peer"]
@@ -71,7 +74,7 @@ def train(settings: SessionSettings, params: Dict):
 
     logger.debug("Peer %d training in round %d...", peer_id, round_nr)
 
-    return detached_model
+    return [detached_model]
 
 
 def compute_gradient(settings: SessionSettings, params: Dict):
@@ -100,7 +103,7 @@ def aggregate(settings: SessionSettings, params: Dict):
     start_time = time.time()
     agg_model = model_manager.aggregate_trained_models(weights)
     logger.debug("Model aggregation took %f s.", time.time() - start_time)
-    return agg_model
+    return [agg_model]
 
 
 def test(settings: SessionSettings, params: Dict):
@@ -126,4 +129,16 @@ def test(settings: SessionSettings, params: Dict):
     logger.info("Model accuracy (peer %d, round %d): %f, loss: %f", peer_id, round_nr, accuracy, loss)
 
     detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
-    return detached_model
+    return [detached_model]
+
+
+def chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
+    model = params["model"]
+    chunks = ChunkManager.chunk_model(model, settings.chunks_in_sample)
+    return chunks
+
+def reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:
+    chunks = params["chunks"]
+    model = create_model(settings.dataset, architecture=settings.model)
+    model = ChunkManager.reconstruct_model(chunks, model)
+    return [model]

@@ -14,5 +14,7 @@ def create_dataset(settings: SessionSettings) -> FederatedDataset:
 
     if settings.dataset == "cifar10":
         return FederatedDataset(dataset="uoft-cs/cifar10", partitioners={"train": partitioner})
+    elif settings.dataset == "google_speech":
+        return FederatedDataset(dataset="speech_commands", subset = "v0.02", partitioners={"train": partitioner}, trust_remote_code=True)
     else:
         raise RuntimeError("Unknown dataset %s" % settings.dataset)

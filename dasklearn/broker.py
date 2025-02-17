@@ -14,6 +14,7 @@ import setproctitle
 
 from dasklearn.communication import Communication
 from dasklearn.functions import *
+from dasklearn.simulation.conflux.settings import ConfluxSettings
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
 from dasklearn.util.logging import setup_logging
@@ -195,7 +196,7 @@ class Broker:
                 else:
                     # Some broker needs this result - get all brokers we need to inform about this result
                     brokers_to_inform: Set[str] = set()
-                    for next_task in task.outputs:
+                    for next_task, _ in task.outputs:
                         peer_next_task = next_task.data["peer"]
                         brokers_to_inform.add(self.clients_to_brokers[peer_next_task])
 
@@ -267,11 +268,15 @@ class Broker:
         We received a task result - either locally or from another worker. Handle it.
         """
         self.logger.debug("Handling result of task %s", task)
-        for next_task in task.outputs:
-            if next_task.data["peer"] in self.brokers_to_clients[self.identity]:
-                next_task.set_data(task.name, res)
-                if next_task.has_all_inputs():
-                    self.schedule_task(next_task)
+        if not isinstance(res, (list, tuple)):
+            raise RuntimeError("Task result must be a list or tuple")
+        
+        for idx, res_at_idx in enumerate(res):
+            for next_task, next_task_idx in task.outputs:
+                if next_task.data["peer"] in self.brokers_to_clients[self.identity] and idx == next_task_idx:
+                    next_task.set_data((task.name, next_task_idx), res_at_idx)
+                    if next_task.has_all_inputs():
+                        self.schedule_task(next_task)
 
     def on_message(self, identity: str, msg: Dict):
         if identity == "coordinator" and msg["type"] == "config":  # Configuration received from the coordinator
@@ -285,7 +290,9 @@ class Broker:
                 for client in clients:
                     self.clients_to_brokers[client] = broker
 
-            self.settings = SessionSettings.from_dict(msg["settings"])
+            # Load the settings based on the class
+            name_to_cls = {"SessionSettings": SessionSettings, "ConfluxSettings": ConfluxSettings}
+            self.settings = name_to_cls[msg["settings_class"]].from_dict(msg["settings"])
             os.makedirs(self.settings.data_dir, exist_ok=True)
             setup_logging(self.settings.data_dir, "%s.log" % self.identity, log_level=self.settings.log_level)
             self.dag = WorkflowDAG.unserialize(msg["dag"])

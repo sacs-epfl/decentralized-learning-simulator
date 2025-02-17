@@ -5,7 +5,7 @@ class Round:
 
     def __init__(self, round_nr: int):
         self.round_nr: int = round_nr
-        self.model: Optional[str] = None
+        self.model: Tuple[Optional[str], int] = (None, 0)
         self.incoming_models: Dict[int, Tuple[str, List[float]]] = {}
 
         # State

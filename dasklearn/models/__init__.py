@@ -35,5 +35,8 @@ def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
     elif dataset == "movielens":
         from dasklearn.models.MovieLens import MatrixFactorization
         return MatrixFactorization()
+    elif dataset == "google_speech":
+        from dasklearn.models.resnet_speech import resnet34
+        return resnet34(num_classes=35, in_channels=1)
     else:
         raise RuntimeError("Unknown dataset %s" % dataset)

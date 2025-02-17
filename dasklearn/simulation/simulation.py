@@ -72,6 +72,7 @@ class Simulation:
         self.register_event_callback(START_TRAIN, "start_train")
         self.register_event_callback(START_TRANSFER, "start_transfer")
         self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
+        self.register_event_callback(SEND_MESSAGE, "on_message")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
@@ -227,8 +228,7 @@ class Simulation:
         process = psutil.Process()
         self.memory_log.append((self.current_time, process.memory_info()))
 
-        while self.events or self.pending_tasks:
-
+        while (self.events or self.pending_tasks) and self.current_time < self.settings.duration:
             # Process synchronous events
             while self.events:
                 _, _, event = self.events.pop(0)
@@ -240,6 +240,11 @@ class Simulation:
                     self.memory_log.append((self.current_time, process.memory_info()))
 
             await asyncio.sleep(0.01)
+        
+        self.events = []
+        for task in self.pending_tasks:
+            task.cancel()
+        self.pending_tasks.clear()
 
         self.memory_log.append((self.current_time, process.memory_info()))
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
@@ -311,6 +316,7 @@ class Simulation:
             "brokers": self.broker_addresses,
             "brokers_to_clients": self.brokers_to_clients,
             "settings": self.settings.to_dict(),
+            "settings_class": self.settings.__class__.__name__,
             "dag": self.workflow_dag.serialize()
         }
         msg = pickle.dumps(data)
