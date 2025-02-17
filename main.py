@@ -52,6 +52,7 @@ def run():
         wait=args.wait,
         stragglers_ratio=args.stragglers_ratio,
         stragglers_proportion=args.stragglers_proportion,
+        profile=args.profile,
     )
 
     if settings.algorithm == "fl":

@@ -195,8 +195,27 @@ class Simulation:
             self.apply_diablo_traces()
         else:
             raise RuntimeError("Unknown traces %s" % self.settings.traces)
+        
+    def start_profile(self):
+        # Check if the Yappi library has been installed
+        try:
+            import yappi
+        except ImportError:
+            self.logger.error("Yappi library not installed - cannot profile")
+            return
+        yappi.start(builtins=True)
+
+    def stop_profile(self):
+        import yappi
+        yappi.stop()
+        yappi_stats = yappi.get_func_stats()
+        yappi_stats.sort("tsub")
+        yappi_stats.save(os.path.join(self.data_dir, "yappi.stats"), type='callgrind')
 
     async def run(self):
+        if self.settings.profile:
+            self.start_profile()
+
         self.simulation_start_time: float = time.time()
         self.setup_directories()
         if not self.settings.unit_testing:
@@ -249,6 +268,9 @@ class Simulation:
         self.memory_log.append((self.current_time, process.memory_info()))
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
         self.save_measurements()
+
+        if self.settings.profile:
+            self.stop_profile()
 
         # Sanity check the DAG
         self.workflow_dag.check_validity()
