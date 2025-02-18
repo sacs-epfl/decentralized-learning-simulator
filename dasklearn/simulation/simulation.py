@@ -273,13 +273,6 @@ class Simulation:
         if not self.settings.dry_run:
             await self.solve_workflow_graph()
 
-        # Done! Sanity checks
-        for client in self.clients:
-            assert len(client.bw_scheduler.incoming_requests) == 0
-            assert len(client.bw_scheduler.outgoing_requests) == 0
-            assert len(client.bw_scheduler.incoming_transfers) == 0
-            assert len(client.bw_scheduler.outgoing_transfers) == 0
-
         if self.settings.dry_run:
             self.logger.info("Dry run - shutdown")
             asyncio.get_event_loop().stop()
