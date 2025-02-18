@@ -1,4 +1,3 @@
-from asyncio import Future
 from random import Random
 from typing import List
 
@@ -26,7 +25,7 @@ class ConfluxClient(AsynchronousClient):
             start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round)
             self.simulator.schedule(start_round_event)
 
-    async def start_round(self, event: Event):
+    def start_round(self, event: Event):
         round_info: Round = event.data
         self.round_info[round_info.round_nr] = round_info
         round_nr: int = round_info.round_nr
@@ -44,23 +43,27 @@ class ConfluxClient(AsynchronousClient):
 
         # 1. Train the model
         self.schedule_train(round_info)
-        round_info.model = await round_info.train_future
+
+    def finish_train(self, event: Event):
+        """
+        We finished training.
+        """
+        round_nr: int = event.data["round"]
+        round_info: Round = self.round_info[round_nr]
         round_info.is_training = False
         round_info.train_done = True
+        round_info.model = event.data["model"]
 
         # 2. Start sharing the model chunks
         participants_next_sample = SampleManager.get_sample(round_nr + 1, len(self.simulator.clients), self.simulator.settings.sample_size)
         participants_next_sample = sorted(participants_next_sample)
-        await self.gossip_chunks(round_info, participants_next_sample)
+        self.gossip_chunks(round_info, participants_next_sample)
 
-        self.logger.info("Participant %d completed round %d", self.index, round_nr)
-        self.round_info.pop(round_nr)
-
-    async def gossip_chunks(self, round_info: Round, participants: List[int]) -> None:
+    def gossip_chunks(self, round_info: Round, participants: List[int]) -> None:
         """
         Gossip chunks to the next sample of participants.
         """
-        self.logger.info("Participant %d starts gossiping chunks in round %d", self.index, round_info.round_nr)
+        self.client_log(f"Participant {self.index} starts gossiping chunks in round {round_info.round_nr}")
 
         # Add compute tasks for the chunks
         task_name = Task.generate_name("chunk")
@@ -76,17 +79,14 @@ class ConfluxClient(AsynchronousClient):
 
         self.random.shuffle(round_info.send_queue)
 
-        for recipient_idx, chunk_idx in round_info.send_queue:
-            # TODO we should probably start several transfers at the same time to better utilize outgoing bandwidth!
-            await self.send_chunk(round_info, task_name, chunk_idx, recipient_idx)
+        # Send the first chunk
+        participant, chunk_idx = round_info.send_queue.pop(0)
+        self.send_chunk(round_info, task_name, chunk_idx, participant)
 
-    async def send_chunk(self, round_info: Round, model_name: str, chunk_idx: int, recipient_idx: int) -> None:
+    def send_chunk(self, round_info: Round, model_name: str, chunk_idx: int, recipient_idx: int) -> None:
         event_data = {"from": self.index, "to": recipient_idx, "model": model_name, "metadata": {"chunk": chunk_idx, "round": round_info.round_nr + 1}}
         start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
         self.simulator.schedule(start_transfer_event)
-
-        round_info.send_chunk_future = Future()
-        await round_info.send_chunk_future
 
     def start_transfer(self, event: Event):
         """
@@ -99,7 +99,15 @@ class ConfluxClient(AsynchronousClient):
         super().finish_outgoing_transfer(event)
         metadata: Dict = event.data["transfer"].metadata
         round_info = self.round_info[metadata["round"] - 1]
-        round_info.send_chunk_future.set_result(None)
+
+        # We've sent a chunk - send the next one
+        if round_info.send_queue:
+            participant, chunk_idx = round_info.send_queue.pop(0)
+            self.send_chunk(round_info, event.data["transfer"].model, chunk_idx, participant)
+        else:
+            # We're done with this round
+            self.client_log(f"Participant {self.index} completed round {round_info.round_nr}")
+            self.round_info.pop(round_info.round_nr)
 
     def on_incoming_model(self, event: Event):
         """
@@ -160,13 +168,3 @@ class ConfluxClient(AsynchronousClient):
         start_train_event = Event(self.simulator.current_time, self.index, START_TRAIN, data={
             "model": round_info.model, "round": round_info.round_nr})
         self.simulator.schedule(start_train_event)
-
-    def finish_train(self, event: Event):
-        """
-        We finished training.
-        """
-        cur_round: int = event.data["round"]
-        round_info: Round = self.round_info[cur_round]
-        round_info.is_training = False
-        round_info.train_done = True
-        round_info.train_future.set_result(event.data["model"])

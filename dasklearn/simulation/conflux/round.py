@@ -1,4 +1,3 @@
-from asyncio import Future
 from typing import List, Optional, Tuple
 
 from dasklearn.simulation.conflux.chunk_manager import ChunkManager
@@ -20,8 +19,6 @@ class Round:
         # State
         self.is_training: bool = False
         self.train_done: bool = False
-        self.train_future: Future = Future()
-        self.send_chunk_future: Future = Future()
         self.chunk_gossip_done: bool = False
         self.send_queue: List[Tuple[bytes, int]] = []
         self.received_enough_chunks: bool = False

@@ -1,4 +1,3 @@
-from asyncio import Future
 from typing import Dict, List, Optional, Tuple
 
 
@@ -12,4 +11,3 @@ class Round:
         # State
         self.is_training: bool = False
         self.train_done: bool = False
-        self.train_future: Future = Future()
