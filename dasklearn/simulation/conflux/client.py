@@ -35,7 +35,7 @@ class ConfluxClient(AsynchronousClient):
         # Should we test the model?
         if round_nr > 1 and (round_nr - 1) % self.simulator.settings.test_interval == 0:
             test_task_name = "test_%d_%d" % (self.index, round_nr)
-            task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index})
+            task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr - 1, "time": self.simulator.current_time, "peer": self.index})
             self.add_compute_task(task)
             round_info.model = (test_task_name, 0)
 
