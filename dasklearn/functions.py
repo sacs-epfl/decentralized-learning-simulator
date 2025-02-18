@@ -126,7 +126,7 @@ def test(settings: SessionSettings, params: Dict):
     with open(accuracies_file_path, "a") as accuracies_file:
         accuracies_file.write("%s,%d,%d,%.2f,%f,%f\n" % (settings.algorithm, peer_id, round_nr, cur_time / MICROSECONDS, accuracy, loss))
 
-    logger.info("Model accuracy (peer %d, round %d): %f, loss: %f", peer_id, round_nr, accuracy, loss)
+    logger.info("Model accuracy (peer %d, round %d): %f, loss: %f, time: %.2f", peer_id, round_nr, accuracy, loss, cur_time / MICROSECONDS)
 
     detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
     return [detached_model]
