@@ -152,7 +152,7 @@ class ConfluxClient(AsynchronousClient):
         participants_previous_sample = SampleManager.get_sample(round_info.round_nr - 1, len(self.simulator.clients), self.simulator.settings.sample_size)
         for participant in participants_previous_sample:
             # TODO assumed to be instant for now
-            self.send_message_to_client(participant, "has_enough_chunks", {"round": round_info.round_nr})
+            self.send_message_to_client(participant, "has_enough_chunks", {"round": round_info.round_nr - 1})
 
     def on_message(self, event: Event):
         if event.data["type"] == "has_enough_chunks":
