@@ -175,6 +175,8 @@ class Broker:
                 task = self.dag.tasks[task_name]
                 self.items_in_worker_queue -= 1
                 self.completed_tasks += 1
+                if self.completed_tasks % 1000 == 0:
+                    self.logger.info("Completed %d tasks", self.completed_tasks)
 
                 received_by_broker_time = time.time()
                 received_by_worker_time = info["received"]
