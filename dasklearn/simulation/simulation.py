@@ -379,12 +379,12 @@ class Simulation:
                     os.remove(path)
 
     def save_measurements(self) -> None:
-        # Write time utilization
-        with open(os.path.join(self.data_dir, "time_utilisation.csv"), "w") as file:
-            file.write("client,compute_time,total_time\n")
+        # Write client statistics
+        with open(os.path.join(self.data_dir, "client_statistics.csv"), "w") as file:
+            file.write("client,bytes_sent,bytes_received,compute_time,training_speed\n")
             for client in self.clients:
-                # Supports only duration based algorithms
-                file.write("%d,%d,%d\n" % (client.index, client.compute_time, self.settings.duration))
+                file.write("%d,%d,%d,%d,%d\n" % (
+                    client.index, client.bw_scheduler.total_bytes_sent, client.bw_scheduler.total_bytes_received, client.compute_time, client.simulated_speed))
         # Write aggregation log
         with open(os.path.join(self.data_dir, "aggregations.csv"), "w") as file:
             file.write("client;clients;ages\n")
@@ -405,11 +405,6 @@ class Simulation:
                 total_opportunity: int = sum(client.opportunity.values())
                 for contributor, value in client.opportunity.items():
                     file.write("%d,%d,%f\n" % (client.index, contributor, value / total_opportunity))
-        # Write client speed log
-        with open(os.path.join(self.data_dir, "speeds.csv"), "w") as file:
-            file.write("client,training_time\n")
-            for client in self.clients:
-                file.write("%d,%d\n" % (client.index, client.simulated_speed))
         # Write max memory log
         with open(os.path.join(self.data_dir, "max_memory.csv"), "w") as file:
             file.write("max_memory_usage_kb\n")
