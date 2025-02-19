@@ -121,12 +121,13 @@ def test(settings: SessionSettings, params: Dict):
     accuracies_file_path: str = os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv")
     if not os.path.exists(accuracies_file_path):
         with open(accuracies_file_path, "w") as accuracies_file:
-            accuracies_file.write("algorithm,peer,round,time,accuracy,loss\n")
+            accuracies_file.write("algorithm,partitioner,alpha,peer,round,time,accuracy,loss\n")
 
     with open(accuracies_file_path, "a") as accuracies_file:
-        accuracies_file.write("%s,%d,%d,%.2f,%f,%f\n" % (settings.algorithm, peer_id, round_nr, cur_time / MICROSECONDS, accuracy, loss))
+        accuracies_file.write("%s,%s,%g,%d,%d,%.2f,%f,%f\n" % (
+            settings.algorithm, settings.partitioner, settings.alpha, peer_id, round_nr, cur_time / MICROSECONDS, accuracy, loss))
 
-    logger.info("Model accuracy (peer %d, round %d): %f, loss: %f, time: %.2f", peer_id, round_nr, accuracy, loss, cur_time / MICROSECONDS)
+    logger.info("[t=%.2f] Model accuracy (peer %d, round %d): %f, loss: %f", cur_time / MICROSECONDS, peer_id, round_nr, accuracy, loss)
 
     detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
     return [detached_model]
