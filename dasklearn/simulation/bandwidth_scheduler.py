@@ -28,7 +28,11 @@ class BWScheduler:
 
         self.is_active: bool = False  # Whether we are sending or receiving something
         self.became_active: int = 0
+
+        # Statistics
         self.total_time_transmitting: int = 0
+        self.total_bytes_sent = 0
+        self.total_bytes_received = 0
 
     def get_allocated_outgoing_bw(self) -> int:
         allocated_bw: int = sum([transfer.allocated_bw for transfer in self.outgoing_transfers])
@@ -135,6 +139,7 @@ class BWScheduler:
         self.logger.debug("Transfer %d: %s => %s has completed", transfer.transfer_id, self.my_id,
                           transfer.receiver_scheduler.my_id)
         transfer.finish()
+        self.total_bytes_sent += transfer.get_transferred_bytes()
 
         # Inform the other side
         self.unregister_transfer(transfer, is_outgoing=True)
@@ -155,6 +160,7 @@ class BWScheduler:
         Then we inform other pending incoming requests.
         """
         self.unregister_transfer(completed_transfer, is_outgoing=False)
+        self.total_bytes_received += completed_transfer.get_transferred_bytes()
 
         cur_time = self.client.simulator.current_time
         data = {
