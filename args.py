@@ -53,6 +53,9 @@ def get_args():
     # Plots
     parser.add_argument('--compute-graph-plot-size', type=int, default=100)
 
+    # Profiling
+    parser.add_argument('--profile', action=argparse.BooleanOptionalAction)
+
     # Broker-related parameters
     parser.add_argument('--brokers', type=int, default=1)
     parser.add_argument('--port', type=int, default=5555)

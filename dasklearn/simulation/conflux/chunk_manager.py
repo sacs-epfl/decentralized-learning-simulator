@@ -51,7 +51,3 @@ class ChunkManager:
             pointer += numel
 
         return model
-
-    def aggregate_received_chunks(self):
-        
-        self.received_chunks = None

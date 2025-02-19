@@ -20,7 +20,7 @@ class TeleportationClient(AsynchronousClient):
             start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round)
             self.simulator.schedule(start_round_event)
 
-    async def start_round(self, event: Event):
+    def start_round(self, event: Event):
         round_info: Round = event.data
         self.round_info[round_info.round_nr] = round_info
         round_nr: int = round_info.round_nr
@@ -30,7 +30,7 @@ class TeleportationClient(AsynchronousClient):
         # Should we test the model?
         if round_nr > 1 and (round_nr - 1) % self.simulator.settings.test_interval == 0:
             test_task_name = "test_%d_%d" % (self.index, round_nr)
-            task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index})
+            task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr - 1, "time": self.simulator.current_time, "peer": self.index})
             self.add_compute_task(task)
             round_info.model = (test_task_name, 0)
 
@@ -38,9 +38,16 @@ class TeleportationClient(AsynchronousClient):
 
         # 1. Train the model
         self.schedule_train(round_info)
-        round_info.model = await round_info.train_future
+
+    def finish_train(self, event: Event):
+        """
+        We finished training.
+        """
+        round_nr: int = event.data["round"]
+        round_info: Round = self.round_info[round_nr]
         round_info.is_training = False
         round_info.train_done = True
+        round_info.model = event.data["model"]
 
         # 2. Start sharing the models in the G_k topology related ot the currente sample
         sample: List[int] = SampleManager.get_sample(round_nr, len(self.simulator.clients), self.simulator.settings.sample_size)
@@ -105,13 +112,3 @@ class TeleportationClient(AsynchronousClient):
         start_train_event = Event(self.simulator.current_time, self.index, START_TRAIN, data={
             "model": round_info.model, "round": round_info.round_nr})
         self.simulator.schedule(start_train_event)
-
-    def finish_train(self, event: Event):
-        """
-        We finished training.
-        """
-        cur_round: int = event.data["round"]
-        round_info: Round = self.round_info[cur_round]
-        round_info.is_training = False
-        round_info.train_done = True
-        round_info.train_future.set_result(event.data["model"])

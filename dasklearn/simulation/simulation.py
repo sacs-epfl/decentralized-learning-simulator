@@ -1,6 +1,5 @@
 import asyncio
 import bisect
-import inspect
 import os
 import pickle
 import shutil
@@ -8,9 +7,9 @@ import resource
 import psutil
 import random
 import time
-from asyncio import Future, ensure_future
+from asyncio import Future
 from random import Random
-from typing import Coroutine, List, Optional, Callable, Set, Tuple
+from typing import List, Optional, Callable, Set, Tuple
 from datetime import datetime
 from heapq import nlargest
 
@@ -195,8 +194,27 @@ class Simulation:
             self.apply_diablo_traces()
         else:
             raise RuntimeError("Unknown traces %s" % self.settings.traces)
+        
+    def start_profile(self):
+        # Check if the Yappi library has been installed
+        try:
+            import yappi
+        except ImportError:
+            self.logger.error("Yappi library not installed - cannot profile")
+            return
+        yappi.start(builtins=True)
+
+    def stop_profile(self):
+        import yappi
+        yappi.stop()
+        yappi_stats = yappi.get_func_stats()
+        yappi_stats.sort("tsub")
+        yappi_stats.save(os.path.join(self.data_dir, "yappi.stats"), type='callgrind')
 
     async def run(self):
+        if self.settings.profile:
+            self.start_profile()
+
         self.simulation_start_time: float = time.time()
         self.setup_directories()
         if not self.settings.unit_testing:
@@ -228,27 +246,24 @@ class Simulation:
         process = psutil.Process()
         self.memory_log.append((self.current_time, process.memory_info()))
 
-        while (self.events or self.pending_tasks) and self.current_time < self.settings.duration:
+        while self.events and self.current_time < self.settings.duration:
             # Process synchronous events
-            while self.events:
-                _, _, event = self.events.pop(0)
-                assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
-                self.current_time = event.time
-                self.process_event(event)
-                # No need to track memory at every event
-                if random.random() < 0.1 / self.settings.participants:
-                    self.memory_log.append((self.current_time, process.memory_info()))
-
-            await asyncio.sleep(0.01)
+            _, _, event = self.events.pop(0)
+            assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
+            self.current_time = event.time
+            self.process_event(event)
+            # No need to track memory at every event
+            if random.random() < 0.1 / self.settings.participants:
+                self.memory_log.append((self.current_time, process.memory_info()))
         
         self.events = []
-        for task in self.pending_tasks:
-            task.cancel()
-        self.pending_tasks.clear()
 
         self.memory_log.append((self.current_time, process.memory_info()))
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
         self.save_measurements()
+
+        if self.settings.profile:
+            self.stop_profile()
 
         # Sanity check the DAG
         self.workflow_dag.check_validity()
@@ -257,13 +272,6 @@ class Simulation:
 
         if not self.settings.dry_run:
             await self.solve_workflow_graph()
-
-        # Done! Sanity checks
-        for client in self.clients:
-            assert len(client.bw_scheduler.incoming_requests) == 0
-            assert len(client.bw_scheduler.outgoing_requests) == 0
-            assert len(client.bw_scheduler.incoming_transfers) == 0
-            assert len(client.bw_scheduler.outgoing_transfers) == 0
 
         if self.settings.dry_run:
             self.logger.info("Dry run - shutdown")
@@ -275,24 +283,12 @@ class Simulation:
     def register_event_callback(self, name: str, callback: str):
         self.event_callbacks[name] = callback
 
-    def schedule_async_task(self, coro: Coroutine) -> asyncio.Task:
-        task = asyncio.create_task(coro)
-        self.pending_tasks.add(task)
-        task.add_done_callback(lambda t: self.pending_tasks.discard(t))
-        return task
-
     def process_event(self, event: Event):
         if event.action not in self.event_callbacks:
             raise RuntimeError("Action %s has no callback!" % event.action)
 
         callback: Callable = getattr(self.clients[event.client_id], self.event_callbacks[event.action])
-
-        if inspect.iscoroutinefunction(callback):
-            # Run the async callback
-            self.schedule_async_task(callback(event))
-        else:
-            # Run the sync callback
-            callback(event)
+        callback(event)
 
     def schedule(self, event: Event):
         assert event.time >= self.current_time, "Cannot schedule event %s in the past!" % event
@@ -374,7 +370,7 @@ class Simulation:
                  for i in range(self.settings.participants)]
 
         with open(os.path.join(self.settings.data_dir, "accuracies.csv"), "w") as output_file:
-            output_file.write("peer,round,time,accuracy,loss\n")
+            output_file.write("algorithm,dataset,partitioner,alpha,peer,round,time,accuracy,loss\n")
             for path in paths:
                 if os.path.exists(path):
                     with open(path, "r") as input_file:
@@ -383,12 +379,12 @@ class Simulation:
                     os.remove(path)
 
     def save_measurements(self) -> None:
-        # Write time utilization
-        with open(os.path.join(self.data_dir, "time_utilisation.csv"), "w") as file:
-            file.write("client,compute_time,total_time\n")
+        # Write client statistics
+        with open(os.path.join(self.data_dir, "client_statistics.csv"), "w") as file:
+            file.write("client,bytes_sent,bytes_received,compute_time,training_speed\n")
             for client in self.clients:
-                # Supports only duration based algorithms
-                file.write("%d,%d,%d\n" % (client.index, client.compute_time, self.settings.duration))
+                file.write("%d,%d,%d,%d,%d\n" % (
+                    client.index, client.bw_scheduler.total_bytes_sent, client.bw_scheduler.total_bytes_received, client.compute_time, client.simulated_speed))
         # Write aggregation log
         with open(os.path.join(self.data_dir, "aggregations.csv"), "w") as file:
             file.write("client;clients;ages\n")
@@ -409,11 +405,6 @@ class Simulation:
                 total_opportunity: int = sum(client.opportunity.values())
                 for contributor, value in client.opportunity.items():
                     file.write("%d,%d,%f\n" % (client.index, contributor, value / total_opportunity))
-        # Write client speed log
-        with open(os.path.join(self.data_dir, "speeds.csv"), "w") as file:
-            file.write("client,training_time\n")
-            for client in self.clients:
-                file.write("%d,%d\n" % (client.index, client.simulated_speed))
         # Write max memory log
         with open(os.path.join(self.data_dir, "max_memory.csv"), "w") as file:
             file.write("max_memory_usage_kb\n")

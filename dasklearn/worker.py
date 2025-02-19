@@ -23,7 +23,7 @@ class Worker:
             received_time = time.time()
             task_name, func_name, data = self.shared_queue.get()  # Blocks until an item is available
             try:
-                self.logger.info("Worker %d executing task %s", self.index, task_name)
+                self.logger.debug("Worker %d executing task %s", self.index, task_name)
                 if func_name not in globals():
                     raise RuntimeError("Task function %s not found!" % func_name)
                 f = globals()[func_name]
