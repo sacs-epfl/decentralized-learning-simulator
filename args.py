@@ -28,6 +28,7 @@ def get_args():
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
     parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor", "conflux", "teleportation"])
+    parser.add_argument('--topology', type=str, default="kreg", choices=["ring", "kreg"])
     parser.add_argument('--sample-size', type=int, default=10)
     parser.add_argument('--chunks-in-sample', type=int, default=10)
     parser.add_argument('--success-fraction', type=float, default=1)

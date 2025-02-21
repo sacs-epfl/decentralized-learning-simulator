@@ -59,8 +59,10 @@ def run():
         from dasklearn.simulation.fl.simulation import FLSimulation as SIM
         from dasklearn.simulation.fl.settings import FLSettings
         settings = FLSettings(**settings.__dict__, sample_size=args.sample_size)
-    elif settings.algorithm == "dpsgd":
+    elif settings.algorithm in ["dpsgd", "epidemic"]:
         from dasklearn.simulation.dpsgd.simulation import DPSGDSimulation as SIM
+        from dasklearn.simulation.dpsgd.settings import DPSGDSettings
+        settings = DPSGDSettings(**settings.__dict__, el=args.el, topology=args.topology, k=args.k)
     elif settings.algorithm == "gossip":
         from dasklearn.simulation.gossip.simulation import GossipSimulation as SIM
         from dasklearn.simulation.gossip.settings import GLSettings
@@ -73,10 +75,6 @@ def run():
         from dasklearn.simulation.adpsgd.simulation import ADPSGDSimulation as SIM
         from dasklearn.simulation.adpsgd.settings import ADPSGDSettings
         settings = ADPSGDSettings(**settings.__dict__, agg=args.agg)
-    elif settings.algorithm == "epidemic":
-        from dasklearn.simulation.epidemic.simulation import EpidemicSimulation as SIM
-        from dasklearn.simulation.epidemic.settings import ELSettings
-        settings = ELSettings(**settings.__dict__, el=args.el)
     elif settings.algorithm == "lubor":
         from dasklearn.simulation.lubor.simulation import LuborSimulation as SIM
         from dasklearn.simulation.lubor.settings import LuborSettings

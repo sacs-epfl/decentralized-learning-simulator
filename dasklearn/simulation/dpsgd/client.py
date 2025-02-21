@@ -82,12 +82,14 @@ class DPSGDClient(BaseClient):
         round_info.is_training = False
         round_info.train_done = True
 
-        for index, neighbour in enumerate(list(self.simulator.topology.neighbors(self.index))):
+        if len(self.simulator.topologies) < cur_round:
+            self.simulator.add_topology()
+        for neighbour in self.simulator.topologies[cur_round - 1].successors(self.index):
             self.send_model(neighbour, event.data["model"], metadata={"round": event.data["round"],
                                                                       "opportunity": self.opportunity})
 
         # Do we have all incoming models for this round? If so, aggregate.
-        num_nb = len(list(self.simulator.topology.neighbors(self.index)))
+        num_nb = len(list(self.simulator.topologies[cur_round - 1].predecessors(self.index)))
         if len(round_info.incoming_models) == num_nb:
             aggregate_event = Event(self.simulator.current_time, self.index, AGGREGATE, data={"round": cur_round})
             self.simulator.schedule(aggregate_event)
@@ -117,7 +119,9 @@ class DPSGDClient(BaseClient):
         else:
             round_info: Round = self.round_info[round_nr]
 
-            num_nb = len(list(self.simulator.topology.neighbors(self.index)))
+            if len(self.simulator.topologies) < round_nr:
+                self.simulator.add_topology()
+            num_nb = len(list(self.simulator.topologies[round_nr - 1].predecessors(self.index)))
             round_info.incoming_models[event.data["from"]] = event.data["model"], event.data["metadata"]["opportunity"]
 
             # Are we done training our own model in this round and have we received all nb models?
