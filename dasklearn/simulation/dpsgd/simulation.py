@@ -1,5 +1,7 @@
+from copy import deepcopy
 import math
 from collections import defaultdict
+import random
 from typing import List, Tuple
 
 import networkx as nx
@@ -15,18 +17,43 @@ class DPSGDSimulation(Simulation):
 
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
-        self.k = math.floor(math.log2(self.settings.participants))
-        self.topology = nx.random_regular_graph(self.k, self.settings.participants, seed=self.settings.seed)
+        self.topologies = []
+        if self.settings.k == 0:
+                    self.settings.k = math.floor(math.log2(self.settings.participants))
         self.clients_ready_for_round: Dict[int, List[Tuple[int, Dict]]] = defaultdict(lambda: [])
 
         self.register_event_callback(START_ROUND, "start_round")
         self.register_event_callback(FINISH_TRAIN, "finish_train")
         self.register_event_callback(AGGREGATE, "aggregate")
 
-    def initialize_clients(self):
-        super().initialize_clients()
-        for client in self.clients:
-            client.topology = self.topology
+    def add_topology(self) -> None:
+        # Generate a new topology
+        if self.settings.algorithm == "dpsgd" or (self.settings.algorithm == "epidemic" and self.settings.el == "oracle"):
+            seed = self.settings.seed if self.settings.algorithm == "dpsgd" else self.settings.seed + len(self.topologies)
+            r = random.Random(seed)
+
+            if self.settings.topology == "kreg":
+                g = nx.random_regular_graph(self.settings.k, self.settings.participants, seed=seed)
+            elif self.settings.topology == "ring":
+                g = nx.cycle_graph(self.settings.participants)
+                nodes = list(g.nodes())
+                mapping = dict(zip(g.nodes(), r.sample(nodes, len(nodes))))
+                g = nx.relabel_nodes(g, mapping)
+            else:
+                raise ValueError("Unknown topology %s" % self.settings.topology)
+            g = g.to_directed()
+        else:
+            g = nx.DiGraph()
+            if self.settings.algorithm == "epidemic" and self.settings.el == "local":
+                for node in self.participants:
+                    nodes = self.participants[:]
+                    nodes.remove(node)
+                    connections = r.sample(nodes, self.k)
+                    for other_node in connections:
+                        g.add_edge(node, other_node)
+
+        print("Topology: %s" % g.edges())
+        self.topologies.append(g)
 
     def client_ready_for_round(self, client_id: int, round_nr: int, start_round_info: Dict):
         """
