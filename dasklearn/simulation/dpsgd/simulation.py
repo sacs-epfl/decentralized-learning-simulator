@@ -52,7 +52,6 @@ class DPSGDSimulation(Simulation):
                     for other_node in connections:
                         g.add_edge(node, other_node)
 
-        print("Topology: %s" % g.edges())
         self.topologies.append(g)
 
     def client_ready_for_round(self, client_id: int, round_nr: int, start_round_info: Dict):
