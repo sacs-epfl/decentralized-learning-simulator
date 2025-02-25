@@ -39,6 +39,7 @@ def run():
         test_interval=args.test_interval,
         brokers=args.brokers,
         traces=args.traces,
+        churn=args.churn,
         min_bandwidth=args.min_bandwidth,
         rounds=args.rounds,
         port=args.port,

@@ -38,8 +38,7 @@ class GossipClient(AsynchronousClient):
         """
         We received a model. Perform one aggregate and training step.
         """
-        self.last_model = (event.data["from"], event.data["model"], event.data["metadata"]["age"],
-                           event.data["metadata"]["opportunity"])
+        self.last_model = event.data["from"], event.data["model"], event.data["metadata"]["age"]
         # Accept the incoming model if no other model is being trained
         if self.available:
             self.clear()

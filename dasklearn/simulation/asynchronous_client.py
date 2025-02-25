@@ -38,7 +38,6 @@ class AsynchronousClient(BaseClient, ABC):
         self.compute_time += event.data["train_time"]
         self.own_model = event.data["model"]
         self.age += 1
-        self.opportunity[self.index] += 1
 
     def on_incoming_model(self, event: Event):
         """
@@ -60,7 +59,7 @@ class AsynchronousClient(BaseClient, ABC):
         if len(models) == 0:
             return
         # Add own model to the aggregation
-        models.append((self.index, self.own_model, self.age, self.opportunity))
+        models.append((self.index, self.own_model, self.age))
         model_names: List[str] = list(map(lambda x: x[1], models))
         self.aggregations.append(models)
         self.client_log("Client %d will aggregate (%s)" % (self.index, model_names))
@@ -73,7 +72,6 @@ class AsynchronousClient(BaseClient, ABC):
         else:
             weights = None
         self.own_model = self.aggregate_models(model_names, self.age, weights)
-        self.merge_opportunity(list(map(lambda x: x[3], models)), weights)
 
     def send(self):
         """
@@ -82,7 +80,7 @@ class AsynchronousClient(BaseClient, ABC):
         clients: Set[int] = self.simulator.get_send_set(self.index)
         for client in clients:
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, client))
-            self.send_model(client, self.own_model, metadata=dict(age=self.age, opportunity=self.opportunity))
+            self.send_model(client, self.own_model, metadata=dict(age=self.age))
 
     def test(self, event: Event):
         """

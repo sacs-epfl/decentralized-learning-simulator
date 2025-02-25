@@ -1,8 +1,4 @@
-from typing import List, Optional, Tuple
-
-from dasklearn.simulation.conflux.chunk_manager import ChunkManager
-
-from torch import nn
+from typing import List, Optional, Set, Tuple
 
 from dasklearn.simulation.conflux.settings import ConfluxSettings
 
@@ -23,6 +19,7 @@ class Round:
         self.send_queue: List[Tuple[bytes, int]] = []
         self.received_enough_chunks: bool = False
         self.received_chunks: List[List[Tuple[str, int]]] = []  # Keep track of received chunks, indexed by chunk index
+        self.has_sent_view: Set[int] = set()  # Keep track of which clients have received our view
 
     def init_received_chunks(self, settings: ConfluxSettings):
         self.sample_size = settings.sample_size

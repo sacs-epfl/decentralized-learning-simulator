@@ -16,6 +16,8 @@ from heapq import nlargest
 import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
+
+from dasklearn.simulation.churn_manager import ChurnManager
 try:
     import seaborn as sns
     seaborn_available = True
@@ -55,6 +57,9 @@ class Simulation:
         self.current_time: int = 0
         self.brokers_available_future: Future = Future()
         self.simulation_start_time: float = 0
+        self.churn_manager: ChurnManager = ChurnManager(settings)
+        self.num_active_clients: int = 0
+        self.active_counts: List[Tuple[int, int]] = []
 
         self.clients: List[BaseClient] = []
         self.broker_addresses: Dict[str, str] = {}
@@ -72,6 +77,8 @@ class Simulation:
         self.register_event_callback(START_TRANSFER, "start_transfer")
         self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
         self.register_event_callback(SEND_MESSAGE, "on_message")
+        self.register_event_callback(ONLINE, "come_online")
+        self.register_event_callback(OFFLINE, "go_offline")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
@@ -132,7 +139,6 @@ class Simulation:
 
     def initialize_clients(self):
         for client_id in range(self.settings.participants):
-            self.clients.append(self.CLIENT_CLASS(self, client_id))
             init_client_event = Event(0, client_id, INIT_CLIENT)
             self.schedule(init_client_event)
 
@@ -195,6 +201,89 @@ class Simulation:
         else:
             raise RuntimeError("Unknown traces %s" % self.settings.traces)
         
+    def apply_churn(self):
+        if self.settings.churn == "none":
+            return
+        elif self.settings.churn == "synthetic":
+            min_online = int(self.settings.participants * 0.1)
+            max_online = int(self.settings.participants * 0.8)
+            self.churn_manager.simulate_node_traces(self.settings.participants, min_online, max_online, 3600 * MICROSECONDS, self.settings.duration, time_step=MICROSECONDS)
+
+            # Set nodes offline that should be offline
+            for index in range(self.settings.participants):
+                if index in self.churn_manager.traces and self.churn_manager.traces[index] and self.churn_manager.traces[index][0][0] != 0:
+                    self.clients[index].online = False
+
+            # Apply churn
+            for index in range(self.settings.participants):
+                traces: List[Tuple[int, int]] = self.churn_manager.traces.get(index, [])
+                for start, end in traces:
+                    if start == 0:
+                        continue  # Ignore the very first event where the node starts online
+
+                    start_event = Event(int(start), index, ONLINE)
+                    self.schedule(start_event)
+                    end_event = Event(int(end), index, OFFLINE)
+                    self.schedule(end_event)
+
+        elif self.settings.churn == "fedscale":
+            self.logger.info("Applying FedScale availability trace file")
+            with open(os.path.join("data", "fedscale_churn"), "rb") as traces_file:
+                data = pickle.load(traces_file)
+
+            rand = Random(self.settings.seed)
+            device_ids = rand.sample(list(data.keys()), self.settings.participants)
+            for ind in range(self.settings.participants):
+                self.set_fedscale_trace_for_client(ind, data[device_ids[ind]])
+        else:
+            raise RuntimeError("Unknown churn model %s" % self.settings.churn)
+        
+        self.num_active_clients = sum([1 for client in self.clients if client.online])
+        self.logger.info("Number of active clients at the start of the simulation: %d", self.num_active_clients)
+        self.active_counts.append((int(self.cur_time_in_sec()), self.num_active_clients))
+
+    def update_active_clients(self, comes_online: bool):
+        if comes_online:
+            self.num_active_clients += 1
+        else:
+            self.num_active_clients -= 1
+
+        self.active_counts.append((self.current_time, self.num_active_clients))
+
+    def set_fedscale_trace_for_client(self, client_id: int, data: Dict):
+        events: int = 0
+
+        # Figure out if the node starts online or not
+        self.clients[client_id].online = True if (data["inactive"][0] < data["active"][0] or data["active"][0] == 0) else False
+
+        # Combine the traces of this client into a list of tuples with the timestamp and the event type
+        traces: List[Tuple[int, str]] = [(x, ONLINE) for x in data["active"] if x > 0] + [(x, OFFLINE) for x in data["inactive"]]
+        traces.sort(key=lambda x: x[0])
+
+        iterations: int = 0
+        done: bool = False
+        while True:
+            for timestamp, event_type in traces:
+                actual_timestamp = (timestamp + iterations * data["finish_time"]) * MICROSECONDS
+                if actual_timestamp > self.settings.duration:
+                    done = True
+                    break
+
+                event = Event(actual_timestamp, client_id, event_type)
+                self.schedule(event)
+                events += 1
+
+            iterations += 1
+
+            if done:
+                break
+
+        # # Clients that have no events scheduled should be online
+        # if events == 0:
+        #     self.clients[client_id].online = True
+
+        self.logger.info("Scheduled %d join/leave events for client %d (trace length in sec: %d)", events, client_id, data["finish_time"])
+
     def start_profile(self):
         # Check if the Yappi library has been installed
         try:
@@ -222,11 +311,15 @@ class Simulation:
             self.communication = Communication("coordinator", self.settings.port, self.on_message)
             self.communication.start()
 
-        # Initialize the clients
-        self.initialize_clients()
+        # Create the clients
+        for client_id in range(self.settings.participants):
+            self.clients.append(self.CLIENT_CLASS(self, client_id))
 
         # Apply traces
         self.apply_traces()
+
+        # Apply churn
+        self.apply_churn()
 
         # Apply strugglers
         n_strugglers: int = int(self.settings.participants * self.settings.stragglers_proportion + 0.0000001)
@@ -238,6 +331,9 @@ class Simulation:
                 client.simulated_speed = 1000000000000
             else:
                 client.simulated_speed /= self.settings.stragglers_ratio
+
+        # Initialize the clients
+        self.initialize_clients()
 
         # Determine the size of the model, which will be used to determine the duration of model transfers
         self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
@@ -398,13 +494,6 @@ class Simulation:
             for client in self.clients:
                 for sender, count in client.incoming_counter.items():
                     file.write("%d,%d,%d\n" % (client.index, sender, count))
-        # Write opportunity log
-        with open(os.path.join(self.data_dir, "opportunities.csv"), "w") as file:
-            file.write("client,contributing_client,value\n")
-            for client in self.clients:
-                total_opportunity: int = sum(client.opportunity.values())
-                for contributor, value in client.opportunity.items():
-                    file.write("%d,%d,%f\n" % (client.index, contributor, value / total_opportunity))
         # Write max memory log
         with open(os.path.join(self.data_dir, "max_memory.csv"), "w") as file:
             file.write("max_memory_usage_kb\n")
@@ -422,3 +511,8 @@ class Simulation:
                 file.write("client,struggler\n")
                 for client in self.clients:
                     file.write("%d,%s\n" % (client.index, client.struggler))
+        # Write active client log
+        with open(os.path.join(self.data_dir, "churn.csv"), "w") as file:
+            file.write("time,active_clients\n")
+            for time, active_clients in self.active_counts:
+                file.write("%d,%d\n" % (time, active_clients))

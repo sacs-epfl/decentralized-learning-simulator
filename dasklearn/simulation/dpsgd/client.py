@@ -21,12 +21,20 @@ class DPSGDClient(BaseClient):
             test_event = Event(event.time + self.simulator.settings.test_period, self.index, TEST)
             self.simulator.schedule(test_event)
 
-    def is_training(self) -> bool:
-        return any([r.is_training for r in self.round_info.values()])
-
     def schedule_next_round(self, round_data: Dict):
         if self.simulator.settings.rounds > 0 and round_data["round"] > self.simulator.settings.rounds:
             return
+        
+        round_nr: int = round_data["round"]
+        model: Tuple[Optional[str], int] = round_data["model"]
+        incoming_models: Dict[int, Tuple[str, List[float]]] = round_data["incoming_models"]\
+            if "incoming_models" in round_data else {}
+
+        new_round = Round(round_nr)
+        new_round.model = model
+        new_round.incoming_models = incoming_models
+        new_round.should_ignore = not self.online
+        self.round_info[round_nr] = new_round
 
         is_sync: bool = self.simulator.settings.synchronous
         if not is_sync:
@@ -38,32 +46,29 @@ class DPSGDClient(BaseClient):
 
     def start_round(self, event: Event):
         round_nr: int = event.data["round"]
-        model: Tuple[Optional[str], int] = event.data["model"]
-        incoming_models: Dict[int, Tuple[str, List[float]]] = event.data["incoming_models"]\
-            if "incoming_models" in event.data else {}
-        # Round has already started
-        if round_nr in self.round_info:
-            self.round_info[round_nr].incoming_models.update(incoming_models)
-            if model[0]:
-                self.round_info[round_nr].model = model
-                self.schedule_train(self.round_info[round_nr])
+
+        if round_nr not in self.round_info:
             return
 
-        self.client_log("Client %d starting round %d" % (self.index, round_nr))
-        new_round = Round(round_nr)
-        new_round.model = model
-        new_round.incoming_models = incoming_models
-        self.round_info[round_nr] = new_round
+        round_info: Round = self.round_info[round_nr]
 
-        if new_round.model or round_nr == 1:
-            # Start training if we have our local model or if it's the first round.
-            self.schedule_train(new_round)
+        self.client_log("Client %d starting round %d" % (self.index, round_nr))
+
+        if round_info.model and not round_info.is_training:
+            self.schedule_train(round_info)
 
     def schedule_train(self, round_info: Round):
+        cur_round: int = round_info.round_nr
         round_info.is_training = True
-        start_train_event = Event(self.simulator.current_time, self.index, START_TRAIN, data={
-            "model": round_info.model, "round": round_info.round_nr})
-        self.simulator.schedule(start_train_event)
+        if not round_info.should_ignore:
+            start_train_event = Event(self.simulator.current_time, self.index, START_TRAIN, data={
+                "model": round_info.model, "round": cur_round})
+            self.start_train(start_train_event)
+        else:
+            # We should ignore this round, but we still need to notify the simulator that we're done training.
+            finish_train_event = Event(self.simulator.current_time, self.index, FINISH_TRAIN, data={
+                "round": cur_round, "model": round_info.model, "train_time": 0})
+            self.finish_train(finish_train_event)
 
     def finish_train(self, event: Event):
         """
@@ -71,8 +76,7 @@ class DPSGDClient(BaseClient):
         """
         cur_round: int = event.data["round"]
         self.compute_time += event.data["train_time"]
-        self.opportunity[self.index] += 1
-        self.client_log("Client %d finished model training in round %d" % (self.index, cur_round))
+        self.client_log("Client %d finished model training in round %d (online? %s)" % (self.index, cur_round, self.online))
         if cur_round not in self.round_info:
             raise RuntimeError("Client %d does not know about round %d after training finished!" %
                                (self.index, cur_round))
@@ -81,25 +85,32 @@ class DPSGDClient(BaseClient):
         round_info.model = event.data["model"]
         round_info.is_training = False
         round_info.train_done = True
-
-        if len(self.simulator.topologies) < cur_round:
-            self.simulator.add_topology()
-        for neighbour in self.simulator.topologies[cur_round - 1].successors(self.index):
-            self.send_model(neighbour, event.data["model"], metadata={"round": event.data["round"],
-                                                                      "opportunity": self.opportunity})
+        
+        self.send_model_to_nbs(round_info)
 
         # Do we have all incoming models for this round? If so, aggregate.
         num_nb = len(list(self.simulator.topologies[cur_round - 1].predecessors(self.index)))
         if len(round_info.incoming_models) == num_nb:
             aggregate_event = Event(self.simulator.current_time, self.index, AGGREGATE, data={"round": cur_round})
-            self.simulator.schedule(aggregate_event)
+            self.aggregate(aggregate_event)
 
-        # We're now done training. Should we start training in another round?
-        for active_round_nr in self.round_info.keys():
-            round_info: Round = self.round_info[active_round_nr]
-            if not round_info.train_done and not round_info.is_training and round_info.model:
-                self.schedule_train(round_info)
-                break
+    def send_model_to_nbs(self, round_info):
+        cur_round = round_info.round_nr
+        if len(self.simulator.topologies) < cur_round:
+            self.simulator.add_topology()
+        for neighbour in self.simulator.topologies[round_info.round_nr - 1].successors(self.index):
+            if not round_info.should_ignore and self.simulator.clients[neighbour].online:
+                self.send_model(neighbour, round_info.model, metadata={"round": cur_round})
+            else:
+                self.simulator.clients[neighbour].on_offline_sentinel(self.index, cur_round)
+
+    def on_offline_sentinel(self, from_client: int, round_nr: int):
+        event = {
+            "from": from_client,
+            "model": None,
+            "metadata": {"round": round_nr},
+        }
+        self.on_incoming_model(Event(self.simulator.current_time, self.index, INCOMING_MODEL, data=event))
 
     def on_incoming_model(self, event: Event):
         """
@@ -111,10 +122,9 @@ class DPSGDClient(BaseClient):
         self.incoming_counter[event.data["from"]] += 1
 
         if round_nr not in self.round_info:
-            # We do not know about this round yet - start it.
+            # We do not know about this round yet - schedule it to start.
             round_data: Dict = {"round": round_nr, "model": None,
-                                "incoming_models": {event.data["from"]: (event.data["model"],
-                                                                         event.data["metadata"]["opportunity"])}}
+                                "incoming_models": {event.data["from"]: event.data["model"]}}
             self.schedule_next_round(round_data)
         else:
             round_info: Round = self.round_info[round_nr]
@@ -122,34 +132,35 @@ class DPSGDClient(BaseClient):
             if len(self.simulator.topologies) < round_nr:
                 self.simulator.add_topology()
             num_nb = len(list(self.simulator.topologies[round_nr - 1].predecessors(self.index)))
-            round_info.incoming_models[event.data["from"]] = event.data["model"], event.data["metadata"]["opportunity"]
+            round_info.incoming_models[event.data["from"]] = event.data["model"]
 
             # Are we done training our own model in this round and have we received all nb models?
             # If so, aggregate everything. Otherwise, wait until we are done training.
             if round_info.train_done and len(round_info.incoming_models) == num_nb:
                 aggregate_event = Event(self.simulator.current_time, self.index, AGGREGATE, data={"round": round_nr})
-                self.simulator.schedule(aggregate_event)
+                self.aggregate(aggregate_event)
 
     def aggregate(self, event: Event):
         round_nr = event.data["round"]
         round_info: Round = self.round_info[round_nr]
-        model_names = [model_name for model_name, _ in round_info.incoming_models.values()] + [round_info.model]
+        model_names = [m for m in round_info.incoming_models.values() if m] + [round_info.model]
         self.client_log("Client %d will aggregate in round %d (%s)" % (self.index, round_nr, model_names))
-        other = [(sender_id, model_name, round_nr, opportunity)
-                 for sender_id, (model_name, opportunity) in round_info.incoming_models.items()]
-        self.aggregations.append(other + [(self.index, round_info.model, round_nr, self.opportunity)])
-        round_info.model = self.aggregate_models(model_names, round_nr)
-        self.merge_opportunity(list(map(lambda x: x[3], self.aggregations[-1])))
+        if not round_info.should_ignore:
+            other = [(sender_id, model_name, round_nr)
+                    for sender_id, model_name in round_info.incoming_models.items()]
+            self.aggregations.append(other + [(self.index, round_info.model, round_nr)])
+            round_info.model = self.aggregate_models(model_names, round_nr)
 
-        # Should we test?
-        if self.simulator.settings.stop == "rounds" and self.simulator.settings.test_interval > 0 \
-                and round_nr % self.simulator.settings.test_interval == 0:
-            test_task_name = "test_%d_%d" % (self.index, round_nr)
-            task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index})
-            self.add_compute_task(task)
-            round_info.model = (test_task_name, 0)
+            # Should we test?
+            if self.simulator.settings.stop == "rounds" and self.simulator.settings.test_interval > 0 \
+                    and round_nr % self.simulator.settings.test_interval == 0:
+                test_task_name = "test_%d_%d" % (self.index, round_nr)
+                task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index})
+                self.add_compute_task(task)
+                round_info.model = (test_task_name, 0)
 
-        self.logger.debug("Client %d finished round %d" % (self.index, round_nr))
+        self.logger.debug("Client %d finished round %d (t=%d)" % (self.index, round_nr, self.simulator.current_time // MICROSECONDS))
+        self.last_round_completed = round_nr
         self.round_info.pop(round_nr)
 
         next_round_nr: int = round_nr + 1
@@ -157,8 +168,8 @@ class DPSGDClient(BaseClient):
             self.schedule_next_round({"round": next_round_nr, "model": round_info.model})
         else:
             next_round_info: Round = self.round_info[next_round_nr]
-            next_round_info.model = round_info.model
-            if not self.is_training():
+            if next_round_info.model is None and not next_round_info.is_training:
+                next_round_info.model = round_info.model
                 self.schedule_train(next_round_info)
 
     def test(self, event: Event):
