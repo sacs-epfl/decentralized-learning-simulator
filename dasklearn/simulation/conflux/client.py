@@ -118,7 +118,8 @@ class ConfluxClient(AsynchronousClient):
         task_name = Task.generate_name("chunk")
         task = Task(task_name, "chunk", data={
             "model": round_info.model, "round": round_info.round_nr,
-            "time": self.simulator.current_time, "peer": self.index
+            "time": self.simulator.current_time, "peer": self.index,
+            "n": self.simulator.settings.chunks_in_sample,
         })
         self.add_compute_task(task)
 

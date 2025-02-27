@@ -90,6 +90,10 @@ def run():
         from dasklearn.simulation.teleportation.simulation import TeleportationSimulation as SIM
         from dasklearn.simulation.teleportation.settings import TeleportationSettings
         settings = TeleportationSettings(**settings.__dict__, sample_size=args.sample_size)
+    elif settings.algorithm == "shatter":
+        from dasklearn.simulation.shatter.simulation import ShatterSimulation as SIM
+        from dasklearn.simulation.shatter.settings import ShatterSettings
+        settings = ShatterSettings(**settings.__dict__, k=args.k, r=args.r)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
 

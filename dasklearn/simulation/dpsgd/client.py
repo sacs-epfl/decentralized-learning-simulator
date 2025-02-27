@@ -11,7 +11,6 @@ class DPSGDClient(BaseClient):
 
     def __init__(self, simulator, index: int):
         super().__init__(simulator, index)
-        self.topology = None
         self.round_info: Dict[int, Round] = {}
 
     def init_client(self, event: Event):
