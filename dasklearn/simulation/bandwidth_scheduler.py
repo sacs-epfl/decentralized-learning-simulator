@@ -245,7 +245,6 @@ class BWScheduler:
         if transfer_count > 0:
             self.logger.warning("Interrupting all %d transfers of participant %s in the scheduler",
                                 transfer_count, self.my_id)
-        self.cancel_all_pending_tasks()
         for transfer in self.outgoing_transfers:
             transfer.receiver_scheduler.on_incoming_transfer_complete(transfer)
             self.logger.debug("Failing outgoing transfer %d: %s => %s", transfer.transfer_id, self.my_id,

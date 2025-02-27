@@ -39,7 +39,6 @@ class ADPSGDClient(AsynchronousClient):
             local_steps: int = self.simulator.settings.learning.local_steps
         self.compute_time += event.data["train_time"]
         self.steps_remaining -= local_steps
-        self.opportunity[self.index] += (local_steps / self.simulator.settings.learning.local_steps)
         self.age += (local_steps / self.simulator.settings.learning.local_steps)
 
         if self.own_model is None:
@@ -107,11 +106,10 @@ class ADPSGDClient(AsynchronousClient):
         if not self.active:
             # Passive peer sends back its own model
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, event.data["from"]))
-            metadata = dict(age=int(self.age), opportunity=self.opportunity)
+            metadata = dict(age=int(self.age))
             self.send_model(event.data["from"], self.own_model, metadata=metadata)
 
-        self.aggregate([(event.data["from"], event.data["model"], event.data["metadata"]["age"],
-                         event.data["metadata"]["opportunity"])])
+        self.aggregate([(event.data["from"], event.data["model"], event.data["metadata"]["age"])])
 
         # Schedule next local step
         if self.active:

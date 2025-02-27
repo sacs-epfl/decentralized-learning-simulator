@@ -17,18 +17,28 @@ class BaseClient:
         self.index = index
         self.bw_scheduler = BWScheduler(self)
         self.other_nodes_bws: Dict[bytes, int] = {}
+        self.online: bool = True  # Whether the node is online or not
 
-        self.simulated_speed: float = 5  # Simulated speed in milliseconds
+        self.simulated_speed: float = 200  # Simulated speed in milliseconds
         self.struggler = False
 
         self.latest_task: Optional[str] = None  # Keep track of the latest task
         self.train_function: str = "train"
 
         self.compute_time: int = 0  # Total time spent training
-        # Log of aggregations (client, model, age, opportunity)
-        self.aggregations: List[List[Tuple[int, str, int, Dict[int, float]]]] = []
+        # Log of aggregations (client, model, age)
+        self.aggregations: List[List[Tuple[int, str, int]]] = []
         self.incoming_counter: Dict[int, int] = Counter()
-        self.opportunity: Dict[int, float] = Counter()  # Opportunity of clients to contribute to the model
+
+    def come_online(self, event: Event):
+        if not self.online:
+            self.simulator.update_active_clients(True)
+        self.online = True
+
+    def go_offline(self, event: Event):
+        if self.online:
+            self.simulator.update_active_clients(False)
+        self.online = False
 
     def client_log(self, msg: str):
         self.logger.debug("[t=%.3f] %s", time_to_sec(self.simulator.current_time), msg)
@@ -36,8 +46,7 @@ class BaseClient:
     def get_train_time(self) -> int:
         train_time: float = 0.0
         local_steps: int = self.simulator.settings.learning.local_steps
-        batch_size: int = self.simulator.settings.learning.batch_size
-        train_time = float(AUGMENTATION_FACTOR_SIM * local_steps * batch_size * (self.simulated_speed / 1000))
+        train_time = float(AUGMENTATION_FACTOR_SIM * local_steps * (self.simulated_speed / 1000))
         return int(train_time * MICROSECONDS)
 
     def start_train(self, event: Event):
@@ -89,15 +98,6 @@ class BaseClient:
         event_data = {"from": self.index, "to": to, "type": type, "message": message}
         start_transfer_event = Event(self.simulator.current_time + send_time, to, SEND_MESSAGE, data=event_data)
         self.simulator.schedule(start_transfer_event)
-
-    def merge_opportunity(self, opportunities: List[Dict[int, float]], weights: Optional[List[float]] = None) -> None:
-        result_opportunity: Dict[int, float] = Counter()
-        if weights is None:
-            weights = [1 / len(opportunities)] * len(opportunities)
-        for cont_dict, weight in zip(opportunities, weights):
-            for client, opportunity in cont_dict.items():
-                result_opportunity[client] += (opportunity * weight)
-        self.opportunity = result_opportunity
 
     def add_compute_task(self, task: Task, inputs: Optional[Tuple[str, int]] = None) -> None:
         self.simulator.workflow_dag.tasks[task.name] = task

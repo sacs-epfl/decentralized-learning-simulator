@@ -45,6 +45,9 @@ def get_args():
     parser.add_argument('--min-bandwidth', type=int, default=0)  # The minimum bandwidth a node must have to participate, in bytes/s.
     parser.add_argument('--traces', type=str, default="none", choices=["none", "fedscale", "diablo"])
 
+    # Churn
+    parser.add_argument('--churn', type=str, default="none", choices=["none", "synthetic", "fedscale"])
+
     # Accuracy checking
     parser.add_argument('--validation-set-fraction', type=float, default=0.0)
     parser.add_argument('--compute-validation-loss-global-model', action=argparse.BooleanOptionalAction)

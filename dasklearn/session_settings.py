@@ -43,6 +43,7 @@ class SessionSettings:
     scheduler: Optional[str] = None
     brokers: Optional[int] = None
     traces: str = "none"
+    churn: str = "none"
     min_bandwidth: int = 0
     rounds: int = 10
     data_dir: str = ""
