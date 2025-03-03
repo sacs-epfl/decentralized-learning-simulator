@@ -477,10 +477,11 @@ class Simulation:
     def save_measurements(self) -> None:
         # Write client statistics
         with open(os.path.join(self.data_dir, "client_statistics.csv"), "w") as file:
-            file.write("client,bytes_sent,bytes_received,compute_time,training_speed\n")
+            file.write("client,bytes_sent,bytes_received,compute_time,training_speed,bandwidth\n")
             for client in self.clients:
-                file.write("%d,%d,%d,%d,%d\n" % (
-                    client.index, client.bw_scheduler.total_bytes_sent, client.bw_scheduler.total_bytes_received, client.compute_time, client.simulated_speed))
+                file.write("%d,%d,%d,%d,%d,%d\n" % (
+                    client.index, client.bw_scheduler.total_bytes_sent, client.bw_scheduler.total_bytes_received,
+                    client.compute_time, client.simulated_speed, client.bw_scheduler.bw_limit))
         # Write aggregation log
         with open(os.path.join(self.data_dir, "aggregations.csv"), "w") as file:
             file.write("client;clients;ages\n")
