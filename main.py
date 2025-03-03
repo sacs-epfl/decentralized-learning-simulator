@@ -10,6 +10,15 @@ from dasklearn.session_settings import SessionSettings, LearningSettings
 from dasklearn.util import MICROSECONDS
 
 
+def get_torch_device() -> str:
+    if torch.cuda.is_available():
+        return "cuda:0"
+    elif torch.backends.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
+
+
 def run():
     args = get_args()
 
@@ -29,7 +38,7 @@ def run():
         dataset_base_path=args.dataset_base_path,
         validation_set_fraction=args.validation_set_fraction,
         compute_validation_loss_global_model=args.compute_validation_loss_global_model,
-        torch_device_name="cpu" if not torch.cuda.is_available() else "cuda:0",
+        torch_device_name=get_torch_device(),
         work_dir="",
         learning=learning_settings,
         participants=args.peers,
@@ -90,6 +99,10 @@ def run():
         from dasklearn.simulation.teleportation.simulation import TeleportationSimulation as SIM
         from dasklearn.simulation.teleportation.settings import TeleportationSettings
         settings = TeleportationSettings(**settings.__dict__, sample_size=args.sample_size)
+    elif settings.algorithm == "shatter":
+        from dasklearn.simulation.shatter.simulation import ShatterSimulation as SIM
+        from dasklearn.simulation.shatter.settings import ShatterSettings
+        settings = ShatterSettings(**settings.__dict__, k=args.k, r=args.r)
     else:
         raise RuntimeError("Unsupported algorithm %s" % settings.algorithm)
 

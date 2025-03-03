@@ -135,7 +135,8 @@ def test(settings: SessionSettings, params: Dict):
 
 def chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
     model = params["model"]
-    chunks = ChunkManager.chunk_model(model, settings.chunks_in_sample)
+    num_chunks = params["n"]
+    chunks = ChunkManager.chunk_model(model, num_chunks)
     return chunks
 
 def reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:

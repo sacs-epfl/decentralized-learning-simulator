@@ -16,6 +16,7 @@ from dasklearn.communication import Communication
 from dasklearn.functions import *
 from dasklearn.simulation.conflux.settings import ConfluxSettings
 from dasklearn.simulation.dpsgd.settings import DPSGDSettings
+from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.teleportation.settings import TeleportationSettings
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
@@ -169,7 +170,13 @@ class Broker:
                 task_name, res, info = await self.worker_result_queue.get()
                 if task_name == "error":
                     # One of the workers encountered an exception - stop everything
-                    self.logger.info("Worker encountered an exception - shutting down everything")
+                    task_name = res
+                    task = self.dag.tasks[task_name]
+                    self.logger.error("Failed task %s: %s", task_name, task)
+                    self.logger.error("Failed task inputs (resolved: %d): %s", task.inputs_resolve, task.inputs)
+                    self.logger.error("Failed task outputs: %s", task.outputs)
+                    self.logger.error("Failed task data: %s", task.data)
+                    self.logger.error("Worker encountered an exception - shutting down everything")
                     self.shutdown_everyone()
                     break
 
@@ -295,7 +302,13 @@ class Broker:
                     self.clients_to_brokers[client] = broker
 
             # Load the settings based on the class
-            name_to_cls = {"SessionSettings": SessionSettings, "ConfluxSettings": ConfluxSettings, "TeleportationSettings": TeleportationSettings, "DPSGDSettings": DPSGDSettings}
+            name_to_cls = {
+                "SessionSettings": SessionSettings,
+                "ConfluxSettings": ConfluxSettings,
+                "TeleportationSettings": TeleportationSettings,
+                "DPSGDSettings": DPSGDSettings,
+                "ShatterSettings": ShatterSettings,               
+            }
             self.settings = name_to_cls[msg["settings_class"]].from_dict(msg["settings"])
             os.makedirs(self.settings.data_dir, exist_ok=True)
             setup_logging(self.settings.data_dir, "%s.log" % self.identity, log_level=self.settings.log_level)

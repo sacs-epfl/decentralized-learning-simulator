@@ -27,7 +27,7 @@ def get_args():
 
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
-    parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor", "conflux", "teleportation"])
+    parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor", "conflux", "teleportation", "shatter"])
     parser.add_argument('--topology', type=str, default="kreg", choices=["ring", "kreg"])
     parser.add_argument('--sample-size', type=int, default=10)
     parser.add_argument('--chunks-in-sample', type=int, default=10)
@@ -39,6 +39,7 @@ def get_args():
     parser.add_argument('--wait', action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument('--el', type=str, default="oracle", choices=["oracle", "local"])
     parser.add_argument('--k', type=int, default=0)
+    parser.add_argument('--r', type=int, default=0)
     parser.add_argument('--no_weights', action=argparse.BooleanOptionalAction, default=False)
 
     # Traces

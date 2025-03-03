@@ -32,6 +32,7 @@ class Worker:
                 finish_time = time.time()
                 self.result_queue.put((task_name, res, {"received": received_time, "finished": finish_time, "worker": self.index}))
             except Exception as exc:
+                self.logger.error("=== Worker %d failed to execute task %s ===", self.index, task_name)
                 self.logger.exception(exc)
-                self.result_queue.put(("error", None))
+                self.result_queue.put(("error", task_name, None))
                 break
