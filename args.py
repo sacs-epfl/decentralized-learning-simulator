@@ -60,6 +60,7 @@ def get_args():
 
     # Profiling
     parser.add_argument('--profile', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--log-bandwidth-utilization', action=argparse.BooleanOptionalAction)
 
     # Broker-related parameters
     parser.add_argument('--brokers', type=int, default=1)

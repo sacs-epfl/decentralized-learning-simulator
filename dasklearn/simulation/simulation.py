@@ -32,7 +32,7 @@ from dasklearn.simulation.events import *
 from dasklearn.simulation.client import BaseClient
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
-from dasklearn.util import MICROSECONDS
+from dasklearn.util import MICROSECONDS, time_to_sec
 from dasklearn.util.logging import setup_logging
 
 
@@ -70,7 +70,9 @@ class Simulation:
         self.n_sink_tasks: int = 0
         self.sink_tasks_counter: int = 0
 
+        # Logging
         self.memory_log: List[Tuple[int, psutil.pmem]] = []  # time, memory info
+        self.bw_utilization: List[Tuple[int, float, float]] = []  # time, utilization in, utilization out
 
         self.register_event_callback(INIT_CLIENT, "init_client")
         self.register_event_callback(START_TRAIN, "start_train")
@@ -79,6 +81,7 @@ class Simulation:
         self.register_event_callback(SEND_MESSAGE, "on_message")
         self.register_event_callback(ONLINE, "come_online")
         self.register_event_callback(OFFLINE, "go_offline")
+        self.register_event_callback(MONITOR_BANDWIDTH_UTILIZATION, "monitor_bandwidth_utilization")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
@@ -300,6 +303,26 @@ class Simulation:
         yappi_stats.sort("tsub")
         yappi_stats.save(os.path.join(self.data_dir, "yappi.stats"), type='callgrind')
 
+    def monitor_bandwidth_utilization(self, event: Event) -> None:
+        """
+        Monitor the bandwidth utilization of all clients that are sending or receiving data.
+        """
+        total_in, total_out, total_in_used, total_out_used = 0, 0, 0, 0
+        for client in self.clients:
+            in_used = client.bw_scheduler.get_allocated_incoming_bw()
+            out_used = client.bw_scheduler.get_allocated_outgoing_bw()
+            if in_used > 0 or out_used > 0:
+                total_in += client.bw_scheduler.bw_limit
+                total_out += client.bw_scheduler.bw_limit
+                total_in_used += client.bw_scheduler.get_allocated_incoming_bw()
+                total_out_used += client.bw_scheduler.get_allocated_outgoing_bw()
+
+        self.bw_utilization.append((time_to_sec(self.current_time), total_in_used / total_in, total_out_used / total_out))
+
+        # Schedule the next event
+        next_event = Event(self.current_time + MICROSECONDS, 0, MONITOR_BANDWIDTH_UTILIZATION, is_global=True)
+        self.schedule(next_event)
+
     async def run(self):
         if self.settings.profile:
             self.start_profile()
@@ -334,6 +357,12 @@ class Simulation:
 
         # Initialize the clients
         self.initialize_clients()
+
+        # Initialize the bandwidth utilization monitor if needed
+        if self.settings.log_bandwidth_utilization:
+            self.logger.info("Initializing bandwidth utilization monitor")
+            monitor_bw_event: Event = Event(MICROSECONDS, 0, MONITOR_BANDWIDTH_UTILIZATION, is_global=True)
+            self.schedule(monitor_bw_event)
 
         # Determine the size of the model, which will be used to determine the duration of model transfers
         self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
@@ -381,9 +410,13 @@ class Simulation:
 
     def process_event(self, event: Event):
         if event.action not in self.event_callbacks:
-            raise RuntimeError("Action %s has no callback!" % event.action)
+                raise RuntimeError("Action %s has no callback!" % event.action)
 
-        callback: Callable = getattr(self.clients[event.client_id], self.event_callbacks[event.action])
+        if event.is_global:
+            callback: Callable = getattr(self, self.event_callbacks[event.action])
+        else:
+            callback: Callable = getattr(self.clients[event.client_id], self.event_callbacks[event.action])
+        
         callback(event)
 
     def schedule(self, event: Event):
@@ -517,3 +550,9 @@ class Simulation:
             file.write("time,active_clients\n")
             for time, active_clients in self.active_counts:
                 file.write("%d,%d\n" % (time, active_clients))
+        # Write bandwidth utilizations
+        if self.settings.log_bandwidth_utilization:
+            with open(os.path.join(self.data_dir, "bw_utilization.csv"), "w") as file:
+                file.write("time,incoming,outgoing\n")
+                for time, in_util, out_util in self.bw_utilization:
+                    file.write("%d,%f,%f\n" % (time, in_util, out_util))

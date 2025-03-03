@@ -59,4 +59,5 @@ class SessionSettings:
     wait: bool = False
     stragglers_proportion: float = 0.0  # value between 0=none and 1=all
     stragglers_ratio: float = 0.1  # value between 0=no_action and 1=no_struggle
-    profile: bool = False
+    profile: bool = False,
+    log_bandwidth_utilization: bool = False

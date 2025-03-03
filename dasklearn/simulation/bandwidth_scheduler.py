@@ -288,9 +288,11 @@ class Transfer:
         self.start_time: int = -1
         self.last_time_updated: int = 0
         self.reschedules: int = 0
+        self.duration: int = -1
 
     def finish(self):
         self.update()
+        self.duration = self.receiver_scheduler.client.simulator.current_time - self.start_time
 
     def fail(self):
         self.update()

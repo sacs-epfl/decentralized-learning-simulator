@@ -10,6 +10,7 @@ from dasklearn.simulation.conflux.round import Round
 from dasklearn.simulation.conflux.sample_manager import SampleManager
 from dasklearn.simulation.events import *
 from dasklearn.tasks.task import Task
+from dasklearn.util import time_to_sec
 
 
 class ConfluxClient(AsynchronousClient):
@@ -104,6 +105,8 @@ class ConfluxClient(AsynchronousClient):
         round_info.train_done = True
         round_info.model = event.data["model"]
 
+        self.client_log(f"Node {self.index} finished training in round {round_nr}")
+
         # 2. Start sharing the model chunks with clients in the next sample
         participants_next_sample = SampleManager.get_sample(round_nr + 1, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
         self.gossip_chunks(round_info, participants_next_sample)
@@ -153,11 +156,16 @@ class ConfluxClient(AsynchronousClient):
 
         receiver_scheduler: BWScheduler = self.simulator.clients[to].bw_scheduler
         self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
+        self.client_log(f"Node {self.index} starts sending chunk {event.data['metadata']['chunk']} to {to} in round {event.data['metadata']['round'] - 1}")
 
     def finish_outgoing_transfer(self, event):
         super().finish_outgoing_transfer(event)
         metadata: Dict = event.data["transfer"].metadata
         round_info = self.round_info[metadata["round"] - 1]
+
+        to: int = event.data["transfer"].receiver_scheduler.my_id
+        transfer_duration = time_to_sec(event.data["transfer"].duration)
+        self.client_log(f"Node {self.index} finished sending chunk {metadata['chunk']} to {to} in round {metadata['round'] - 1} (duration: {transfer_duration}s)")
 
         # We've sent a chunk - send the next one
         if round_info.send_queue:

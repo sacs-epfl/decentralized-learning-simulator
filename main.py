@@ -63,6 +63,7 @@ def run():
         stragglers_ratio=args.stragglers_ratio,
         stragglers_proportion=args.stragglers_proportion,
         profile=args.profile,
+        log_bandwidth_utilization=args.log_bandwidth_utilization,
     )
 
     if settings.algorithm == "fl":
