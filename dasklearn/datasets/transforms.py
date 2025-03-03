@@ -1,24 +1,32 @@
 import torch
-from torchvision.transforms import ToTensor as ttsor
-from torchvision import transforms
+import torchvision.transforms as T
 
 from dasklearn.datasets.transforms_stft import ToSTFT, StretchAudioOnSTFT, TimeshiftAudioOnSTFT, FixSTFTDimension, \
     AddBackgroundNoiseOnSTFT, ToMelSpectrogramFromSTFT, DeleteSTFT
 from dasklearn.datasets.transforms_wav import ChangeAmplitude, ChangeSpeedAndPitchAudio, FixAudioLength, ToTensor, \
     ToMelSpectrogram, LoadAudio
 
-transforms_tens = ttsor()
+transforms_tens = T.ToTensor()
+
+transforms_tens_resnet = T.Compose([
+    T.Resize((224, 224)),  # Ensure input size is large enough for ResNet
+    T.ToTensor()
+])
 
 def apply_transforms_cifar10(batch):
     batch["img"] = [transforms_tens(img) for img in batch["img"]]
     return batch
 
+def apply_transforms_cifar10_resnet(batch):
+    batch["img"] = [transforms_tens_resnet(img) for img in batch["img"]]
+    return batch
+
 
 def preprocess_audio_train(batch):
-    data_aug_transform = transforms.Compose(
+    data_aug_transform = T.Compose(
             [ChangeAmplitude(), ChangeSpeedAndPitchAudio(), FixAudioLength(), ToSTFT(), StretchAudioOnSTFT(),
              TimeshiftAudioOnSTFT(), FixSTFTDimension()])
-    train_feature_transform = transforms.Compose([ToMelSpectrogramFromSTFT(
+    train_feature_transform = T.Compose([ToMelSpectrogramFromSTFT(
             n_mels=32), DeleteSTFT(), ToTensor('mel_spectrogram', 'input')])
 
     audio = [{"samples" : x["array"], "sample_rate" : x["sampling_rate"]} for x in batch["audio"]]
@@ -34,7 +42,7 @@ def preprocess_audio_train(batch):
 
 
 def preprocess_audio_test(batch):
-    test_transform = transforms.Compose(
+    test_transform = T.Compose(
             [FixAudioLength(), ToMelSpectrogram(n_mels=32), ToTensor('mel_spectrogram', 'input')])
 
     audio = [{"samples" : x["array"], "sample_rate" : x["sampling_rate"]} for x in batch["audio"]]

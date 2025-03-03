@@ -67,7 +67,8 @@ class ModelTrainer:
         if not self.partition:
             self.partition = self.dataset.load_partition(self.participant_index, "train")
             if(self.settings.dataset == "cifar10"):
-                from dasklearn.datasets.transforms import apply_transforms_cifar10 as transforms
+                from dasklearn.datasets.transforms import apply_transforms_cifar10, apply_transforms_cifar10_resnet
+                transforms = apply_transforms_cifar10_resnet if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else apply_transforms_cifar10
                 self.partition = self.partition.with_transform(transforms)
             elif(self.settings.dataset == "google_speech"):
                 # filter removes the silent samples from testing/training as they don't really have a label
