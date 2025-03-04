@@ -16,7 +16,6 @@ class Round:
         self.is_training: bool = False
         self.train_done: bool = False
         self.chunk_gossip_done: bool = False
-        self.send_queue: List[Tuple[bytes, int]] = []
         self.received_enough_chunks: bool = False
         self.received_chunks: List[List[Tuple[str, int]]] = []  # Keep track of received chunks, indexed by chunk index
         self.has_sent_view: Set[int] = set()  # Keep track of which clients have received our view

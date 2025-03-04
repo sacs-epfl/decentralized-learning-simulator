@@ -1,9 +1,9 @@
 import copy
 from random import Random
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from dasklearn.simulation.asynchronous_client import AsynchronousClient
-from dasklearn.simulation.bandwidth_scheduler import BWScheduler
+from dasklearn.simulation.bandwidth_scheduler import BWScheduler, Transfer
 from dasklearn.simulation.conflux import NodeMembershipChange
 from dasklearn.simulation.conflux.client_manager import ClientManager
 from dasklearn.simulation.conflux.round import Round
@@ -126,15 +126,17 @@ class ConfluxClient(AsynchronousClient):
         })
         self.add_compute_task(task)
 
+        # Queue chunk sending
+        send_queue: List[Tuple[int, int]] = []
         for participant in participants:
             for chunk_idx in range(self.simulator.settings.chunks_in_sample):
-                round_info.send_queue.append((participant, chunk_idx))
+                send_queue.append((participant, chunk_idx))
 
-        self.random.shuffle(round_info.send_queue)
+        self.random.shuffle(send_queue)
 
-        # Send the first chunk
-        participant, chunk_idx = round_info.send_queue.pop(0)
-        self.send_chunk(round_info, task_name, chunk_idx, participant)
+        while send_queue:
+            participant, chunk_idx = send_queue.pop(0)
+            self.send_chunk(round_info, task_name, chunk_idx, participant)
 
     def send_chunk(self, round_info: Round, model_name: str, chunk_idx: int, recipient_idx: int) -> None:
         event_data = {"from": self.index, "to": recipient_idx, "model": model_name, "metadata": {"chunk": chunk_idx, "round": round_info.round_nr + 1}}
@@ -166,15 +168,6 @@ class ConfluxClient(AsynchronousClient):
         to: int = event.data["transfer"].receiver_scheduler.my_id
         transfer_duration = time_to_sec(event.data["transfer"].duration)
         self.client_log(f"Node {self.index} finished sending chunk {metadata['chunk']} to {to} in round {metadata['round'] - 1} (duration: {transfer_duration}s)")
-
-        # We've sent a chunk - send the next one
-        if round_info.send_queue:
-            participant, chunk_idx = round_info.send_queue.pop(0)
-            self.send_chunk(round_info, event.data["transfer"].model, chunk_idx, participant)
-        else:
-            # We're done with this round
-            self.client_log(f"Participant {self.index} completed round {round_info.round_nr}")
-            self.round_info.pop(round_info.round_nr)
 
     def on_incoming_model(self, event: Event):
         """
@@ -209,6 +202,7 @@ class ConfluxClient(AsynchronousClient):
 
         # Did we receive sufficient chunks?
         if self.round_info[round_nr].has_received_enough_chunks():
+            self.client_log(f"Client {self.index} received enough chunks in round {round_nr}")
             self.round_info[round_nr].received_enough_chunks = True
             self.inform_nodes_in_previous_sample(self.round_info[round_nr])
             
@@ -250,8 +244,20 @@ class ConfluxClient(AsynchronousClient):
         if event.data["type"] == "has_enough_chunks":
             if event.data["message"]["round"] not in self.round_info:
                 return  # It could be that the round is already completed, which is fine.
-            round_info = self.round_info[event.data["message"]["round"]]
-            round_info.send_queue = [(participant, chunk_idx) for participant, chunk_idx in round_info.send_queue if participant != event.data["from"]]
+            
+            from_client: int = event.data["from"]
+
+            # Remove the scheduled transfers that are not relevant anymore
+            to_remove: List[Transfer] = []
+            for transfer in self.bw_scheduler.outgoing_requests:
+                if transfer.metadata["round"] == (event.data["message"]["round"] + 1) and transfer.receiver_scheduler.my_id == from_client:
+                    to_remove.append(transfer)
+
+            for transfer in to_remove:
+                self.bw_scheduler.outgoing_requests.remove(transfer)
+                if transfer in transfer.receiver_scheduler.incoming_requests:
+                    transfer.receiver_scheduler.incoming_requests.remove(transfer)
+
         elif event.data["type"] == "status":
             self.on_membership_advertisement(event.data["from"], event.data["message"]["change"], event.data["message"]["round"], event.data["message"]["index"])
         else:

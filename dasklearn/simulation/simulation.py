@@ -383,6 +383,15 @@ class Simulation:
         
         self.events = []
 
+        # We're done - summarize statistics
+        total_bw_in, total_bw_out = 0, 0
+        for client in self.clients:
+            total_bw_in += client.bw_scheduler.total_bytes_received
+            total_bw_out += client.bw_scheduler.total_bytes_sent
+
+        self.logger.info("Simulation done! Total bytes sent: %d, total bytes received: %d", total_bw_out, total_bw_in)
+
+
         self.memory_log.append((self.current_time, process.memory_info()))
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
         self.save_measurements()
