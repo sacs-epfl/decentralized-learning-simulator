@@ -22,6 +22,7 @@ class ConfluxClient(AsynchronousClient):
         self.advertise_index: int = 1
         self.client_manager: ClientManager = ClientManager(self.index, 100000)
         self.train_sample_estimate: int = 0
+        self.last_round_completed: int = 0
 
     def init_client(self, _: Event):
         sample: List[int] = SampleManager.get_sample(1, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
@@ -90,7 +91,7 @@ class ConfluxClient(AsynchronousClient):
             self.add_compute_task(task)
             round_info.model = (test_task_name, 0)
 
-        self.client_log(f"Node {self.index} starts training in round {round_nr}")
+        self.client_log(f"Client {self.index} starts training in round {round_nr}")
 
         # 1. Train the model
         self.schedule_train(round_info)
@@ -105,7 +106,7 @@ class ConfluxClient(AsynchronousClient):
         round_info.train_done = True
         round_info.model = event.data["model"]
 
-        self.client_log(f"Node {self.index} finished training in round {round_nr}")
+        self.client_log(f"Client {self.index} finished training in round {round_nr}")
 
         # 2. Start sharing the model chunks with clients in the next sample
         participants_next_sample = SampleManager.get_sample(round_nr + 1, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
@@ -138,6 +139,8 @@ class ConfluxClient(AsynchronousClient):
             participant, chunk_idx = send_queue.pop(0)
             self.send_chunk(round_info, task_name, chunk_idx, participant)
 
+        self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
+
     def send_chunk(self, round_info: Round, model_name: str, chunk_idx: int, recipient_idx: int) -> None:
         event_data = {"from": self.index, "to": recipient_idx, "model": model_name, "metadata": {"chunk": chunk_idx, "round": round_info.round_nr + 1}}
         start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
@@ -158,7 +161,7 @@ class ConfluxClient(AsynchronousClient):
 
         receiver_scheduler: BWScheduler = self.simulator.clients[to].bw_scheduler
         self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
-        self.client_log(f"Node {self.index} starts sending chunk {event.data['metadata']['chunk']} to {to} in round {event.data['metadata']['round'] - 1}")
+        #self.client_log(f"Client {self.index} starts sending chunk {event.data['metadata']['chunk']} to {to} in round {event.data['metadata']['round'] - 1}")
 
     def finish_outgoing_transfer(self, event):
         super().finish_outgoing_transfer(event)
@@ -167,7 +170,7 @@ class ConfluxClient(AsynchronousClient):
 
         to: int = event.data["transfer"].receiver_scheduler.my_id
         transfer_duration = time_to_sec(event.data["transfer"].duration)
-        self.client_log(f"Node {self.index} finished sending chunk {metadata['chunk']} to {to} in round {metadata['round'] - 1} (duration: {transfer_duration}s)")
+        #self.client_log(f"Client {self.index} finished sending chunk {metadata['chunk']} to {to} in round {metadata['round'] - 1} (duration: {transfer_duration}s)")
 
     def on_incoming_model(self, event: Event):
         """
@@ -179,11 +182,20 @@ class ConfluxClient(AsynchronousClient):
         metadata: Dict = event.data["metadata"]
         from_client: int = event.data["from"]
         self.client_manager.update_client_activity(from_client, max(metadata["round"], self.get_round_estimate()))
-        self.received_model_chunk(metadata["round"], event.data["model"], metadata["chunk"], metadata.get("population_view", None))
+        self.received_model_chunk(from_client, metadata["round"], event.data["model"], metadata["chunk"], metadata.get("population_view", None))
 
-    def received_model_chunk(self, round_nr: int, model_name: str, chunk_idx: int, population_view: Optional[Dict] = None) -> None:
+    def received_model_chunk(self, from_client: int, round_nr: int, model_name: str, chunk_idx: int, population_view: Optional[Dict] = None) -> None:
         if population_view:
             self.client_manager.merge_population_views(population_view)
+
+        if round_nr == self.last_round_completed:
+            # We received a chunk from a round we already completed
+            self.send_message_to_client(from_client, "has_enough_chunks", {"round": round_nr - 1})
+            return
+        elif self.last_round_completed > round_nr:
+            self.logger.warning("Client %d received a chunk from client %d for a round we already completed (%d < %d)" % (self.index, from_client, round_nr, self.last_round_completed))
+            self.send_message_to_client(from_client, "stale", {"last_round_completed": self.last_round_completed})
+            return
 
         self.train_sample_estimate = max(self.train_sample_estimate, round_nr)
         if round_nr not in self.round_info:
@@ -251,6 +263,21 @@ class ConfluxClient(AsynchronousClient):
             to_remove: List[Transfer] = []
             for transfer in self.bw_scheduler.outgoing_requests:
                 if transfer.metadata["round"] == (event.data["message"]["round"] + 1) and transfer.receiver_scheduler.my_id == from_client:
+                    to_remove.append(transfer)
+
+            for transfer in to_remove:
+                self.bw_scheduler.outgoing_requests.remove(transfer)
+                if transfer in transfer.receiver_scheduler.incoming_requests:
+                    transfer.receiver_scheduler.incoming_requests.remove(transfer)
+        
+        elif event.data["type"] == "stale":
+            self.logger.warning("Client %d received a stale message from client %d" % (self.index, event.data["from"]))
+            last_round: int = event.data["message"]["last_round_completed"]
+
+            # Kill all the transfers that are not relevant anymore
+            to_remove: List[Transfer] = []
+            for transfer in self.bw_scheduler.outgoing_requests:
+                if transfer.metadata["round"] < last_round:
                     to_remove.append(transfer)
 
             for transfer in to_remove:
