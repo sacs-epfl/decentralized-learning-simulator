@@ -110,6 +110,9 @@ class BWScheduler:
         for request in requests_scheduled:
             self.outgoing_requests.remove(request)
 
+        for transfer in self.outgoing_transfers:
+         self.on_receiver_inform_about_free_bandwidth(transfer)
+
     def schedule_request(self, request, bw_to_allocate: int):
         """
         Schedule a particular request - we know for sure that there is bandwidth available for this transfer.
