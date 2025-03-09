@@ -271,7 +271,7 @@ class ConfluxClient(AsynchronousClient):
                     transfer.receiver_scheduler.incoming_requests.remove(transfer)
         
         elif event.data["type"] == "stale":
-            self.logger.warning("Client %d received a stale message from client %d" % (self.index, event.data["from"]))
+            self.logger.warning("Client %d received a stale message from client %d (t=%d)" % (self.index, event.data["from"], self.simulator.cur_time_in_sec()))
             last_round: int = event.data["message"]["last_round_completed"]
 
             # Kill all the transfers that are not relevant anymore
