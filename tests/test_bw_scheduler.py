@@ -102,16 +102,16 @@ def test_add_transfer(setup_schedulers):
     # Add a transfer
     transfer = scheduler1.add_transfer(scheduler2, 100000, "test_model", {})
     assert transfer.allocated_bw == scheduler1.bw_limit
-    assert scheduler1.get_allocated_outgoing_bw() == scheduler1.bw_limit
-    assert scheduler2.get_allocated_incoming_bw() == scheduler1.bw_limit
+    assert scheduler1.allocated_outgoing == scheduler1.bw_limit
+    assert scheduler2.allocated_incoming == scheduler1.bw_limit
     assert transfer.transfer_id in scheduler1.outgoing_transfers
     assert transfer.transfer_id in scheduler2.incoming_transfers
 
     # Adding another transfer should not schedule it
     transfer2 = scheduler1.add_transfer(scheduler2, 100000, "test_model", {})
     assert transfer2.allocated_bw == 0
-    assert scheduler1.get_allocated_outgoing_bw() == scheduler1.bw_limit
-    assert scheduler2.get_allocated_incoming_bw() == scheduler1.bw_limit
+    assert scheduler1.allocated_outgoing == scheduler1.bw_limit
+    assert scheduler2.allocated_incoming == scheduler1.bw_limit
     assert transfer2.transfer_id in scheduler1.outgoing_requests
 
 
@@ -132,11 +132,11 @@ def test_on_outgoing_transfer_complete(setup_schedulers):
     scheduler1.on_outgoing_transfer_complete(transfer)
 
     # finish() should have updated the transferred bytes.
-    assert transfer.get_transferred_bytes() >= 0
+    assert transfer.transferred >= 0
     # The transfer should be unregistered from the sender.
     assert transfer not in scheduler1.outgoing_transfers
     # The sender's total_bytes_sent should have been updated.
-    assert scheduler1.total_bytes_sent == transfer.get_transferred_bytes()
+    assert scheduler1.total_bytes_sent == transfer.transferred
     # The receiver should have unregistered the transfer as well.
     assert transfer not in scheduler2.incoming_transfers
 

@@ -143,7 +143,7 @@ class BWScheduler:
         self.logger.debug("Transfer %d: %s => %s has completed", transfer.transfer_id, self.my_id,
                           transfer.receiver_scheduler.my_id)
         transfer.finish()
-        self.total_bytes_sent += transfer.get_transferred_bytes()
+        self.total_bytes_sent += transfer.transferred
 
         # Inform the other side
         self.unregister_transfer(transfer, is_outgoing=True)
@@ -159,7 +159,7 @@ class BWScheduler:
         Then we inform other pending incoming requests.
         """
         self.unregister_transfer(completed_transfer, is_outgoing=False)
-        self.total_bytes_received += completed_transfer.get_transferred_bytes()
+        self.total_bytes_received += completed_transfer.transferred
 
         cur_time = self.client.simulator.current_time
         data = {
@@ -302,9 +302,6 @@ class Transfer:
         transferred: int = int((cur_time - self.last_time_updated) / MICROSECONDS * self.allocated_bw)
         self.transferred += transferred
         self.last_time_updated = cur_time
-
-    def get_transferred_bytes(self) -> int:
-        return self.transferred
 
     def __str__(self):
         return "%s (%s => %s)" % (self.transfer_id, self.sender_scheduler.my_id, self.receiver_scheduler.my_id)
