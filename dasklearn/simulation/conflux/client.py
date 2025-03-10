@@ -109,15 +109,17 @@ class ConfluxClient(AsynchronousClient):
 
         self.client_log(f"Client {self.index} finished training in round {round_nr}")
 
-        # 2. Start sharing the model chunks with clients in the next sample
-        participants_next_sample = SampleManager.get_sample(round_nr + 1, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
-        self.gossip_chunks(round_info, participants_next_sample)
+        self.chunk_model(round_info)
 
-    def gossip_chunks(self, round_info: Round, participants: List[int]) -> None:
+        # 2. Activate nodes in the next sample so they can start pulling the chunks
+        participants_next_sample = SampleManager.get_sample(round_nr + 1, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
+        for participant in participants_next_sample:
+            self.send_message_to_client(participant, "round_done", {"round": round_nr, "model": round_info.model[0]})
+
+    def chunk_model(self, round_info: Round):
         """
-        Gossip chunks to the next sample of participants.
+        Chunk your current local model
         """
-        self.client_log(f"Participant {self.index} starts gossiping chunks in round {round_info.round_nr}")
 
         # Add compute tasks for the chunks
         task_name = Task.generate_name("chunk")
@@ -127,20 +129,32 @@ class ConfluxClient(AsynchronousClient):
             "n": self.simulator.settings.chunks_in_sample,
         })
         self.add_compute_task(task)
-
-        # Queue chunk sending
-        send_queue: List[Tuple[int, int]] = []
-        for participant in participants:
-            for chunk_idx in range(self.simulator.settings.chunks_in_sample):
-                send_queue.append((participant, chunk_idx))
-
-        self.random.shuffle(send_queue)
-
-        while send_queue:
-            participant, chunk_idx = send_queue.pop(0)
-            self.send_chunk(round_info, task_name, chunk_idx, participant)
+        round_info.model = (task_name, 0)
 
         self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
+
+    def start_pulling_chunks_in_round(self, round_info: Round):
+        """
+        Start pulling chunks in the given round.
+        """
+        self.client_log(f"Client {self.index} starts pulling chunks in round {round_info.round_nr}")
+        while round_info.has_free_slot():
+            self.pull_chunk_for_round(round_info)
+
+    def pull_chunk_for_round(self, round_info: Round):
+        if not round_info.has_free_slot():
+            # No space for another pull
+            return
+
+        # Pick a new chunk to pull
+        suggestion: Tuple[int, int] = round_info.get_next_chunk_suggestion(round_info.clients_ready_prev_round)
+        from_client, chunk_idx = suggestion
+        self.client_log("Client %d pulling chunk (%d, %d) for round %d" % (self.index, from_client, chunk_idx, round_info.round_nr))
+        round_info.fill_slot(suggestion)
+
+        assert self.simulator.clients[from_client].bw_scheduler.allocated_outgoing > 0
+
+        self.send_message_to_client(from_client, "pull", {"round": round_info.round_nr - 1, "chunk": chunk_idx})
 
     def send_chunk(self, round_info: Round, model_name: str, chunk_idx: int, recipient_idx: int) -> None:
         event_data = {"from": self.index, "to": recipient_idx, "model": model_name, "metadata": {"chunk": chunk_idx, "round": round_info.round_nr + 1}}
@@ -164,15 +178,6 @@ class ConfluxClient(AsynchronousClient):
         self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
         #self.client_log(f"Client {self.index} starts sending chunk {event.data['metadata']['chunk']} to {to} in round {event.data['metadata']['round'] - 1}")
 
-    def finish_outgoing_transfer(self, event):
-        super().finish_outgoing_transfer(event)
-        metadata: Dict = event.data["transfer"].metadata
-        round_info = self.round_info[metadata["round"] - 1]
-
-        to: int = event.data["transfer"].receiver_scheduler.my_id
-        transfer_duration = time_to_sec(event.data["transfer"].duration)
-        #self.client_log(f"Client {self.index} finished sending chunk {metadata['chunk']} to {to} in round {metadata['round'] - 1} (duration: {transfer_duration}s)")
-
     def on_incoming_model(self, event: Event):
         """
         We received a model chunk.
@@ -189,53 +194,28 @@ class ConfluxClient(AsynchronousClient):
         if population_view:
             self.client_manager.merge_population_views(population_view)
 
-        if round_nr == self.last_round_completed:
-            # We received a chunk from a round we already completed
-            self.send_message_to_client(from_client, "has_enough_chunks", {"round": round_nr - 1})
-            return
-        elif self.last_round_completed > round_nr:
-            self.logger.warning("Client %d received a chunk from client %d for a round we already completed (%d < %d)" % (self.index, from_client, round_nr, self.last_round_completed))
-            self.send_message_to_client(from_client, "stale", {"last_round_completed": self.last_round_completed})
-            return
-
-        self.train_sample_estimate = max(self.train_sample_estimate, round_nr)
-        if round_nr not in self.round_info:
-            # We received a chunk but haven't started this round yet - store it.
-            new_round = Round(round_nr)
-            self.round_info[round_nr] = new_round
-            new_round.init_received_chunks(self.simulator.settings)
-            new_round.received_chunks[chunk_idx].append((model_name, chunk_idx))
-        else:
-            if self.round_info[round_nr].received_enough_chunks:
-                # We have already received enough chunks - ignore this chunk.
-                return
-
-            # Otherwise, process it right away!
-            self.round_info[round_nr].received_chunks[chunk_idx].append((model_name, chunk_idx))
+        round_info: Round = self.round_info[round_nr]
+        round_info.received_chunks[chunk_idx].append((model_name, chunk_idx, from_client))
+        round_info.empty_slot((from_client, chunk_idx))
 
         # Did we receive sufficient chunks?
-        if self.round_info[round_nr].has_received_enough_chunks():
+        if round_info.has_received_enough_chunks():
             self.client_log(f"Client {self.index} received enough chunks in round {round_nr}")
-            self.round_info[round_nr].received_enough_chunks = True
-            self.inform_nodes_in_previous_sample(self.round_info[round_nr])
+            round_info.received_enough_chunks = True
             
             # Reconstruct new model
             task_name = Task.generate_name("reconstruct_from_chunks")
             task = Task(task_name, "reconstruct_from_chunks", data={
-                "chunks": self.round_info[round_nr].received_chunks, "round": round_nr,
+                "chunks": round_info.received_chunks, "round": round_nr,  # TODO bug here since we changed the structure of received_chunks
                 "time": self.simulator.current_time, "peer": self.index
             })
             self.add_compute_task(task)
-            self.round_info[round_nr].model = (task_name, 0)
+            round_info.model = (task_name, 0)
 
-            start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=self.round_info[round_nr])
+            start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round_info)
             self.simulator.schedule(start_round_event)
-
-    def inform_nodes_in_previous_sample(self, round_info: Round):
-        participants_previous_sample = SampleManager.get_sample(round_info.round_nr - 1, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
-        for participant in participants_previous_sample:
-            # TODO assumed to be instant for now
-            self.send_message_to_client(participant, "has_enough_chunks", {"round": round_info.round_nr - 1})
+        else:
+            self.pull_chunk_for_round(round_info)
 
     def on_membership_advertisement(self, other_client: int, status: int, round: int, index: int):
         """
@@ -254,28 +234,22 @@ class ConfluxClient(AsynchronousClient):
             self.client_manager.last_active[other_client] = (max(round, latest_round), (index, NodeMembershipChange.LEAVE))
 
     def on_message(self, event: Event):
-        if event.data["type"] == "has_enough_chunks":
-            if event.data["message"]["round"] not in self.round_info:
-                return  # It could be that the round is already completed, which is fine.
-            
-            from_client: int = event.data["from"]
-
-            # Remove the scheduled transfers that are not relevant anymore
-            for transfer in list(self.bw_scheduler.outgoing_requests.values()):
-                if transfer.metadata["round"] == (event.data["message"]["round"] + 1) and transfer.receiver_scheduler.my_id == from_client:
-                    self.bw_scheduler.kill_transfer(transfer)          
-        
-        elif event.data["type"] == "stale":
-            self.logger.warning("Client %d received a stale message from client %d (t=%d)" % (self.index, event.data["from"], self.simulator.cur_time_in_sec()))
-            last_round: int = event.data["message"]["last_round_completed"]
-
-            # Kill all the transfers that are not relevant anymore
-            for transfer in list(self.bw_scheduler.outgoing_requests.values()):
-                if transfer.metadata["round"] < last_round:
-                    self.bw_scheduler.kill_transfer(transfer)
-
-        elif event.data["type"] == "status":
+        if event.data["type"] == "status":
             self.on_membership_advertisement(event.data["from"], event.data["message"]["change"], event.data["message"]["round"], event.data["message"]["index"])
+        elif event.data["type"] == "round_done":
+            # A client has finished a round and is ready to send chunks to us
+            next_round_nr = event.data["message"]["round"] + 1
+            if next_round_nr not in self.round_info:
+                self.round_info[next_round_nr] = Round(next_round_nr)
+                self.round_info[next_round_nr].init_received_chunks(self.simulator.settings)
+
+            self.round_info[next_round_nr].clients_ready_prev_round.add(event.data["from"])
+            self.pull_chunk_for_round(self.round_info[next_round_nr])
+        elif event.data["type"] == "pull":
+            round_nr = event.data["message"]["round"]
+            chunk_idx = event.data["message"]["chunk"]
+            round_info = self.round_info[round_nr]
+            self.send_chunk(round_info, round_info.model[0], chunk_idx, event.data["from"])
         else:
             raise ValueError("Unknown message type: %s" % event.data["type"])
 
