@@ -154,7 +154,7 @@ class ConfluxClient(AsynchronousClient):
         round_info: Round = self.round_info[event.data["metadata"]["round"] - 1]
         transfer_size = self.simulator.model_size // self.simulator.settings.chunks_in_sample
         if to not in round_info.has_sent_view:
-            population_view = copy.deepcopy(self.client_manager.last_active)
+            population_view = self.client_manager.last_active
             event.data["metadata"]["population_view"] = population_view
             # TODO add the length of the serialized data view
             round_info.has_sent_view.add(to)
