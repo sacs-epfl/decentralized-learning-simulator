@@ -25,7 +25,8 @@ class ConfluxClient(AsynchronousClient):
         self.last_round_completed: int = 0
 
     def init_client(self, _: Event):
-        sample: List[int] = SampleManager.get_sample(1, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
+        active_clients: List[int] = self.client_manager.get_active_clients()
+        sample: List[int] = SampleManager.get_sample(1, active_clients, self.simulator.settings.sample_size)
 
         if self.index in sample:
             round = Round(1)

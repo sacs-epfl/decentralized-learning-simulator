@@ -35,9 +35,9 @@ class ClientManager:
         self.last_active.pop(other_index, None)
 
     def get_active_clients(self, round: Optional[int] = None) -> List[int]:
-        active_clients = [client_id for client_id, status in self.last_active.items() if (status[1][1] != NodeMembershipChange.LEAVE or client_id == self.my_index)]
+        active_clients = [client_id for client_id, status in self.last_active.items() if (status[1][1] != NodeMembershipChange.LEAVE)]
         if round:
-            active_clients = [client_id for client_id in active_clients if (self.last_active[client_id][0] >= (round - self.inactivity_threshold) or client_id == self.my_index)]
+            active_clients = [client_id for client_id in active_clients if (self.last_active[client_id][0] >= (round - self.inactivity_threshold))]
         return active_clients
 
     def get_clients(self) -> List[int]:
