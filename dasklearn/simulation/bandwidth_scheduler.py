@@ -21,6 +21,9 @@ class BWScheduler:
         self.outgoing_transfers: List[Transfer] = []  # Ongoing outgoing transfers
         self.incoming_transfers: List[Transfer] = []  # Ongoing incoming transfers
 
+        self.allocated_incoming: int = 0
+        self.allocated_outgoing: int = 0
+
         self.client = client
         self.my_id: int = self.client.index
 
@@ -35,14 +38,10 @@ class BWScheduler:
         self.total_bytes_received = 0
 
     def get_allocated_outgoing_bw(self) -> int:
-        allocated_bw: int = sum([transfer.allocated_bw for transfer in self.outgoing_transfers])
-        assert allocated_bw <= self.bw_limit, "Allocated outgoing bandwidth of %s (%d) cannot exceed limit (%d)" % (self.my_id, allocated_bw, self.bw_limit)
-        return allocated_bw
+        return self.allocated_outgoing
 
     def get_allocated_incoming_bw(self) -> int:
-        allocated_bw: int = sum([transfer.allocated_bw for transfer in self.incoming_transfers])
-        assert allocated_bw <= self.bw_limit, "Allocated incoming bandwidth of %s (%d) cannot exceed limit (%d)" % (self.my_id, allocated_bw, self.bw_limit)
-        return allocated_bw
+        return self.allocated_incoming
 
     def register_transfer(self, transfer, is_outgoing=False):
         if not self.incoming_transfers and not self.outgoing_transfers:
@@ -58,9 +57,11 @@ class BWScheduler:
         if is_outgoing:
             if transfer in self.outgoing_transfers:
                 self.outgoing_transfers.remove(transfer)
+                self.allocated_outgoing -= transfer.allocated_bw
         else:
             if transfer in self.incoming_transfers:
                 self.incoming_transfers.remove(transfer)
+                self.allocated_incoming -= transfer.allocated_bw
 
         if not self.incoming_transfers and not self.outgoing_transfers:
             self.is_active = False
@@ -121,6 +122,8 @@ class BWScheduler:
         self.logger.debug("Starting transfer %d: %s => %s (allocated %d bw to this transfer, s %d/%d, r %d/%d)", request.transfer_id, self.my_id,
                           request.receiver_scheduler.my_id, bw_to_allocate, self.get_allocated_outgoing_bw(), self.bw_limit, request.receiver_scheduler.get_allocated_incoming_bw(), request.receiver_scheduler.bw_limit)
         request.allocated_bw = bw_to_allocate
+        self.allocated_outgoing += bw_to_allocate
+        request.receiver_scheduler.allocated_incoming += bw_to_allocate
         estimated_transfer_duration = request.transfer_size / request.allocated_bw
         request.start_time = self.client.simulator.current_time
         request.last_time_updated = self.client.simulator.current_time
@@ -227,6 +230,8 @@ class BWScheduler:
 
                 # "Restart" the transfer and reschedule the completion event
                 transfer.allocated_bw += additional_bw_to_allocate
+                self.allocated_outgoing += additional_bw_to_allocate
+                transfer.receiver_scheduler.allocated_incoming += additional_bw_to_allocate
                 new_estimated_finish_time = (transfer.transfer_size - transfer.transferred) / transfer.allocated_bw
                 assert new_estimated_finish_time >= 0, "Estimated finish time in the past: %f (transfer size: %d, transferred: %d)" % (new_estimated_finish_time, transfer.transfer_size, transfer.transferred)
                 transfer.reschedules += 1

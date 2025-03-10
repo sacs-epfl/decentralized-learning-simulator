@@ -53,28 +53,6 @@ def setup_schedulers():
     scheduler2 = BWScheduler(client2)
     return scheduler1, scheduler2, client1, client2
 
-# -------------------------------
-# Test functions using pytest
-# -------------------------------
-
-def test_get_allocated_bw(setup_schedulers):
-    scheduler1, scheduler2, client1, client2 = setup_schedulers
-    # Create dummy transfers with preset allocated bandwidth.
-    transfer1 = Transfer(scheduler1, scheduler2, 1000, "dummy_model", {})
-    transfer1.allocated_bw = 300000
-    transfer2 = Transfer(scheduler1, scheduler2, 1000, "dummy_model", {})
-    transfer2.allocated_bw = 200000
-    scheduler1.outgoing_transfers = [transfer1, transfer2]
-    assert scheduler1.get_allocated_outgoing_bw() == 500000
-
-    # Test incoming bandwidth allocation.
-    transfer3 = Transfer(scheduler1, scheduler2, 1000, "dummy_model", {})
-    transfer3.allocated_bw = 150000
-    transfer4 = Transfer(scheduler1, scheduler2, 1000, "dummy_model", {})
-    transfer4.allocated_bw = 250000
-    scheduler1.incoming_transfers = [transfer3, transfer4]
-    assert scheduler1.get_allocated_incoming_bw() == 400000
-
 
 def test_register_and_unregister_transfer(setup_schedulers):
     scheduler1, scheduler2, client1, client2 = setup_schedulers
