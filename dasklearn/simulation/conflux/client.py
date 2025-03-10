@@ -260,30 +260,18 @@ class ConfluxClient(AsynchronousClient):
             from_client: int = event.data["from"]
 
             # Remove the scheduled transfers that are not relevant anymore
-            to_remove: List[Transfer] = []
-            for transfer in self.bw_scheduler.outgoing_requests:
+            for transfer in list(self.bw_scheduler.outgoing_requests.values()):
                 if transfer.metadata["round"] == (event.data["message"]["round"] + 1) and transfer.receiver_scheduler.my_id == from_client:
-                    to_remove.append(transfer)
-
-            for transfer in to_remove:
-                self.bw_scheduler.outgoing_requests.remove(transfer)
-                if transfer in transfer.receiver_scheduler.incoming_requests:
-                    transfer.receiver_scheduler.incoming_requests.remove(transfer)
+                    self.bw_scheduler.kill_transfer(transfer)          
         
         elif event.data["type"] == "stale":
             self.logger.warning("Client %d received a stale message from client %d (t=%d)" % (self.index, event.data["from"], self.simulator.cur_time_in_sec()))
             last_round: int = event.data["message"]["last_round_completed"]
 
             # Kill all the transfers that are not relevant anymore
-            to_remove: List[Transfer] = []
-            for transfer in self.bw_scheduler.outgoing_requests:
+            for transfer in list(self.bw_scheduler.outgoing_requests.values()):
                 if transfer.metadata["round"] < last_round:
-                    to_remove.append(transfer)
-
-            for transfer in to_remove:
-                self.bw_scheduler.outgoing_requests.remove(transfer)
-                if transfer in transfer.receiver_scheduler.incoming_requests:
-                    transfer.receiver_scheduler.incoming_requests.remove(transfer)
+                    self.bw_scheduler.kill_transfer(transfer)
 
         elif event.data["type"] == "status":
             self.on_membership_advertisement(event.data["from"], event.data["message"]["change"], event.data["message"]["round"], event.data["message"]["index"])

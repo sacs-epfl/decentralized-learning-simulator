@@ -4,7 +4,7 @@ sending and receiving party.
 """
 import logging
 import random
-from typing import List, Any
+from typing import List, Any, OrderedDict
 
 from dasklearn.simulation.events import *
 from dasklearn.util import MICROSECONDS
@@ -15,11 +15,14 @@ class BWScheduler:
     def __init__(self, client) -> None:
         super().__init__()
         self.bw_limit: int = 1000000  # in bytes/s, 1 MB/s by default
-        self.outgoing_requests: List[Transfer] = []  # Outgoing transfers waiting to be started
-        self.incoming_requests: List[Transfer] = []  # Incoming transfers waiting to be started
 
-        self.outgoing_transfers: List[Transfer] = []  # Ongoing outgoing transfers
-        self.incoming_transfers: List[Transfer] = []  # Ongoing incoming transfers
+        # Requests that are waiting to be scheduled
+        self.outgoing_requests: OrderedDict[int, Transfer] = OrderedDict()
+        self.incoming_requests: OrderedDict[int, Transfer] = OrderedDict()
+
+        # Transfers that are currently ongoing
+        self.outgoing_transfers: OrderedDict[int, Transfer] = OrderedDict()
+        self.incoming_transfers: OrderedDict[int, Transfer] = OrderedDict()
 
         self.allocated_incoming: int = 0
         self.allocated_outgoing: int = 0
@@ -49,18 +52,18 @@ class BWScheduler:
             self.became_active = self.client.simulator.current_time
 
         if is_outgoing:
-            self.outgoing_transfers.append(transfer)
+            self.outgoing_transfers[transfer.transfer_id] = transfer
         else:
-            self.incoming_transfers.append(transfer)
+            self.incoming_transfers[transfer.transfer_id] = transfer
 
     def unregister_transfer(self, transfer, is_outgoing=False):
         if is_outgoing:
-            if transfer in self.outgoing_transfers:
-                self.outgoing_transfers.remove(transfer)
+            if transfer.transfer_id in self.outgoing_transfers:
+                self.outgoing_transfers.pop(transfer.transfer_id)
                 self.allocated_outgoing -= transfer.allocated_bw
         else:
-            if transfer in self.incoming_transfers:
-                self.incoming_transfers.remove(transfer)
+            if transfer.transfer_id in self.incoming_transfers:
+                self.incoming_transfers.pop(transfer.transfer_id)
                 self.allocated_incoming -= transfer.allocated_bw
 
         if not self.incoming_transfers and not self.outgoing_transfers:
@@ -74,7 +77,7 @@ class BWScheduler:
         :param transfer_size: Size of the transfer, in bytes
         """
         transfer: Transfer = Transfer(self, receiver_scheduler, transfer_size, model, metadata)
-        self.outgoing_requests.append(transfer)
+        self.outgoing_requests[transfer.transfer_id] = transfer
         self.logger.debug("Adding transfer request %d: %s => %s to the queue", transfer.transfer_id, self.my_id,
                           transfer.receiver_scheduler.my_id)
         self.schedule()
@@ -90,7 +93,7 @@ class BWScheduler:
             return  # Cannot accept more pending requests
 
         requests_scheduled: List[Transfer] = []
-        for request in self.outgoing_requests:
+        for request in list(self.outgoing_requests.values()):
             receiver_bw_left = request.receiver_scheduler.bw_limit - request.receiver_scheduler.get_allocated_incoming_bw()
             bw_to_allocate = min(sender_bw_left, receiver_bw_left)
             if bw_to_allocate > 0:
@@ -103,16 +106,16 @@ class BWScheduler:
                     break  # Cannot accept more pending requests
             else:
                 # Add this transfer as pending request in the queue of the receiver, try again later.
-                if request not in request.receiver_scheduler.incoming_requests:
+                if request.transfer_id not in request.receiver_scheduler.incoming_requests:
                     self.logger.debug("Sender %s adding transfer %d as pending incoming request in the scheduler of "
                                       "receiver %s", self.my_id, request.transfer_id, request.receiver_scheduler.my_id)
-                    request.receiver_scheduler.incoming_requests.append(request)
+                    request.receiver_scheduler.incoming_requests[request.transfer_id] = request
 
         for request in requests_scheduled:
-            self.outgoing_requests.remove(request)
+            self.outgoing_requests.pop(request.transfer_id)
 
         if sender_bw_left > 0:
-            for transfer in self.outgoing_transfers:
+            for transfer in list(self.outgoing_transfers.values()):
                 self.on_receiver_inform_about_free_bandwidth(transfer)
 
     def schedule_request(self, request, bw_to_allocate: int):
@@ -136,8 +139,8 @@ class BWScheduler:
 
         self.register_transfer(request, is_outgoing=True)
         request.receiver_scheduler.register_transfer(request, is_outgoing=False)
-        if request in request.receiver_scheduler.incoming_requests:
-            request.receiver_scheduler.incoming_requests.remove(request)
+        if request.transfer_id in request.receiver_scheduler.incoming_requests:
+            request.receiver_scheduler.incoming_requests.pop(request.transfer_id)
 
     def on_outgoing_transfer_complete(self, transfer):
         """
@@ -175,7 +178,7 @@ class BWScheduler:
         self.client.on_incoming_model(incoming_model_event)
 
         # Prioritize allocating bandwidth to ongoing transfers
-        for transfer in self.incoming_transfers + self.incoming_requests:
+        for transfer in list(self.incoming_transfers.values()) + list(self.incoming_requests.values()):
             self.logger.debug("Informing sender %s about available bandwidth for transfer %d",
                               transfer.sender_scheduler.my_id, transfer.transfer_id)
             transfer.sender_scheduler.on_receiver_inform_about_free_bandwidth(transfer)
@@ -208,7 +211,7 @@ class BWScheduler:
         receiver_bw_left: int = transfer.receiver_scheduler.bw_limit - transfer.receiver_scheduler.get_allocated_incoming_bw()
 
         # This is either an ongoing request or a pending request
-        if transfer in self.outgoing_transfers:
+        if transfer.transfer_id in self.outgoing_transfers:
             self.logger.debug("Sender %s got available bw notification from receiver %s for ongoing transfer %s",
                               self.my_id, transfer.receiver_scheduler.my_id, transfer.transfer_id)
             # It's an ongoing transfer, increase the allocated bw of this transfer accordingly
@@ -234,13 +237,13 @@ class BWScheduler:
                 finish_transfer_event = Event(finish_time, self.client.index, FINISH_OUTGOING_TRANSFER,
                                               {"transfer": transfer})
                 self.client.simulator.schedule(finish_transfer_event)
-        elif transfer in self.outgoing_requests:
+        elif transfer.transfer_id in self.outgoing_requests:
             self.logger.debug("Sender %s got available bw notification from receiver %s for pending request %s",
                               self.my_id, transfer.receiver_scheduler.my_id, transfer.transfer_id)
             bw_to_allocate = min(sender_bw_left, receiver_bw_left)
             if bw_to_allocate > 0:
                 self.schedule_request(transfer, bw_to_allocate)
-                self.outgoing_requests.remove(transfer)
+                self.outgoing_requests.pop(transfer.transfer_id)
         else:
             raise RuntimeError("We do not know about request %d!" % transfer.transfer_id)
         
@@ -249,18 +252,18 @@ class BWScheduler:
                             transfer.transfer_id, self.my_id, transfer.receiver_scheduler.my_id)
         
         # Remove from pending lists on both sender and receiver
-        if transfer in transfer.sender_scheduler.outgoing_requests:
-            transfer.sender_scheduler.outgoing_requests.remove(transfer)
-        if transfer in transfer.receiver_scheduler.incoming_requests:
-            transfer.receiver_scheduler.incoming_requests.remove(transfer)
+        if transfer.transfer_id in transfer.sender_scheduler.outgoing_requests:
+            transfer.sender_scheduler.outgoing_requests.pop(transfer.transfer_id)
+        if transfer.transfer_id in transfer.receiver_scheduler.incoming_requests:
+            transfer.receiver_scheduler.incoming_requests.pop(transfer.transfer_id)
         
         # Remove from active lists on the sender side
-        if transfer in transfer.sender_scheduler.outgoing_transfers:
+        if transfer.transfer_id in transfer.sender_scheduler.outgoing_transfers:
             transfer.sender_scheduler.remove_transfer_finish_from_event_queue(transfer)
             transfer.sender_scheduler.unregister_transfer(transfer, is_outgoing=True)
         
         # Remove from active lists on the receiver side
-        if transfer in transfer.receiver_scheduler.incoming_transfers:
+        if transfer.transfer_id in transfer.receiver_scheduler.incoming_transfers:
             transfer.receiver_scheduler.unregister_transfer(transfer, is_outgoing=False)
         
         transfer.fail()
@@ -268,12 +271,7 @@ class BWScheduler:
         self.schedule()
 
     def kill_all_transfers(self):
-        transfer_count: int = len(self.incoming_transfers) + len(self.outgoing_transfers)
-        if transfer_count > 0:
-            self.logger.warning("Interrupting all %d transfers of participant %s in the scheduler",
-                                transfer_count, self.my_id)
-        
-        for transfer in self.incoming_transfers + self.outgoing_transfers + self.incoming_requests + self.outgoing_requests:
+        for transfer in list(self.incoming_transfers.values()) + list(self.outgoing_transfers.values()) + list(self.incoming_requests.values()) + list(self.outgoing_requests.values()):
             self.logger.debug("Killing transfer %d: %s => %s", transfer.transfer_id, self.my_id, transfer.receiver_scheduler.my_id)
             self.kill_transfer(transfer)
 
