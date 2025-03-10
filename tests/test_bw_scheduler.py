@@ -167,4 +167,64 @@ def test_on_receiver_inform_about_free_bandwidth(setup_schedulers):
     assert any(event.data.get("transfer") == transfer for (_, _, event) in client1.simulator.events)
 
 
+def test_kill_transfer_active(setup_schedulers):
+    scheduler1, scheduler2, client1, client2 = setup_schedulers
+    transfer = scheduler1.add_transfer(scheduler2, 1000, "test_model", {})
+    assert transfer in scheduler1.outgoing_transfers
+    assert transfer in scheduler2.incoming_transfers
+    assert len(client1.simulator.events) == 1
+
+    scheduler1.kill_transfer(transfer)
+
+    # Verify that the transfer has been removed from active lists on both sides.
+    assert transfer not in scheduler1.outgoing_transfers
+    assert transfer not in scheduler2.incoming_transfers
+    # Verify that the running totals have been updated.
+    assert scheduler1.allocated_outgoing == 0
+    assert scheduler2.allocated_incoming == 0
+    # Verify that the finish event has been removed.
+    assert not any(event.data.get("transfer") == transfer for (_, _, event) in client1.simulator.events)
+
+
+def test_kill_transfer_pending(setup_schedulers):
+    scheduler1, scheduler2, _, _ = setup_schedulers
+    # Create a transfer that is pending (i.e. not yet active)
+    transfer = Transfer(scheduler1, scheduler2, 1000, "test_model", {})
+    scheduler1.outgoing_requests.append(transfer)
+    scheduler2.incoming_requests.append(transfer)
+    
+    scheduler1.kill_transfer(transfer)
+    
+    # Verify that the transfer is removed from the pending lists.
+    assert transfer not in scheduler1.outgoing_requests
+    assert transfer not in scheduler2.incoming_requests
+
+
+def test_kill_all_transfers(setup_schedulers):
+    scheduler1, scheduler2, _, _ = setup_schedulers
+
+    # Create an active transfer where scheduler1 is the sender.
+    transfer1 = scheduler1.add_transfer(scheduler2, 1000, "test_model", {})
+    transfer2 = scheduler2.add_transfer(scheduler1, 1000, "test_model", {})
+
+    # Create pending transfers for scheduler1.
+    pending_transfer1 = Transfer(scheduler1, scheduler2, 1000, "test_model", {})
+    scheduler1.outgoing_requests.append(pending_transfer1)
+    scheduler2.incoming_requests.append(pending_transfer1)
+    
+    pending_transfer2 = Transfer(scheduler2, scheduler1, 1000, "test_model", {})
+    scheduler2.outgoing_requests.append(pending_transfer2)
+    scheduler1.incoming_requests.append(pending_transfer2)
+    
+    # Kill all transfers on scheduler1.
+    scheduler1.kill_all_transfers()
+    
+    # Verify that scheduler1's active and pending lists are empty.
+    for scheduler in [scheduler1, scheduler2]:
+        assert not scheduler.outgoing_transfers
+        assert not scheduler.incoming_transfers
+        assert not scheduler.outgoing_requests
+        assert not scheduler.incoming_requests
+
+
 logging.basicConfig(level=logging.DEBUG)

@@ -155,11 +155,6 @@ class BWScheduler:
         # Try to schedule remaining requests as we might have unallocated bandwidth at this point.
         self.schedule()
 
-    def on_outgoing_transfer_failed(self, failed_transfer):
-        self.unregister_transfer(failed_transfer, is_outgoing=True)
-        self.cancel_pending_task("transfer_%d_finish_%d" % (failed_transfer.transfer_id, failed_transfer.reschedules))
-        self.schedule()
-
     def on_incoming_transfer_complete(self, completed_transfer):
         """
         An incoming transfer has been completed.
@@ -248,35 +243,39 @@ class BWScheduler:
                 self.outgoing_requests.remove(transfer)
         else:
             raise RuntimeError("We do not know about request %d!" % transfer.transfer_id)
+        
+    def kill_transfer(self, transfer):
+        self.logger.debug("Killing transfer %d: %s => %s", 
+                            transfer.transfer_id, self.my_id, transfer.receiver_scheduler.my_id)
+        
+        # Remove from pending lists on both sender and receiver
+        if transfer in transfer.sender_scheduler.outgoing_requests:
+            transfer.sender_scheduler.outgoing_requests.remove(transfer)
+        if transfer in transfer.receiver_scheduler.incoming_requests:
+            transfer.receiver_scheduler.incoming_requests.remove(transfer)
+        
+        # Remove from active lists on the sender side
+        if transfer in transfer.sender_scheduler.outgoing_transfers:
+            transfer.sender_scheduler.remove_transfer_finish_from_event_queue(transfer)
+            transfer.sender_scheduler.unregister_transfer(transfer, is_outgoing=True)
+        
+        # Remove from active lists on the receiver side
+        if transfer in transfer.receiver_scheduler.incoming_transfers:
+            transfer.receiver_scheduler.unregister_transfer(transfer, is_outgoing=False)
+        
+        transfer.fail()
+        
+        self.schedule()
 
     def kill_all_transfers(self):
         transfer_count: int = len(self.incoming_transfers) + len(self.outgoing_transfers)
         if transfer_count > 0:
             self.logger.warning("Interrupting all %d transfers of participant %s in the scheduler",
                                 transfer_count, self.my_id)
-        for transfer in self.outgoing_transfers:
-            transfer.receiver_scheduler.on_incoming_transfer_complete(transfer)
-            self.logger.debug("Failing outgoing transfer %d: %s => %s", transfer.transfer_id, self.my_id,
-                              transfer.receiver_scheduler.my_id)
-            transfer.fail()
-        for transfer in self.incoming_transfers:
-            transfer.sender_scheduler.on_outgoing_transfer_failed(transfer)
-            self.logger.debug("Failing incoming transfer %d: %s => %s", transfer.transfer_id, self.my_id,
-                              transfer.receiver_scheduler.my_id)
-            transfer.fail()
-
-        # Clean up all the pending requests
-        for request in self.outgoing_requests:
-            if request in request.receiver_scheduler.incoming_requests:
-                request.receiver_scheduler.incoming_requests.remove(request)
-        for request in self.incoming_requests:
-            if request in request.sender_scheduler.outgoing_requests:
-                request.sender_scheduler.outgoing_requests.remove(request)
-
-        self.incoming_transfers = []
-        self.outgoing_transfers = []
-        self.incoming_requests = []
-        self.outgoing_requests = []
+        
+        for transfer in self.incoming_transfers + self.outgoing_transfers + self.incoming_requests + self.outgoing_requests:
+            self.logger.debug("Killing transfer %d: %s => %s", transfer.transfer_id, self.my_id, transfer.receiver_scheduler.my_id)
+            self.kill_transfer(transfer)
 
 
 class Transfer:
@@ -305,11 +304,6 @@ class Transfer:
 
     def fail(self):
         self.update()
-        try:
-            self.complete_future.set_exception(RuntimeError("Transfer interrupted"))
-        except InvalidStateError:
-            self.sender_scheduler.logger.error("Failure of transfer %s resulted in an InvalidStateError - "
-                                               "ignoring for now", self)
 
     def update(self):
         cur_time: int = self.sender_scheduler.client.simulator.current_time
