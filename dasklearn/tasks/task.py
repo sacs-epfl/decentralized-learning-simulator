@@ -15,6 +15,7 @@ class Task:
 
         self.inputs_resolve: int = 0
         self.done: bool = False
+        self.index_map: Dict[str, List[Tuple]] = {}
 
     @staticmethod
     def generate_name(base: str) -> str:
@@ -44,9 +45,13 @@ class Task:
 
         return values_replaced
 
-    def set_data(self, input_task_name: str, data, do_replace: bool = True) -> int:
-        # Iteratively go through the dictionary and sub-dictionaries and replace instances
-        values_replaced: int = Task.replace_values_recursively(self.data, input_task_name, data, do_replace)
+    def set_data(self, input_task_name: str, new_data, do_replace: bool = True) -> int:
+        pointers = self.index_map.get(input_task_name, [])
+        values_replaced = 0
+        for container, key in pointers:
+            if do_replace:
+                container[key] = new_data
+            values_replaced += 1
         self.inputs_resolve += 1
         return values_replaced
 
@@ -75,3 +80,17 @@ class Task:
 
     def __repr__(self):
         return str(self)
+
+    def build_index(self, container):
+        if isinstance(container, dict):
+            for key, value in container.items():
+                if isinstance(value, (dict, list)):
+                    self.build_index(value)
+                elif isinstance(value, tuple):
+                    self.index_map.setdefault(value, []).append((container, key))
+        elif isinstance(container, list):
+            for idx, item in enumerate(container):
+                if isinstance(item, (dict, list)):
+                    self.build_index(item)
+                elif isinstance(item, tuple):
+                    self.index_map.setdefault(item, []).append((container, idx))

@@ -385,6 +385,7 @@ class Simulation:
             stop_profile(self.settings.data_dir)
 
         # Sanity check the DAG
+        self.workflow_dag.build_task_indices()
         self.workflow_dag.check_validity()
         self.plot_compute_graph()
         self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())

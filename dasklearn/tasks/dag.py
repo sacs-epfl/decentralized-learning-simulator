@@ -29,6 +29,10 @@ class WorkflowDAG:
         Serialize the DAG.
         """
         return [task.to_json_dict() for task in self.tasks.values()]
+    
+    def build_task_indices(self):
+        for task in self.tasks.values():
+            task.build_index(task.data)
 
     def save_to_file(self, file_path: str) -> None:
         with open(file_path, "w") as dag_file:
