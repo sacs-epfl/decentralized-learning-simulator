@@ -3,6 +3,7 @@ import threading
 from asyncio import ensure_future
 
 import psutil
+from dasklearn.util.utils import start_profile, stop_profile
 import torch.multiprocessing as multiprocessing
 from torch.multiprocessing.reductions import shared_cache as mp_torch_sc
 import pickle
@@ -251,6 +252,9 @@ class Broker:
 
         asyncio.get_event_loop().call_later(2, asyncio.get_event_loop().stop)
 
+        if self.args.profile:
+            stop_profile(self.settings.data_dir, is_broker=True)
+
     def shutdown_everyone(self):
         self.logger.error("Will send shutdown signal to all nodes")
         msg = pickle.dumps({"type": "shutdown"})
@@ -334,3 +338,6 @@ class Broker:
         self.communication = Communication(self.identity, self.args.port, self.on_message, is_broker=True)
         self.communication.start()
         self.communication.connect_to_coordinator(self.args.coordinator)
+
+        if self.args.profile:
+            start_profile()

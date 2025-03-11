@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from dasklearn.simulation.churn_manager import ChurnManager
+from dasklearn.util.utils import start_profile, stop_profile
 try:
     import seaborn as sns
     seaborn_available = True
@@ -287,22 +288,6 @@ class Simulation:
 
         self.logger.info("Scheduled %d join/leave events for client %d (trace length in sec: %d)", events, client_id, data["finish_time"])
 
-    def start_profile(self):
-        # Check if the Yappi library has been installed
-        try:
-            import yappi
-        except ImportError:
-            self.logger.error("Yappi library not installed - cannot profile")
-            return
-        yappi.start(builtins=True)
-
-    def stop_profile(self):
-        import yappi
-        yappi.stop()
-        yappi_stats = yappi.get_func_stats()
-        yappi_stats.sort("tsub")
-        yappi_stats.save(os.path.join(self.data_dir, "yappi.stats"), type='callgrind')
-
     def monitor_bandwidth_utilization(self, event: Event) -> None:
         """
         Monitor the bandwidth utilization of all clients that are sending or receiving data.
@@ -325,7 +310,7 @@ class Simulation:
 
     async def run(self):
         if self.settings.profile:
-            self.start_profile()
+            start_profile()
 
         self.simulation_start_time: float = time.time()
         self.setup_directories()
@@ -397,7 +382,7 @@ class Simulation:
         self.save_measurements()
 
         if self.settings.profile:
-            self.stop_profile()
+            stop_profile(self.settings.data_dir)
 
         # Sanity check the DAG
         self.workflow_dag.check_validity()

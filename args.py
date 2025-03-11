@@ -81,6 +81,7 @@ def get_broker_args():
     parser.add_argument("--port", type=int, default=5556)
     parser.add_argument('--coordinator', type=str)
     parser.add_argument('--workers', type=int, default=1)
+    parser.add_argument('--profile', action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
 

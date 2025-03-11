@@ -1,3 +1,4 @@
+import os
 import random
 
 import numpy as np
@@ -54,3 +55,17 @@ class Cutout(object):
 
 def get_random_hex_str(length: int) -> str:
     return ''.join(random.choice('0123456789abcdef') for n in range(length))
+
+
+def start_profile():
+    import yappi
+    yappi.start(builtins=True)
+
+
+def stop_profile(data_dir: str, is_broker=False):
+    import yappi
+    yappi.stop()
+    yappi_stats = yappi.get_func_stats()
+    yappi_stats.sort("tsub")
+    file_name: str = "yappi.stats" if not is_broker else "yappi_broker.stats"
+    yappi_stats.save(os.path.join(data_dir, file_name), type='callgrind')
