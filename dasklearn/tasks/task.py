@@ -59,6 +59,7 @@ class Task:
         return self.inputs_resolve >= len(self.inputs)
 
     def clear_data(self):
+        self.index_map = None
         self.data = None
 
     def to_json_dict(self) -> Dict:
