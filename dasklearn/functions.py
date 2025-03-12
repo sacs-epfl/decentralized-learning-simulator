@@ -27,9 +27,13 @@ lock = threading.Lock()
 
 def train(settings: SessionSettings, params: Dict):
     global dataset, model_trainers
-    model = params["model"]
-    if isinstance(model, tuple):  # Happens for the first round, when the model is a tuple (None, 0)
-        model = model[0]
+    serialized_model = params["model"]
+    if isinstance(serialized_model, tuple):  # Happens for the first round, when the model is a tuple (None, 0)
+        serialized_model = serialized_model[0]
+
+    # Deserialize model
+    model = unserialize_model(serialized_model, settings.dataset, architecture=settings.model) if serialized_model else None
+
     round_nr = params["round"]
     cur_time = params["time"]
     peer_id = params["peer"]
@@ -67,14 +71,14 @@ def train(settings: SessionSettings, params: Dict):
             g = g.cpu()
             detached_model.gradient.append(g)
     else:
-        detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+        serialized_model = serialize_model(model)
 
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
     logger.debug("Peer %d training in round %d...", peer_id, round_nr)
 
-    return [detached_model]
+    return [serialized_model]
 
 
 def compute_gradient(settings: SessionSettings, params: Dict):
@@ -97,18 +101,21 @@ def aggregate(settings: SessionSettings, params: Dict):
         logger.debug("Aggregating %d models in round %d...", len(models), round_nr)
 
     model_manager = ModelManager(None, settings, 0)
-    for idx, model in enumerate(models):
+    for idx, serialized_model in enumerate(models):
+        model = unserialize_model(serialized_model, settings.dataset, architecture=settings.model)
         model_manager.process_incoming_trained_model(idx, model)
 
     start_time = time.time()
     agg_model = model_manager.aggregate_trained_models(weights)
     logger.debug("Model aggregation took %f s.", time.time() - start_time)
-    return [agg_model]
+    serialized_agg_model = serialize_model(agg_model)
+    return [serialized_agg_model]
 
 
 def test(settings: SessionSettings, params: Dict):
     global dataset, evaluator
-    model = params["model"]
+    serialized_model = params["model"]
+    model = unserialize_model(serialized_model, settings.dataset, architecture=settings.model)
     round_nr = params["round"]
     cur_time = params["time"]
     peer_id = params["peer"]
@@ -129,8 +136,8 @@ def test(settings: SessionSettings, params: Dict):
 
     logger.info("[t=%.2f] Model accuracy (peer %d, round %d): %f, loss: %f", cur_time / MICROSECONDS, peer_id, round_nr, accuracy, loss)
 
-    detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
-    return [detached_model]
+    serialized_model = serialize_model(model)
+    return [serialized_model]
 
 
 def chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
