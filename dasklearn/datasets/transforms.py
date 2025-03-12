@@ -6,11 +6,17 @@ from dasklearn.datasets.transforms_stft import ToSTFT, StretchAudioOnSTFT, Times
 from dasklearn.datasets.transforms_wav import ChangeAmplitude, ChangeSpeedAndPitchAudio, FixAudioLength, ToTensor, \
     ToMelSpectrogram, LoadAudio
 
-transforms_tens = T.ToTensor()
+cifar10_normalization_vectors = (0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)
+
+transforms_tens = T.Compose([
+    T.ToTensor(),
+    T.Normalize(*cifar10_normalization_vectors),
+])
 
 transforms_tens_resnet = T.Compose([
     T.Resize((224, 224)),  # Ensure input size is large enough for ResNet
-    T.ToTensor()
+    T.ToTensor(),
+    T.Normalize(*cifar10_normalization_vectors),
 ])
 
 def apply_transforms_cifar10(batch):
