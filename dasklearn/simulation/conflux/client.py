@@ -247,11 +247,29 @@ class ConfluxClient(AsynchronousClient):
         self.client_manager.update_client_activity(from_client, max(metadata["round"], self.get_round_estimate()))
         self.received_model_chunk(from_client, metadata["round"], metadata["chunk"], metadata.get("population_view", None))
 
+    def update_my_inventory_with_new_chunk(self, round_nr: int, chunk: Tuple[int, Set[str]]) -> List[Tuple[int, Set[str]]]:
+        new_chunks: List[Tuple[int, Set[str]]] = []
+
+        # Compare the new chunk with existing chunks - if it's a subset, we can create a new chunk
+        for existing_chunk in self.available_chunks[round_nr]:
+            if existing_chunk[0] != chunk[0]:
+                continue
+
+            if existing_chunk[1].issubset(chunk[1]):
+                new_chunk = (existing_chunk[0], chunk[1] - existing_chunk[1])
+                new_chunks.append(new_chunk)
+            elif chunk[1].issubset(existing_chunk[1]):
+                new_chunk = (chunk[0], existing_chunk[1] - chunk[1])
+                new_chunks.append(new_chunk)
+
+        return new_chunks
+
     def received_model_chunk(self, from_client: int, round_nr: int, chunk: Tuple[int, Set[int]], population_view: Optional[Dict] = None) -> None:
         if population_view:
             self.client_manager.merge_population_views(population_view)
 
         round_info: Round = self.round_info[round_nr]
+        self.client_log("Client %d received chunk %s from %d for round %d" % (self.index, chunk, from_client, round_nr))
 
         chunk_idx: int = chunk[0]
         for chunk_model_name in chunk[1]:
@@ -260,11 +278,14 @@ class ConfluxClient(AsynchronousClient):
         round_info.is_pulling.remove(chunk)
         
         # Update our inventory
+        derived_chunks: List[Tuple[int, Set[str]]] = self.update_my_inventory_with_new_chunk(round_nr, chunk)
         self.available_chunks[round_nr].append(chunk)
-        self.advertise_new_inventory(round_nr, [chunk])
+        for derived_chunk in derived_chunks:
+            self.available_chunks[round_nr].append(derived_chunk)
+        self.advertise_new_inventory(round_nr, [chunk] + derived_chunks)
 
-        # counts_at_chunk_idxs = [len(chunks) for chunks in round_info.received_chunks]
-        # print(counts_at_chunk_idxs)
+        counts_at_chunk_idxs = [len(chunks) for chunks in round_info.received_chunks]
+        print(counts_at_chunk_idxs)
 
         # Did we receive sufficient chunks?
         if round_info.has_received_enough_chunks():
