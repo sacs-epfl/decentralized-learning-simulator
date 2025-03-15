@@ -156,7 +156,14 @@ class ConfluxClient(AsynchronousClient):
         if round_info.received_enough_chunks or not self.bw_scheduler.has_free_incoming_slot():
             # No space for another pull
             return
+        
+        if random.choice([True, False]):
+            # Pull chunks for underrepresented chunk indices
+            self.pull_chunks_for_underrepresented_chunk_idxs(round_info)
+        else:
+            self.pull_rare_chunks(round_info)
 
+    def pull_chunks_for_underrepresented_chunk_idxs(self, round_info: Round):
         # Determine chunk indices that are underrepresented
         chunk_idxs = list(range(self.simulator.settings.chunks_in_sample))
         random.shuffle(chunk_idxs)  # Shuffle before sorting to ensure randomness within groups
@@ -211,6 +218,41 @@ class ConfluxClient(AsynchronousClient):
                     round_info.is_pulling.add(chunk_to_pull)
                     other.start_outgoing_chunk_transfer(round_info.round_nr, self.index, chunk_to_pull)
                     break  # move to the next chunk index
+
+            if not self.bw_scheduler.has_free_incoming_slot():
+                break
+
+    def pull_rare_chunks(self, round_info: Round):
+        # For each chunk, determine how rare it is
+        chunk_rarity: Dict[Tuple[int, Set[str]], int] = {}
+        for chunk, owners in round_info.inventories.items():
+            chunk_rarity[chunk] = len(owners)
+
+        # Sort the chunks by rarity
+        sorted_chunks = list(chunk_rarity.items())
+        random.shuffle(sorted_chunks)
+        sorted_chunks.sort(key=lambda x: x[1])
+
+        # Iterate over the chunks and find ones that we can pull
+        for chunk_to_pull, _ in sorted_chunks:
+            chunk_idx: int = chunk_to_pull[0]
+
+            # Do we have all components of this chunk already?
+            need_chunk: bool = True
+            for model_name in chunk_to_pull[1]:
+                if round_info.has_received_chunk(chunk_idx, model_name):
+                    need_chunk = False
+                    break
+
+            if not need_chunk:
+                continue
+
+            for owner in round_info.inventories[chunk_to_pull]:
+                other = self.simulator.clients[owner]
+                if other.bw_scheduler.has_free_outgoing_slot() and chunk_to_pull not in round_info.is_pulling:
+                    round_info.is_pulling.add(chunk_to_pull)
+                    other.start_outgoing_chunk_transfer(round_info.round_nr, self.index, chunk_to_pull)
+                    break  # move to the next chunk
 
             if not self.bw_scheduler.has_free_incoming_slot():
                 break
@@ -284,9 +326,6 @@ class ConfluxClient(AsynchronousClient):
             self.available_chunks[round_nr].append(derived_chunk)
         self.advertise_new_inventory(round_nr, [chunk] + derived_chunks)
 
-        counts_at_chunk_idxs = [len(chunks) for chunks in round_info.received_chunks]
-        print(counts_at_chunk_idxs)
-
         # Did we receive sufficient chunks?
         if round_info.has_received_enough_chunks():
             self.client_log(f"Client {self.index} received enough chunks in round {round_nr}")
@@ -296,11 +335,17 @@ class ConfluxClient(AsynchronousClient):
             for slot_idx, transfer in enumerate(self.bw_scheduler.incoming_slots):
                 if transfer and transfer.metadata["round"] == round_nr:
                     self.bw_scheduler.kill_transfer(transfer)
+
+            # Collect the received chunks per index
+            received_chunks: List[Set[str]] = [[] for _ in range(self.simulator.settings.chunks_in_sample)]
+            for chunk_idx, chunk_models in enumerate(round_info.received_chunks):
+                for model_name in chunk_models:
+                    received_chunks[chunk_idx].append((model_name, chunk_idx))
             
             # Reconstruct new model
             task_name = Task.generate_name("reconstruct_from_chunks")
             task = Task(task_name, "reconstruct_from_chunks", data={
-                "chunks": round_info.received_chunks, "round": round_nr,  # TODO bug here since we changed the structure of received_chunks
+                "chunks": received_chunks, "round": round_nr,  # TODO bug here since we changed the structure of received_chunks
                 "time": self.simulator.current_time, "peer": self.index
             })
             self.add_compute_task(task)
