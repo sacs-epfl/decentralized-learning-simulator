@@ -167,8 +167,9 @@ class ConfluxClient(AsynchronousClient):
             if not round_info.has_received_chunk(chunk):
                 chunks_we_want.append(chunk)
 
-        random.shuffle(chunks_we_want)
-        print(len(chunks_we_want))
+        # Prioritize chunks at indices that are underrepresented
+        chunks_we_want.sort(key=lambda x: len(round_info.received_chunks[x[1]]))
+
         for chunk in chunks_we_want:
             for owner in round_info.inventories[chunk]:
                 other = self.simulator.clients[owner]
@@ -239,7 +240,6 @@ class ConfluxClient(AsynchronousClient):
             # Kill any incoming transfer related to this round
             for slot_idx, transfer in enumerate(self.bw_scheduler.incoming_slots):
                 if transfer and transfer.metadata["round"] == round_nr:
-                    print("k")
                     self.bw_scheduler.kill_transfer(transfer)
             
             # Reconstruct new model
