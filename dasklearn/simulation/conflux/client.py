@@ -147,36 +147,52 @@ class ConfluxClient(AsynchronousClient):
 
         self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
 
-    def start_outgoing_chunk_transfer(self, round_nr: int, to: int, chunk: Tuple[str, int]) -> None:
-        assert chunk in self.available_chunks[round_nr], "Chunk not available!"
-        self.send_chunk(round_nr, chunk, to)
+    def start_outgoing_chunk_transfer(self, round_nr: int, to: int, chunks: List[Tuple[str, int]]) -> None:
+        for chunk in chunks:
+            assert chunk in self.available_chunks[round_nr], "Chunk %s not available!" % str(chunk)
 
-    def send_chunk(self, round_nr: int, chunk: Tuple[str, int], recipient_idx: int) -> None:
-        event_data = {"from": self.index, "to": recipient_idx, "model": chunk[0], "metadata": {"chunk": chunk[1], "round": round_nr}}
+        event_data = {"from": self.index, "to": to, "model": None, "metadata": {"chunks": chunks, "round": round_nr}}
         start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
-        self.start_transfer(start_transfer_event)
+        self.start_transfer(start_transfer_event)        
 
     def pull_chunks_for_round(self, round_info: Round):
         if round_info.received_enough_chunks or not self.bw_scheduler.has_free_incoming_slot():
             # No space for another pull
             return
 
-        # Determine the chunk we want to pull
-        chunks_we_want: List[Tuple[str, int]] = []
-        for chunk in round_info.inventories.keys():
-            if not round_info.has_received_chunk(chunk):
-                chunks_we_want.append(chunk)
+        # Determine chunk indices that are underrepresented
+        chunk_idxs = list(range(self.simulator.settings.chunks_in_sample))
+        random.shuffle(chunk_idxs)  # Shuffle before sorting to ensure randomness within groups
+        chunk_idxs.sort(key=lambda x: len(round_info.received_chunks[x]))
 
-        # Prioritize chunks at indices that are underrepresented
-        chunks_we_want.sort(key=lambda x: len(round_info.received_chunks[x[1]]))
+        # Now, determine per chunk index the chunk owners that can offer us the chunk we don't have yet
+        # Essentially, we make a list of owners and what they can offer us
+        chunks_per_sender: Dict[int, Dict[int, List[Tuple[str, int]]]] = defaultdict(list)
+        for idx in chunk_idxs:
+            chunks_per_sender[idx] = defaultdict(list)
 
-        for chunk in chunks_we_want:
-            for owner in round_info.inventories[chunk]:
+        for chunk, owners in round_info.inventories.items():
+            chunk_idx: int = chunk[1]
+            for owner in owners:
+                if owner not in chunks_per_sender[chunk_idx]:
+                    chunks_per_sender[chunk_idx][owner] = []
+
+                if not round_info.has_received_chunk(chunk):
+                    chunks_per_sender[chunk_idx][owner].append(chunk)
+
+        # Now, we iterate over each chunk index and start to contact the owners with the most chunks we don't have yet
+        # until we have filled up our incoming slots
+        for chunk_idx in chunk_idxs:
+            owners = chunks_per_sender[chunk_idx]
+            sorted_owners = sorted(owners.items(), key=lambda x: len(x[1]), reverse=True)
+
+            for owner, chunks in sorted_owners:
                 other = self.simulator.clients[owner]
-                if other.bw_scheduler.has_free_outgoing_slot() and chunk not in round_info.is_pulling:
-                    round_info.is_pulling.add(chunk)
-                    other.start_outgoing_chunk_transfer(round_info.round_nr, self.index, chunk)
-                    break
+                tup_chunks = tuple(chunks)
+                if other.bw_scheduler.has_free_outgoing_slot() and tup_chunks not in round_info.is_pulling:
+                    round_info.is_pulling.add(tup_chunks)
+                    other.start_outgoing_chunk_transfer(round_info.round_nr, self.index, chunks)
+                    break  # move to the next chunk index
 
             if not self.bw_scheduler.has_free_incoming_slot():
                 break
@@ -198,7 +214,7 @@ class ConfluxClient(AsynchronousClient):
         #     round_info.has_sent_view.add(to)
 
         receiver_scheduler: SlotBWScheduler = self.simulator.clients[to].bw_scheduler
-        self.client_log(f"Client {self.index} starts sending chunk {event.data['metadata']['chunk']} to {to} for round {event.data['metadata']['round']}")
+        self.client_log(f"Client {self.index} starts sending chunks {event.data['metadata']['chunks']} to {to} for round {event.data['metadata']['round']}")
         self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
 
     def on_incoming_model(self, event: Event):
@@ -211,25 +227,23 @@ class ConfluxClient(AsynchronousClient):
         metadata: Dict = event.data["metadata"]
         from_client: int = event.data["from"]
         self.client_manager.update_client_activity(from_client, max(metadata["round"], self.get_round_estimate()))
-        self.received_model_chunk(from_client, metadata["round"], event.data["model"], metadata["chunk"], metadata.get("population_view", None))
+        self.received_model_chunk(from_client, metadata["round"], metadata["chunks"], metadata.get("population_view", None))
 
-    def received_model_chunk(self, from_client: int, round_nr: int, model_name: str, chunk_idx: int, population_view: Optional[Dict] = None) -> None:
+    def received_model_chunk(self, from_client: int, round_nr: int, chunks: List[Tuple[str, int]], population_view: Optional[Dict] = None) -> None:
         if population_view:
             self.client_manager.merge_population_views(population_view)
 
-        chunk: Tuple[str, int] = (model_name, chunk_idx)
         round_info: Round = self.round_info[round_nr]
-        round_info.received_chunks[chunk_idx].append((model_name, chunk_idx))
-        round_info.is_pulling.remove(chunk)
-        self.available_chunks[round_nr].append(chunk)
-
-        self.advertise_new_inventory(round_nr, [chunk])
+        for chunk in chunks:
+            round_info.received_chunks[chunk[1]].append(chunk)
+        round_info.is_pulling.remove(tuple(chunks))
+        
+        # Only update the inventory if we receive a singular chunk
+        if len(chunks) == 1:
+            self.available_chunks[round_nr].append(chunk)
+            self.advertise_new_inventory(round_nr, [chunk])
 
         # Did we receive sufficient chunks?
-        filled_in_slots: int = sum([1 for slot in self.bw_scheduler.incoming_slots if slot])
-        filled_out_slots: int = sum([1 for slot in self.bw_scheduler.outgoing_slots if slot])
-        self.logger.warning("Client %d incoming slots: %d, outgoing slots: %d", self.index, filled_in_slots, filled_out_slots)
-
         if round_info.has_received_enough_chunks():
             counts_at_chunk_idxs = [len(chunks) for chunks in round_info.received_chunks]
             print(counts_at_chunk_idxs)
