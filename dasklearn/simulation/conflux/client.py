@@ -2,7 +2,7 @@ from collections import defaultdict
 import copy
 from random import Random
 import random
-from typing import List, Optional, Tuple
+from typing import List, Optional, Set, Tuple
 
 from dasklearn.simulation.asynchronous_client import AsynchronousClient
 from dasklearn.simulation.conflux import NodeMembershipChange
@@ -25,7 +25,7 @@ class ConfluxClient(AsynchronousClient):
         self.train_sample_estimate: int = 0
         self.last_round_completed: int = 0
 
-        self.available_chunks: Dict[int, List[Tuple[str, int]]] = defaultdict(list)  # Keep track of the chunks we have available, indexed by round
+        self.available_chunks: Dict[int, List[Tuple[int, Set[str]]]] = defaultdict(list)  # Keep track of the chunks we have available, indexed by round
 
     def init_client(self, _: Event):
         # Replace the bandwidth scheduler with a slot-based one
@@ -117,7 +117,7 @@ class ConfluxClient(AsynchronousClient):
 
         self.chunk_model(round_info)
 
-    def advertise_new_inventory(self, round_nr: int, chunks: List[Tuple[str, int]]):
+    def advertise_new_inventory(self, round_nr: int, chunks: List[Tuple[int, Set[str]]]):
         participants = SampleManager.get_sample(round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
         for participant in participants:
             self.send_message_to_client(participant, "has_chunks", {"round": round_nr, "chunks": chunks})
@@ -136,7 +136,7 @@ class ConfluxClient(AsynchronousClient):
         })
         self.add_compute_task(task)
 
-        all_chunks: List[Tuple[str, int]] = [(task_name, i) for i in range(self.simulator.settings.chunks_in_sample)]
+        all_chunks: List[Tuple[int, Set[str]]] = [(i, frozenset({task_name})) for i in range(self.simulator.settings.chunks_in_sample)]
         next_round_nr: int = round_info.round_nr + 1
 
         for chunk in all_chunks:
@@ -147,11 +147,8 @@ class ConfluxClient(AsynchronousClient):
 
         self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
 
-    def start_outgoing_chunk_transfer(self, round_nr: int, to: int, chunks: List[Tuple[str, int]]) -> None:
-        for chunk in chunks:
-            assert chunk in self.available_chunks[round_nr], "Chunk %s not available!" % str(chunk)
-
-        event_data = {"from": self.index, "to": to, "model": None, "metadata": {"chunks": chunks, "round": round_nr}}
+    def start_outgoing_chunk_transfer(self, round_nr: int, to: int, chunk: Tuple[int, Set[str]]) -> None:
+        event_data = {"from": self.index, "to": to, "model": None, "metadata": {"chunk": chunk, "round": round_nr}}
         start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
         self.start_transfer(start_transfer_event)        
 
@@ -172,26 +169,47 @@ class ConfluxClient(AsynchronousClient):
             chunks_per_sender[idx] = defaultdict(list)
 
         for chunk, owners in round_info.inventories.items():
-            chunk_idx: int = chunk[1]
+            chunk_idx: int = chunk[0]
             for owner in owners:
                 if owner not in chunks_per_sender[chunk_idx]:
                     chunks_per_sender[chunk_idx][owner] = []
 
-                if not round_info.has_received_chunk(chunk):
+                # Do we have all components of this chunk already?
+                need_chunk: bool = True
+                for model_name in chunk[1]:
+                    if round_info.has_received_chunk(chunk_idx, model_name):
+                        need_chunk = False
+                        break
+
+                if need_chunk:
                     chunks_per_sender[chunk_idx][owner].append(chunk)
 
         # Now, we iterate over each chunk index and start to contact the owners with the most chunks we don't have yet
         # until we have filled up our incoming slots
         for chunk_idx in chunk_idxs:
             owners = chunks_per_sender[chunk_idx]
-            sorted_owners = sorted(owners.items(), key=lambda x: len(x[1]), reverse=True)
+            count_per_owner: Dict[int, int] = {}
+            for owner, chunks in owners.items():
+                owner_count: int = 0
+                for chunk in chunks:
+                    owner_count += len(chunk[1])
+                count_per_owner[owner] = owner_count
 
-            for owner, chunks in sorted_owners:
+            # Get the owners with the most chunks we don't have yet
+            sorted_owners = sorted(count_per_owner.items(), key=lambda x: x[1], reverse=True)
+            for owner, _ in sorted_owners:
                 other = self.simulator.clients[owner]
-                tup_chunks = tuple(chunks)
-                if other.bw_scheduler.has_free_outgoing_slot() and tup_chunks not in round_info.is_pulling:
-                    round_info.is_pulling.add(tup_chunks)
-                    other.start_outgoing_chunk_transfer(round_info.round_nr, self.index, chunks)
+                
+                # Coalesce all the chunks from this owner into a single one
+                model_names: Set[str] = set()
+                for chunk in owners[owner]:
+                    model_names.update(chunk[1])
+                
+                chunk_to_pull: Tuple[int, Set[str]] = (chunk_idx, frozenset(model_names))
+
+                if other.bw_scheduler.has_free_outgoing_slot() and chunk_to_pull not in round_info.is_pulling:
+                    round_info.is_pulling.add(chunk_to_pull)
+                    other.start_outgoing_chunk_transfer(round_info.round_nr, self.index, chunk_to_pull)
                     break  # move to the next chunk index
 
             if not self.bw_scheduler.has_free_incoming_slot():
@@ -214,7 +232,7 @@ class ConfluxClient(AsynchronousClient):
         #     round_info.has_sent_view.add(to)
 
         receiver_scheduler: SlotBWScheduler = self.simulator.clients[to].bw_scheduler
-        self.client_log(f"Client {self.index} starts sending chunks {event.data['metadata']['chunks']} to {to} for round {event.data['metadata']['round']}")
+        self.client_log(f"Client {self.index} starts sending chunk {event.data['metadata']['chunk']} to {to} for round {event.data['metadata']['round']}")
         self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
 
     def on_incoming_model(self, event: Event):
@@ -227,27 +245,29 @@ class ConfluxClient(AsynchronousClient):
         metadata: Dict = event.data["metadata"]
         from_client: int = event.data["from"]
         self.client_manager.update_client_activity(from_client, max(metadata["round"], self.get_round_estimate()))
-        self.received_model_chunk(from_client, metadata["round"], metadata["chunks"], metadata.get("population_view", None))
+        self.received_model_chunk(from_client, metadata["round"], metadata["chunk"], metadata.get("population_view", None))
 
-    def received_model_chunk(self, from_client: int, round_nr: int, chunks: List[Tuple[str, int]], population_view: Optional[Dict] = None) -> None:
+    def received_model_chunk(self, from_client: int, round_nr: int, chunk: Tuple[int, Set[int]], population_view: Optional[Dict] = None) -> None:
         if population_view:
             self.client_manager.merge_population_views(population_view)
 
         round_info: Round = self.round_info[round_nr]
-        for chunk in chunks:
-            round_info.received_chunks[chunk[1]].append(chunk)
-        round_info.is_pulling.remove(tuple(chunks))
+
+        chunk_idx: int = chunk[0]
+        for chunk_model_name in chunk[1]:
+            round_info.received_chunks[chunk_idx].add(chunk_model_name)
+
+        round_info.is_pulling.remove(chunk)
         
-        # Only update the inventory if we receive a singular chunk
-        if len(chunks) == 1:
-            self.available_chunks[round_nr].append(chunk)
-            self.advertise_new_inventory(round_nr, [chunk])
+        # Update our inventory
+        self.available_chunks[round_nr].append(chunk)
+        self.advertise_new_inventory(round_nr, [chunk])
+
+        # counts_at_chunk_idxs = [len(chunks) for chunks in round_info.received_chunks]
+        # print(counts_at_chunk_idxs)
 
         # Did we receive sufficient chunks?
         if round_info.has_received_enough_chunks():
-            counts_at_chunk_idxs = [len(chunks) for chunks in round_info.received_chunks]
-            print(counts_at_chunk_idxs)
-            
             self.client_log(f"Client {self.index} received enough chunks in round {round_nr}")
             round_info.received_enough_chunks = True
 

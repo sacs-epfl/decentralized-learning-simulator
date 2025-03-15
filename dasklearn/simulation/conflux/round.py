@@ -17,21 +17,18 @@ class Round:
         self.is_training: bool = False
         self.train_done: bool = False
         self.received_enough_chunks: bool = False
-        self.received_chunks: List[List[Tuple[str, int]]] = []  # Keep track of received chunks, indexed by chunk index
-        self.inventories: Dict[Tuple[str, int], List[int]] = {}  # Keep track of which clients have which chunks
+        self.received_chunks: List[Set[str]] = []  # Keep track of received chunks, indexed by chunk index
+        self.inventories: Dict[Tuple[int, Set[str]], List[int]] = {}  # Keep track of which clients have which chunks
         self.has_sent_view: Set[int] = set()  # Keep track of which clients have received our view
-        self.is_pulling: List[Tuple[str, int]] = set()
+        self.is_pulling: Set[Tuple[int, frozenset]] = set()
 
     def init_received_chunks(self, settings: ConfluxSettings):
         self.sample_size = settings.sample_size
         self.success_fraction = settings.success_fraction
-        self.received_chunks = [[] for _ in range(settings.chunks_in_sample)]
+        self.received_chunks = [set() for _ in range(settings.chunks_in_sample)]
 
     def has_received_enough_chunks(self):
         return all([(len(chunks) / self.sample_size) >= self.success_fraction for chunks in self.received_chunks])
     
-    def has_received_chunk(self, chunk: Tuple[str, int]) -> bool:
-        for chunks in self.received_chunks:
-            if chunk in chunks:
-                return True
-        return False
+    def has_received_chunk(self, chunk_idx: int, model_name: str) -> bool:
+        return model_name in self.received_chunks[chunk_idx]
