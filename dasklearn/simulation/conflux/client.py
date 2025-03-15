@@ -157,7 +157,7 @@ class ConfluxClient(AsynchronousClient):
             # No space for another pull
             return
         
-        if random.choice([True, False]):
+        if random.random() < 0.5:
             # Pull chunks for underrepresented chunk indices
             self.pull_chunks_for_underrepresented_chunk_idxs(round_info)
         else:
