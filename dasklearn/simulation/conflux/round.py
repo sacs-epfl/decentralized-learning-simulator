@@ -14,6 +14,7 @@ class Round:
         self.success_fraction: float = 0.0
 
         # State
+        self.sample: Optional[List[int]] = None
         self.is_training: bool = False
         self.train_done: bool = False
         self.received_enough_chunks: bool = False

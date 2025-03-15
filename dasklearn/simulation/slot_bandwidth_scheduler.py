@@ -49,7 +49,7 @@ class SlotBWScheduler:
     def __init__(self, client, num_slots=5, total_bw=1000000):
         self.client = client
         self.num_slots = num_slots
-        self.total_bw = total_bw
+        self.bw_limit = total_bw
         self.slot_bw = total_bw // num_slots  # Each slot gets an equal fraction of the total bandwidth.
         
         self.outgoing_slots = [None] * num_slots

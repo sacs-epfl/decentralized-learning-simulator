@@ -117,8 +117,7 @@ class ConfluxClient(AsynchronousClient):
 
         self.chunk_model(round_info)
 
-    def advertise_new_inventory(self, round_nr: int, chunks: List[Tuple[int, Set[str]]]):
-        participants = SampleManager.get_sample(round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
+    def advertise_new_inventory(self, participants: List[int], round_nr: int, chunks: List[Tuple[int, Set[str]]]):
         for participant in participants:
             self.send_message_to_client(participant, "has_chunks", {"round": round_nr, "chunks": chunks})
 
@@ -143,7 +142,8 @@ class ConfluxClient(AsynchronousClient):
             self.available_chunks[next_round_nr].append(chunk)
 
         # Let the nodes in the next sample know about the availability of these chunks
-        self.advertise_new_inventory(next_round_nr, all_chunks)
+        participants_next_sample: List[int] = SampleManager.get_sample(next_round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
+        self.advertise_new_inventory(participants_next_sample, next_round_nr, all_chunks)
 
         self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
 
@@ -324,7 +324,11 @@ class ConfluxClient(AsynchronousClient):
         self.available_chunks[round_nr].append(chunk)
         for derived_chunk in derived_chunks:
             self.available_chunks[round_nr].append(derived_chunk)
-        self.advertise_new_inventory(round_nr, [chunk] + derived_chunks)
+
+        if not round_info.sample:
+            round_info.sample = SampleManager.get_sample(round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
+
+        self.advertise_new_inventory(round_info.sample, round_nr, [chunk] + derived_chunks)
 
         # Did we receive sufficient chunks?
         if round_info.has_received_enough_chunks():
@@ -380,13 +384,16 @@ class ConfluxClient(AsynchronousClient):
 
             # Are we supposed to pull chunks for this round?
             round_nr = event.data["message"]["round"]
-            participants: List[int] = SampleManager.get_sample(round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
-            if self.index not in participants:
-                return
 
             if round_nr not in self.round_info:
                 self.round_info[round_nr] = Round(round_nr)
                 self.round_info[round_nr].init_received_chunks(self.simulator.settings)
+
+            if not self.round_info[round_nr].sample:
+                self.round_info[round_nr].sample = SampleManager.get_sample(round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
+            
+            if self.index not in self.round_info[round_nr].sample:
+                return
 
             # Update inventories
             for chunk in event.data["message"]["chunks"]:
