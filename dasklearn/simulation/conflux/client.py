@@ -315,23 +315,6 @@ class ConfluxClient(AsynchronousClient):
         self.client_manager.update_client_activity(from_client, max(metadata["round"], self.get_round_estimate()))
         self.received_model_chunk(from_client, metadata["round"], metadata["chunk"], metadata.get("population_view", None))
 
-    def update_my_inventory_with_new_chunk(self, round_nr: int, chunk: Tuple[int, Set[str]]) -> List[Tuple[int, Set[str]]]:
-        new_chunks: List[Tuple[int, Set[str]]] = []
-
-        # Compare the new chunk with existing chunks - if it's a subset, we can create a new chunk
-        for existing_chunk in self.available_chunks[round_nr]:
-            if existing_chunk[0] != chunk[0]:
-                continue
-
-            if existing_chunk[1].issubset(chunk[1]):
-                new_chunk = (existing_chunk[0], chunk[1] - existing_chunk[1])
-                new_chunks.append(new_chunk)
-            elif chunk[1].issubset(existing_chunk[1]):
-                new_chunk = (chunk[0], existing_chunk[1] - chunk[1])
-                new_chunks.append(new_chunk)
-
-        return new_chunks
-
     def received_model_chunk(self, from_client: int, round_nr: int, chunk: Tuple[int, Set[int]], population_view: Optional[Dict] = None) -> None:
         if population_view:
             self.client_manager.merge_population_views(population_view)
@@ -346,15 +329,12 @@ class ConfluxClient(AsynchronousClient):
         round_info.is_pulling.remove(chunk)
         
         # Update our inventory
-        derived_chunks: List[Tuple[int, Set[str]]] = self.update_my_inventory_with_new_chunk(round_nr, chunk)
         self.available_chunks[round_nr].append(chunk)
-        for derived_chunk in derived_chunks:
-            self.available_chunks[round_nr].append(derived_chunk)
 
         if not round_info.sample:
             round_info.sample = SampleManager.get_sample(round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
 
-        self.advertise_new_inventory(round_info.sample, round_nr, [chunk] + derived_chunks)
+        self.advertise_new_inventory(round_info.sample, round_nr, [chunk])
 
         # Did we receive sufficient chunks?
         if round_info.has_received_enough_chunks():
