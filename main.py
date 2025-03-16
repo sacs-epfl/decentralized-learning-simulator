@@ -46,6 +46,9 @@ def load_settings_from_dir(directory: str) -> Dict:
     if "learning" in settings_dict:
         settings_dict["learning"] = LearningSettings(**settings_dict["learning"])
 
+    # The device might be different now
+    settings_dict["torch_device_name"] = get_torch_device()
+
     return settings_dict
 
 def instantiate_class(class_path: str, **kwargs):
