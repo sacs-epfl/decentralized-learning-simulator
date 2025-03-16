@@ -85,13 +85,17 @@ class Simulation:
         self.register_event_callback(MONITOR_BANDWIDTH_UTILIZATION, "monitor_bandwidth_utilization")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
+        if settings.from_dir:
+            self.data_dir = settings.from_dir
+            return  # Everything is setup
+
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
                                      (settings.algorithm, settings.dataset, settings.participants,
                                       settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
         settings.data_dir = self.data_dir
 
     def setup_directories(self):
-        if os.path.exists(self.data_dir):
+        if os.path.exists(self.data_dir) and not self.settings.from_dir:
             shutil.rmtree(self.data_dir)
         os.makedirs(self.data_dir, exist_ok=True)
 
@@ -102,7 +106,7 @@ class Simulation:
         self.brokers_to_clients = {}
         self.clients_to_brokers = {}
 
-        for client in range(len(self.clients)):
+        for client in range(self.settings.participants):
             self.clients_to_brokers[client] = list(self.broker_addresses.keys())[client % len(self.broker_addresses)]
 
         # Build the reverse map
@@ -309,15 +313,35 @@ class Simulation:
         self.schedule(next_event)
 
     async def run(self):
-        if self.settings.profile:
-            start_profile()
-
         self.simulation_start_time: float = time.time()
         self.setup_directories()
         if not self.settings.unit_testing:
             setup_logging(self.data_dir, "coordinator.log")
             self.communication = Communication("coordinator", self.settings.port, self.on_message)
             self.communication.start()
+
+        if not self.settings.from_dir:
+            self.simulate()
+        else:
+            self.logger.info("Loading workflow DAG from %s", self.settings.from_dir)
+            self.workflow_dag = WorkflowDAG.load_from_file(os.path.join(self.settings.from_dir, "workflow_dag"))
+
+        # Sanity check the DAG
+        self.workflow_dag.build_task_indices()
+        self.workflow_dag.check_validity()
+        self.plot_compute_graph()
+        self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())
+
+        if not self.settings.dry_run:
+            await self.solve_workflow_graph()
+
+        if self.settings.dry_run:
+            self.logger.info("Dry run - shutdown")
+            asyncio.get_event_loop().stop()
+
+    def simulate(self):
+        if self.settings.profile:
+            start_profile()
 
         # Create the clients
         for client_id in range(self.settings.participants):
@@ -376,7 +400,6 @@ class Simulation:
 
         self.logger.info("Simulation done! Total bytes sent: %d, total bytes received: %d", total_bw_out, total_bw_in)
 
-
         self.memory_log.append((self.current_time, process.memory_info()))
         self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_dag"))
         with open(os.path.join(self.data_dir, "settings.json"), "w") as out_file:
@@ -386,19 +409,6 @@ class Simulation:
 
         if self.settings.profile:
             stop_profile(self.settings.data_dir)
-
-        # Sanity check the DAG
-        self.workflow_dag.build_task_indices()
-        self.workflow_dag.check_validity()
-        self.plot_compute_graph()
-        self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())
-
-        if not self.settings.dry_run:
-            await self.solve_workflow_graph()
-
-        if self.settings.dry_run:
-            self.logger.info("Dry run - shutdown")
-            asyncio.get_event_loop().stop()
 
     def cur_time_in_sec(self) -> float:
         return self.current_time / MICROSECONDS

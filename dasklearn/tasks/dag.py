@@ -1,5 +1,7 @@
 from collections import Counter
 import json
+import os
+import pickle
 from typing import Dict, List, Set
 
 from torch import nn
@@ -36,8 +38,17 @@ class WorkflowDAG:
             task.build_index(task.data)
 
     def save_to_file(self, file_path: str) -> None:
-        with open(file_path, "w") as dag_file:
-            dag_file.write(json.dumps(self.serialize()))
+        with open(file_path, "wb") as dag_file:
+            dag_file.write(pickle.dumps(self.serialize()))
+
+    @classmethod
+    def load_from_file(cls, file_path: str):
+        if not os.path.exists(file_path):
+            raise FileNotFoundError("File %s does not exist!" % file_path)
+
+        with open(file_path, "rb") as dag_file:
+            serialized_tasks = pickle.loads(dag_file.read())
+        return WorkflowDAG.unserialize(serialized_tasks)
 
     @classmethod
     def unserialize(cls, serialized_tasks):

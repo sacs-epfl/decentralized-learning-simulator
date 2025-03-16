@@ -61,3 +61,4 @@ class SessionSettings:
     stragglers_ratio: float = 0.1  # value between 0=no_action and 1=no_struggle
     profile: bool = False,
     log_bandwidth_utilization: bool = False
+    from_dir: Optional[str] = None
