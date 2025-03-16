@@ -378,7 +378,10 @@ class Simulation:
 
 
         self.memory_log.append((self.current_time, process.memory_info()))
-        self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
+        self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_dag"))
+        with open(os.path.join(self.data_dir, "settings.json"), "w") as out_file:
+            out_file.write(self.settings.to_json())
+
         self.save_measurements()
 
         if self.settings.profile:
