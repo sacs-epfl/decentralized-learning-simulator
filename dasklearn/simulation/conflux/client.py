@@ -121,6 +121,9 @@ class ConfluxClient(AsynchronousClient):
         for participant in participants:
             self.send_message_to_client(participant, "has_chunks", {"round": round_nr, "chunks": chunks})
 
+    def send_population_view(self, receiver: int) -> None:
+        self.send_message_to_client(receiver, "population_view", self.client_manager.last_active)
+
     def chunk_model(self, round_info: Round):
         """
         Chunk your current local model
@@ -144,6 +147,10 @@ class ConfluxClient(AsynchronousClient):
         # Let the nodes in the next sample know about the availability of these chunks
         participants_next_sample: List[int] = SampleManager.get_sample(next_round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
         self.advertise_new_inventory(participants_next_sample, next_round_nr, all_chunks)
+
+        # And send the population view
+        for participant in participants_next_sample:
+            self.send_population_view(participant)
 
         self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
 
@@ -263,16 +270,16 @@ class ConfluxClient(AsynchronousClient):
         """
         to: int = event.data["to"]
 
-        # TODO send the population view
+        round_nr: int = event.data["metadata"]["round"]
+        if round_nr in self.round_info:
+            round_info: Round = self.round_info[round_nr]
+            if to not in round_info.has_sent_view:
+                population_view = self.client_manager.last_active
+                event.data["metadata"]["population_view"] = population_view
+                # TODO add the length of the serialized data view
+                round_info.has_sent_view.add(to)
 
-        # round_info: Round = self.round_info[event.data["metadata"]["round"]]
         transfer_size = self.simulator.model_size // self.simulator.settings.chunks_in_sample
-        # if to not in round_info.has_sent_view:
-        #     population_view = self.client_manager.last_active
-        #     event.data["metadata"]["population_view"] = population_view
-        #     # TODO add the length of the serialized data view
-        #     round_info.has_sent_view.add(to)
-
         receiver_scheduler: SlotBWScheduler = self.simulator.clients[to].bw_scheduler
         self.client_log(f"Client {self.index} starts sending chunk {event.data['metadata']['chunk']} to {to} for round {event.data['metadata']['round']}")
         self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
@@ -401,7 +408,9 @@ class ConfluxClient(AsynchronousClient):
                     self.round_info[round_nr].inventories[chunk] = []
                 self.round_info[round_nr].inventories[chunk].append(event.data["from"])
 
-            self.pull_chunks_for_round(self.round_info[round_nr])            
+            self.pull_chunks_for_round(self.round_info[round_nr])
+        elif event.data["type"] == "population_view":
+            self.client_manager.merge_population_views(event.data["message"])
         else:
             raise ValueError("Unknown message type: %s" % event.data["type"])
 
