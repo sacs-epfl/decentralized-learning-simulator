@@ -99,7 +99,7 @@ class ConfluxClient(AsynchronousClient):
             self.add_compute_task(task)
             round_info.model = (test_task_name, 0)
 
-        self.logger.info(f"[t=%.3f] Client %d starts training in round %d)", time_to_sec(self.simulator.current_time), self.index, round_nr)
+        self.logger.info(f"[t=%.3f] Client %d starts training in round %d", time_to_sec(self.simulator.current_time), self.index, round_nr)
 
         # 1. Train the model
         self.schedule_train(round_info)
@@ -149,7 +149,11 @@ class ConfluxClient(AsynchronousClient):
         participants_next_sample: List[int] = SampleManager.get_sample(next_round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
         if self.index in participants_next_sample:
             # We are in the next sample. We can already inject the chunks for this next round
-            assert next_round_nr in self.round_info
+            if next_round_nr not in self.round_info:
+                self.round_info[next_round_nr] = Round(next_round_nr)
+                self.round_info[next_round_nr].init_received_chunks(self.simulator.settings)
+                self.round_info[next_round_nr].sample = participants_next_sample
+
             next_round_info: Round = self.round_info[next_round_nr]
             for chunk_idx in range(self.simulator.settings.chunks_in_sample):
                 next_round_info.received_chunks[chunk_idx].add(task_name)
@@ -233,6 +237,8 @@ class ConfluxClient(AsynchronousClient):
                     model_names.update(chunk[1])
                 
                 chunk_to_pull: Tuple[int, Set[str]] = (chunk_idx, frozenset(model_names))
+                if len(chunk_to_pull[1]) == 0:
+                    continue  # This owner has nothing to offer us
 
                 if other.bw_scheduler.has_free_outgoing_slot() and chunk_to_pull not in round_info.is_pulling:
                     round_info.is_pulling.add(chunk_to_pull)
