@@ -12,6 +12,7 @@ from dasklearn.simulation.conflux.sample_manager import SampleManager
 from dasklearn.simulation.events import *
 from dasklearn.simulation.slot_bandwidth_scheduler import SlotBWScheduler
 from dasklearn.tasks.task import Task
+from dasklearn.util import time_to_sec
 
 
 class ConfluxClient(AsynchronousClient):
@@ -98,7 +99,7 @@ class ConfluxClient(AsynchronousClient):
             self.add_compute_task(task)
             round_info.model = (test_task_name, 0)
 
-        self.client_log(f"Client {self.index} starts training in round {round_nr}")
+        self.logger.info(f"[t=%.3f] Client %d starts training in round %d)", time_to_sec(self.simulator.current_time), self.index, round_nr)
 
         # 1. Train the model
         self.schedule_train(round_info)
@@ -165,11 +166,15 @@ class ConfluxClient(AsynchronousClient):
     def start_outgoing_chunk_transfer(self, round_nr: int, to: int, chunk: Tuple[int, Set[str]]) -> None:
         event_data = {"from": self.index, "to": to, "model": None, "metadata": {"chunk": chunk, "round": round_nr}}
         start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
-        self.start_transfer(start_transfer_event)        
+        self.start_transfer(start_transfer_event)
 
     def pull_chunks_for_round(self, round_info: Round):
         if round_info.received_enough_chunks or not self.bw_scheduler.has_free_incoming_slot():
             # No space for another pull
+            return
+        
+        # Outdated round
+        if round_info.round_nr < self.last_round_completed:
             return
         
         if random.random() < 0.5:
