@@ -146,11 +146,19 @@ class ConfluxClient(AsynchronousClient):
 
         # Let the nodes in the next sample know about the availability of these chunks
         participants_next_sample: List[int] = SampleManager.get_sample(next_round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size)
+        if self.index in participants_next_sample:
+            # We are in the next sample. We can already inject the chunks for this next round
+            assert next_round_nr in self.round_info
+            next_round_info: Round = self.round_info[next_round_nr]
+            for chunk_idx in range(self.simulator.settings.chunks_in_sample):
+                next_round_info.received_chunks[chunk_idx].add(task_name)
+
         self.advertise_new_inventory(participants_next_sample, next_round_nr, all_chunks)
 
         # And send the population view
         for participant in participants_next_sample:
-            self.send_population_view(participant)
+            if participant != self.index:
+                self.send_population_view(participant)
 
         self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
 
