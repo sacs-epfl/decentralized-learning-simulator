@@ -108,7 +108,7 @@ class SlotBWScheduler:
         finish_event = Event(finish_time, self.client.index, FINISH_OUTGOING_TRANSFER, {"transfer": transfer})
         self.client.simulator.schedule(finish_event)
         self.logger.debug(f"Transfer {transfer.transfer_id} scheduled in slot {sender_slot_index} "
-                            f"with bandwidth {self.slot_bw} bytes/s")
+                            f"with bandwidth {self.slot_bw} bytes/s and duration {estimated_duration} s.")
         return transfer
     
     def on_outgoing_transfer_complete(self, transfer):
@@ -150,6 +150,17 @@ class SlotBWScheduler:
             self.outgoing_slots[out_idx] = None
         transfer.finish()
         self.remove_transfer_finish_from_event_queue(transfer)
+
+        # Remove the transfer from the other side as well
+        other_schedule = transfer.sender if transfer.sender != self else transfer.receiver
+        in_idx = other_schedule._find_transfer_slot(other_schedule.incoming_slots, transfer)
+        out_idx = other_schedule._find_transfer_slot(other_schedule.outgoing_slots, transfer)
+        if in_idx is not None:
+            other_schedule.incoming_slots[in_idx] = None
+        if out_idx is not None:
+            other_schedule.outgoing_slots[out_idx] = None
+        #other_schedule.remove_transfer_finish_from_event_queue(transfer)
+
         self.logger.debug(f"Transfer {transfer.transfer_id} killed.")
 
     def remove_transfer_finish_from_event_queue(self, transfer):
