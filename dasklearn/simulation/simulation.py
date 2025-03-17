@@ -578,3 +578,10 @@ class Simulation:
             for client in self.clients:
                 for round_nr, num_contributions in client.contributions_per_model.items():
                     file.write("%d,%d,%d\n" % (round_nr, client.index, num_contributions))
+
+        # Write round durations
+        with open(os.path.join(self.data_dir, "round_durations.csv"), "w") as file:
+            file.write("round,client,duration\n")
+            for client in self.clients:
+                for round_nr, duration in client.round_durations.items():
+                    file.write("%d,%d,%f\n" % (round_nr, client.index, duration))

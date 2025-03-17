@@ -44,3 +44,22 @@ ggplot(client_stats, aes(x = client_order, y = avg_coverage)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ggsave(paste(args[1], "coverage_vs_normalized_speed.pdf", sep="/"), width = 10, height = 5)
+
+
+# Plot the round durations in a step ECDF
+dat <- read.csv(paste(args[1], "round_durations.csv", sep="/"))
+print(max(dat$duration))
+
+dat_filtered <- dat[dat$duration > 60,]
+print(nrow(dat))
+print(nrow(dat_filtered))
+
+dat_filtered <- dat[dat$duration <= 60,]
+
+ggplot(dat_filtered, aes(x = duration)) +
+  stat_ecdf(geom = "step") +
+  xlab("Round duration (s)") +
+  ylab("ECDF") +
+  theme_bw()
+
+ggsave(paste(args[1], "round_durations.pdf", sep="/"), width = 4, height = 2)

@@ -22,6 +22,7 @@ class Round:
         self.inventories: Dict[Tuple[int, Set[str]], List[int]] = {}  # Keep track of which clients have which chunks
         self.has_sent_view: Set[int] = set()  # Keep track of which clients have received our view
         self.is_pulling: Set[Tuple[int, frozenset]] = set()
+        self.pull_start: Optional[int] = None
 
     def init_received_chunks(self, settings: ConfluxSettings):
         self.sample_size = settings.sample_size

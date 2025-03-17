@@ -25,6 +25,7 @@ class ConfluxClient(AsynchronousClient):
         self.client_manager: ClientManager = ClientManager(self.index, 100000)
         self.train_sample_estimate: int = 0
         self.last_round_completed: int = 0
+        self.round_durations: Dict[int, float] = {}
 
         self.contributions_in_reconstructed_models: List[Tuple[int, int, float, int, int]] = []  # Format: (round, peer_id, coverage, network_speed, compute_speed)
         self.contributions_per_model: Dict[int, int] = {}
@@ -168,6 +169,8 @@ class ConfluxClient(AsynchronousClient):
             if participant != self.index:
                 self.send_population_view(participant)
 
+        if round_info.round_nr > 1:
+            self.round_durations[round_info.round_nr] = time_to_sec(self.simulator.current_time - round_info.pull_start)
         self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
 
     def start_outgoing_chunk_transfer(self, round_nr: int, to: int, chunk: Tuple[int, Set[str]]) -> None:
@@ -176,6 +179,9 @@ class ConfluxClient(AsynchronousClient):
         self.start_transfer(start_transfer_event)
 
     def pull_chunks_for_round(self, round_info: Round):
+        if not round_info.pull_start:
+            round_info.pull_start = self.simulator.current_time
+
         if round_info.received_enough_chunks or not self.bw_scheduler.has_free_incoming_slot():
             # No space for another pull
             return
