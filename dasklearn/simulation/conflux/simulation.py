@@ -1,3 +1,4 @@
+import os
 from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.conflux import NodeMembershipChange
 from dasklearn.simulation.conflux.client import ConfluxClient
@@ -21,3 +22,27 @@ class ConfluxSimulation(AsynchronousSimulation):
                 client.client_manager.add_client(other_client.index, status=join_status)
 
         super().initialize_clients()
+
+    def save_measurements(self):
+        super().save_measurements()
+
+        # Write contributions
+        with open(os.path.join(self.data_dir, "contributions.csv"), "w") as file:
+            file.write("round,client,coverage,network_speed,compute_speed\n")
+            for client in self.clients:
+                for info in client.contributions_in_reconstructed_models:
+                    file.write("%d,%d,%f,%d,%d\n" % info)
+
+        # Write contributions per reconstructed model
+        with open(os.path.join(self.data_dir, "contributions_per_reconstructed_model.csv"), "w") as file:
+            file.write("round,client,num_clients_in_model\n")
+            for client in self.clients:
+                for round_nr, num_contributions in client.contributions_per_model.items():
+                    file.write("%d,%d,%d\n" % (round_nr, client.index, num_contributions))
+
+        # Write round durations
+        with open(os.path.join(self.data_dir, "round_durations.csv"), "w") as file:
+            file.write("round,client,duration\n")
+            for client in self.clients:
+                for round_nr, duration in client.round_durations.items():
+                    file.write("%d,%d,%f\n" % (round_nr, client.index, duration))
