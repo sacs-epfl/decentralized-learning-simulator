@@ -564,3 +564,17 @@ class Simulation:
                 file.write("time,incoming,outgoing\n")
                 for time, in_util, out_util in self.bw_utilization:
                     file.write("%d,%f,%f\n" % (time, in_util, out_util))
+
+        # Write contributions
+        with open(os.path.join(self.data_dir, "contributions.csv"), "w") as file:
+            file.write("round,client,coverage,network_speed,compute_speed\n")
+            for client in self.clients:
+                for info in client.contributions_in_reconstructed_models:
+                    file.write("%d,%d,%f,%d,%d\n" % info)
+
+        # Write contributions per reconstructed model
+        with open(os.path.join(self.data_dir, "contributions_per_reconstructed_model.csv"), "w") as file:
+            file.write("round,client,num_clients_in_model\n")
+            for client in self.clients:
+                for round_nr, num_contributions in client.contributions_per_model.items():
+                    file.write("%d,%d,%d\n" % (round_nr, client.index, num_contributions))

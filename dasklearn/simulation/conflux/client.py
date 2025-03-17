@@ -26,6 +26,9 @@ class ConfluxClient(AsynchronousClient):
         self.train_sample_estimate: int = 0
         self.last_round_completed: int = 0
 
+        self.contributions_in_reconstructed_models: List[Tuple[int, int, float, int, int]] = []  # Format: (round, peer_id, coverage, network_speed, compute_speed)
+        self.contributions_per_model: Dict[int, int] = {}
+
         self.available_chunks: Dict[int, List[Tuple[int, Set[str]]]] = defaultdict(list)  # Keep track of the chunks we have available, indexed by round
 
     def init_client(self, _: Event):
@@ -347,11 +350,25 @@ class ConfluxClient(AsynchronousClient):
                     self.bw_scheduler.kill_transfer(transfer)
 
             # Collect the received chunks per index
+            count_per_model_name: Dict[str, int] = defaultdict(int)
             received_chunks: List[Set[str]] = [[] for _ in range(self.simulator.settings.chunks_in_sample)]
             for chunk_idx, chunk_models in enumerate(round_info.received_chunks):
                 for model_name in chunk_models:
+                    count_per_model_name[model_name] += 1
                     received_chunks[chunk_idx].append((model_name, chunk_idx))
-            
+
+            self.contributions_per_model[round_nr] = len(count_per_model_name)
+
+            # Write statistics on the received chunks
+            for model_name, count in count_per_model_name.items():
+                # Get the peer behind this chunk
+                corresponding_task: Task = self.simulator.workflow_dag.tasks[model_name]
+                client_id = corresponding_task.data["peer"]
+                coverage = count / self.simulator.settings.chunks_in_sample
+                network_speed: int = self.simulator.clients[client_id].bw_scheduler.bw_limit
+                compute_speed: int = self.simulator.clients[client_id].simulated_speed
+                self.contributions_in_reconstructed_models.append((round_nr, client_id, coverage, network_speed, compute_speed))
+
             # Reconstruct new model
             task_name = Task.generate_name("reconstruct_from_chunks")
             task = Task(task_name, "reconstruct_from_chunks", data={
