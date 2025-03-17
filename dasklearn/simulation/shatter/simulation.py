@@ -16,7 +16,7 @@ class ShatterSimulation(Simulation):
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
         self.topologies = []
-        self.finished: Dict[int, List[int, Tuple[str, int]]] = {}
+        self.finished: Dict[int, List[Tuple[str, int]]] = {}
         if self.settings.r == 0:
             self.settings.r = math.floor(math.log2(self.settings.participants * self.settings.k))
 

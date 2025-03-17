@@ -97,7 +97,7 @@ class ConfluxClient(AsynchronousClient):
             raise RuntimeError("Round number %d invalid!" % round_nr)
         
         # Should we test the model?
-        if round_nr > 1 and (round_nr - 1) % self.simulator.settings.test_interval == 0:
+        if round_nr > 1 and self.simulator.settings.test_method == "individual" and (round_nr - 1) % self.simulator.settings.test_interval == 0:
             test_task_name = "test_%d_%d" % (self.index, round_nr)
             task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr - 1, "time": self.simulator.current_time, "peer": self.index})
             self.add_compute_task(task)
@@ -172,6 +172,7 @@ class ConfluxClient(AsynchronousClient):
         if round_info.round_nr > 1:
             self.round_durations[round_info.round_nr] = time_to_sec(self.simulator.current_time - round_info.pull_start)
         self.last_round_completed = max(self.last_round_completed, round_info.round_nr)
+        self.simulator.set_finished(round_info.round_nr, round_info.model)
 
     def start_outgoing_chunk_transfer(self, round_nr: int, to: int, chunk: Tuple[int, Set[str]]) -> None:
         event_data = {"from": self.index, "to": to, "model": None, "metadata": {"chunk": chunk, "round": round_nr}}
