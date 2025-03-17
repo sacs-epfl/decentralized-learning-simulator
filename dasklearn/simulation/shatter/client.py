@@ -81,7 +81,7 @@ class ShatterClient(BaseClient):
             if round_info.num_received_chunks == total_nbs:
                 self._aggregate(round_info)
                 self.client_log("Client %d finished round %d" % (self.index, round_info.round_nr))
-                self.simulator.set_finished(round_info.round_nr)
+                self.simulator.set_finished(round_info.round_nr, round_info.model, was_online=not round_info.should_ignore)
                 self.round_info.pop(cur_round)
                 next_round_nr = cur_round + 1
 
@@ -209,7 +209,7 @@ class ShatterClient(BaseClient):
             })
             self.add_compute_task(task)
             round_info.model = (task_name, 0)
-            if (self.simulator.settings.stop == "rounds" and
+            if (self.simulator.settings.stop == "rounds" and self.simulator.settings.test_method == "individual" and
                 self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0):
                 test_task_name = "test_%d_%d" % (self.index, round_nr)
                 task = Task(test_task_name, "test", data={

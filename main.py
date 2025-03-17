@@ -101,6 +101,7 @@ def run():
             "dry_run": args.dry_run,
             "duration": args.duration * MICROSECONDS,
             "test_period": args.test_period * MICROSECONDS,
+            "test_method": args.test_method,
             "compute_graph_plot_size": args.compute_graph_plot_size,
             "stop": args.stop,
             "wait": args.wait,

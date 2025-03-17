@@ -54,6 +54,7 @@ class SessionSettings:
     unit_testing: bool = False
     duration: int = 100
     test_period: int = 100
+    test_method: str = "individual"
     compute_graph_plot_size: int = 0
     stop: str = "rounds"  # rounds, duration
     wait: bool = False

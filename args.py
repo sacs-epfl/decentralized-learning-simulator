@@ -55,6 +55,7 @@ def get_args():
     parser.add_argument('--compute-validation-loss-global-model', action=argparse.BooleanOptionalAction)
     parser.add_argument('--test-interval', type=int, default=5)
     parser.add_argument('--test-period', type=int, default=60)
+    parser.add_argument('--test-method', type=str, default="individual", choices=["individual", "global"])
 
     # Plots
     parser.add_argument('--compute-graph-plot-size', type=int, default=100)
