@@ -26,11 +26,14 @@ class ModelEvaluator:
     def evaluate_accuracy(self, model, device_name: str = "cpu"):
         if not self.partition:
             self.partition = self.dataset.load_split("test")
-            if(self.settings.dataset == "cifar10"):
+            if self.settings.dataset == "cifar10":
                 from dasklearn.datasets.transforms import apply_transforms_cifar10, apply_transforms_cifar10_resnet
                 transforms = apply_transforms_cifar10_resnet if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else apply_transforms_cifar10
                 self.partition = self.partition.with_transform(transforms)
-            elif(self.settings.dataset == "google_speech"):
+            elif self.settings.dataset == "femnist":
+                from dasklearn.datasets.transforms import apply_transforms_femnist
+                self.partition = self.partition.with_transform(apply_transforms_femnist)
+            elif self.settings.dataset == "google_speech":
                 from dasklearn.datasets.transforms import preprocess_audio_test as transforms
                 # filter removes the silent samples from testing/training as they don't really have a label
                 self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)  
@@ -45,9 +48,11 @@ class ModelEvaluator:
         model.eval()
 
         ce_loss = nn.CrossEntropyLoss()
+        feature_column_name = "x" if self.settings.dataset == "femnist" else "img"
+        label_column_name = "y" if self.settings.dataset == "femnist" else "label"
         with torch.no_grad():
             for batch in iter(test_loader):
-                data, target = batch["img"], batch["label"]  # TODO hard-coded, not generic enough for different datasets
+                data, target = batch[feature_column_name], batch[label_column_name]
                 data, target = Variable(data.to(device)), Variable(target.to(device))
                 output = model.forward(data)
                 if "ResNet" in model.__class__.__name__:

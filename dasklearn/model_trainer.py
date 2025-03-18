@@ -66,11 +66,14 @@ class ModelTrainer:
         # Load the partition if it's not loaded yet
         if not self.partition:
             self.partition = self.dataset.load_partition(self.participant_index, "train")
-            if(self.settings.dataset == "cifar10"):
+            if self.settings.dataset == "cifar10":
                 from dasklearn.datasets.transforms import apply_transforms_cifar10, apply_transforms_cifar10_resnet
                 transforms = apply_transforms_cifar10_resnet if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else apply_transforms_cifar10
                 self.partition = self.partition.with_transform(transforms)
-            elif(self.settings.dataset == "google_speech"):
+            elif self.settings.dataset == "femnist":
+                from dasklearn.datasets.transforms import apply_transforms_femnist
+                self.partition = self.partition.with_transform(apply_transforms_femnist)
+            elif self.settings.dataset == "google_speech":
                 # filter removes the silent samples from testing/training as they don't really have a label
                 from dasklearn.datasets.transforms import preprocess_audio_train as transforms
                 self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)
@@ -96,8 +99,10 @@ class ModelTrainer:
                           self.settings.learning.learning_rate, self.settings.learning.weight_decay)
 
         samples_trained_on = 0
+        feature_column_name = "x" if self.settings.dataset == "femnist" else "img"
+        label_column_name = "y" if self.settings.dataset == "femnist" else "label"
         for local_step, batch in enumerate(train_loader):
-            data, target = batch["img"], batch["label"]  # TODO hard-coded, not generic enough for different datasets
+            data, target = batch[feature_column_name], batch[label_column_name]
             if local_step >= local_steps:
                 break
 

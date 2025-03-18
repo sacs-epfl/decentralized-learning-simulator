@@ -19,12 +19,27 @@ transforms_tens_resnet = T.Compose([
     T.Normalize(*cifar10_normalization_vectors),
 ])
 
+transforms_tens = T.Compose([
+    T.ToTensor(),
+    T.Normalize(*cifar10_normalization_vectors),
+])
+
+transforms_femnist = T.Compose([
+    T.Resize((28, 28)),
+    T.ToTensor(),
+    T.Normalize((0.1307,), (0.3081,))
+])
+
 def apply_transforms_cifar10(batch):
     batch["img"] = [transforms_tens(img) for img in batch["img"]]
     return batch
 
 def apply_transforms_cifar10_resnet(batch):
     batch["img"] = [transforms_tens_resnet(img) for img in batch["img"]]
+    return batch
+
+def apply_transforms_femnist(batch):
+    batch["x"] = [transforms_femnist(img) for img in batch["x"]]
     return batch
 
 
