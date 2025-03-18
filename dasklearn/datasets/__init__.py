@@ -10,7 +10,10 @@ def create_dataset(settings: SessionSettings) -> FederatedDataset:
     if settings.partitioner == "dirichlet":
         partitioner = DirichletPartitioner(num_partitions=settings.participants, partition_by="label", alpha=settings.alpha)
     elif settings.partitioner == "natural":
-        partitioner = NaturalIdPartitioner(partition_by="writer_id")
+        partition_columns = {"femnist": "writer_id", "google_speech": "speaker_id"}
+        if settings.dataset not in partition_columns:
+            raise RuntimeError("Natural partitioning is not supported for dataset %s" % settings.dataset)
+        partitioner = NaturalIdPartitioner(partition_by=partition_columns[settings.dataset])
     else:
         partitioner = IidPartitioner(num_partitions=settings.participants)
 
