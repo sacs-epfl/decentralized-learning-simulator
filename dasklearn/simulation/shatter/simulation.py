@@ -50,6 +50,7 @@ class ShatterSimulation(Simulation):
                 self.clients[0].add_compute_task(task)
 
             self.finished.pop(round_nr)
+            self.topologies[round_nr - 1] = None
 
     def add_topology(self):
         seed = self.settings.seed + len(self.topologies)
