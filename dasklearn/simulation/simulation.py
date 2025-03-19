@@ -317,8 +317,9 @@ class Simulation:
         self.setup_directories()
         if not self.settings.unit_testing:
             setup_logging(self.data_dir, "coordinator.log")
-            self.communication = Communication("coordinator", self.settings.port, self.on_message)
-            self.communication.start()
+            if not self.settings.dry_run:
+                self.communication = Communication("coordinator", self.settings.port, self.on_message)
+                self.communication.start()
 
         try:
             if not self.settings.from_dir:
