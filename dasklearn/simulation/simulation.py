@@ -320,11 +320,14 @@ class Simulation:
             self.communication = Communication("coordinator", self.settings.port, self.on_message)
             self.communication.start()
 
-        if not self.settings.from_dir:
-            self.simulate()
-        else:
-            self.logger.info("Loading workflow DAG from %s", self.settings.from_dir)
-            self.workflow_dag = WorkflowDAG.load_from_file(os.path.join(self.settings.from_dir, "workflow_dag"))
+        try:
+            if not self.settings.from_dir:
+                self.simulate()
+            else:
+                self.logger.info("Loading workflow DAG from %s", self.settings.from_dir)
+                self.workflow_dag = WorkflowDAG.load_from_file(os.path.join(self.settings.from_dir, "workflow_dag"))
+        except KeyboardInterrupt:
+            self.logger.info("Received keyboard interrupt - stopping simulation and proceeding with the workflow DAG as is")
 
         # Sanity check the DAG
         self.workflow_dag.build_task_indices()
