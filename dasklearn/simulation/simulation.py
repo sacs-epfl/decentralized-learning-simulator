@@ -83,6 +83,7 @@ class Simulation:
         self.register_event_callback(ONLINE, "come_online")
         self.register_event_callback(OFFLINE, "go_offline")
         self.register_event_callback(MONITOR_BANDWIDTH_UTILIZATION, "monitor_bandwidth_utilization")
+        self.register_event_callback(CHECKPOINT_DAG, "checkpoint_dag")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
         if settings.from_dir:
@@ -312,6 +313,14 @@ class Simulation:
         next_event = Event(self.current_time + MICROSECONDS, 0, MONITOR_BANDWIDTH_UTILIZATION, is_global=True)
         self.schedule(next_event)
 
+    def checkpoint_dag(self, _: Event) -> None:
+        self.logger.info("Checkpointing workflow DAG...")
+        self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_dag"))
+
+        # Schedule the next event
+        next_event = Event(self.current_time + self.settings.dag_checkpoint_interval * MICROSECONDS, 0, CHECKPOINT_DAG, is_global=True)
+        self.schedule(next_event)
+
     async def run(self):
         self.simulation_start_time: float = time.time()
         self.setup_directories()
@@ -376,6 +385,11 @@ class Simulation:
             self.logger.info("Initializing bandwidth utilization monitor")
             monitor_bw_event: Event = Event(MICROSECONDS, 0, MONITOR_BANDWIDTH_UTILIZATION, is_global=True)
             self.schedule(monitor_bw_event)
+
+        if self.settings.dag_checkpoint_interval > 0:
+            self.logger.info("Initializing DAG checkpointing every %d seconds", self.settings.dag_checkpoint_interval)
+            checkpoint_event: Event = Event(self.settings.dag_checkpoint_interval * MICROSECONDS, 0, CHECKPOINT_DAG, is_global=True)
+            self.schedule(checkpoint_event)
 
         # Determine the size of the model, which will be used to determine the duration of model transfers
         self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))

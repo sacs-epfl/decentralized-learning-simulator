@@ -63,3 +63,4 @@ class SessionSettings:
     profile: bool = False,
     log_bandwidth_utilization: bool = False
     from_dir: Optional[str] = None
+    dag_checkpoint_interval: int = 0
