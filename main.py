@@ -109,6 +109,7 @@ def run():
             "stragglers_proportion": args.stragglers_proportion,
             "profile": args.profile,
             "log_bandwidth_utilization": args.log_bandwidth_utilization,
+            "dag_checkpoint_interval": args.dag_checkpoint_interval,
         }
 
     if args.algorithm not in ALGORITHM_MAPPING:

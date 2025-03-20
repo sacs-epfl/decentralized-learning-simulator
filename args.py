@@ -25,6 +25,7 @@ def get_args():
     parser.add_argument('--stragglers-proportion', type=float, default=0.0)
     parser.add_argument('--stragglers-ratio', type=float, default=0.1)
     parser.add_argument('--from-dir', type=str, default=None)  # Load a workflow DAG/settings from a previous run
+    parser.add_argument('--dag-checkpoint-interval', type=int, default=0)  # Save the workflow DAG every N seconds
 
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)

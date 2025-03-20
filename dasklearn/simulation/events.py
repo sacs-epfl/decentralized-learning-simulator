@@ -40,3 +40,4 @@ SEND_CHUNKS = "send_chunks"
 
 # Global events
 MONITOR_BANDWIDTH_UTILIZATION = "monitor_bandwidth_utilization"
+CHECKPOINT_DAG = "checkpoint_dag"
