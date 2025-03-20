@@ -100,10 +100,6 @@ class Broker:
                     num_models = self.dag.get_num_models()
                     shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
                     mp_torch_cache_items = len(mp_torch_sc)
-                    try:
-                        mp_torch_sc.free_dead_references()
-                    except KeyError:
-                        self.logger.warning("KeyError in free_dead_references()")
 
                     # Calculate the task/sec throughput
                     if self.time_last_check == -1:
