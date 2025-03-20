@@ -27,8 +27,6 @@ class ModelTrainer:
         self.participant_index: int = participant_index
         self.is_training: bool = False
 
-        self.optimizer: Optional[SGDOptimizer] = None
-
     def get_validation_loss(self, model) -> float:
         validation_set = self.dataset.get_validationset()
         total_loss = 0.0
@@ -90,10 +88,6 @@ class ModelTrainer:
         train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True)
 
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
-        if self.optimizer is not None:
-            optimizer.optimizer.load_state_dict(self.optimizer.optimizer.state_dict())
-        self.optimizer = optimizer
-
         self.logger.debug("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
                           local_steps, device_name, self.settings.learning.batch_size,
                           self.settings.learning.learning_rate, self.settings.learning.weight_decay)
