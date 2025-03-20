@@ -40,7 +40,7 @@ class ModelEvaluator:
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
-        test_loader = DataLoader(self.partition, batch_size=256)
+        test_loader = DataLoader(self.partition, batch_size=256, num_workers=2, persistent_workers=True, pin_memory=True)
         device = torch.device(device_name)
 
         correct = example_number = total_loss = num_batches = 0
@@ -59,7 +59,7 @@ class ModelEvaluator:
             for batch in iter(test_loader):
                 data, target = batch[feature_column_name], batch[label_column_name]
                 data, target = Variable(data.to(device)), Variable(target.to(device))
-                output = model.forward(data)
+                output = model(data)
                 loss = lossf(output, target)
                 total_loss += loss.item()
 
@@ -67,6 +67,14 @@ class ModelEvaluator:
                 correct += pred.eq(target.view_as(pred)).sum().item()
                 example_number += target.size(0)
                 num_batches += 1
+
+                del data, target, output, loss, pred
+                torch.cuda.empty_cache()
+
+        # We move the model back to the CPU to avoid memory leaks
+        model.to("cpu")
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         accuracy = float(correct) / float(example_number) * 100.0
         average_loss = total_loss / num_batches
