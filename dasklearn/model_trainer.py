@@ -87,7 +87,7 @@ class ModelTrainer:
         device = torch.device(device_name)
         model = model.to(device)
 
-        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True)
+        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True, num_workers=2, persistent_workers=True, pin_memory=True)
 
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
         if self.optimizer is not None:
@@ -107,7 +107,7 @@ class ModelTrainer:
                 break
 
             model.train()
-            data, target = Variable(data.to(device)), Variable(target.to(device))
+            data, target = data.to(device), target.to(device)
             samples_trained_on += len(data)
 
             optimizer.optimizer.zero_grad()
@@ -130,8 +130,14 @@ class ModelTrainer:
                 break
             optimizer.optimizer.step()
 
+            del data, target, output, loss
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
         self.is_training = False
         model.to("cpu")
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         return {"samples": samples_trained_on, "validation_loss_global": validation_loss_global_model}
 
