@@ -87,7 +87,7 @@ class ModelTrainer:
         device = torch.device(device_name)
         model = model.to(device)
 
-        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True, num_workers=2, persistent_workers=True, pin_memory=True)
+        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True)
 
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
         if self.optimizer is not None:

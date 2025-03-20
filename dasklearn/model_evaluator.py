@@ -40,7 +40,7 @@ class ModelEvaluator:
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
-        test_loader = DataLoader(self.partition, batch_size=256, num_workers=2, persistent_workers=True, pin_memory=True)
+        test_loader = DataLoader(self.partition, batch_size=256)
         device = torch.device(device_name)
 
         correct = example_number = total_loss = num_batches = 0
