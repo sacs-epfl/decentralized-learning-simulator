@@ -333,7 +333,6 @@ class Simulation:
         # Sanity check the DAG
         self.workflow_dag.build_task_indices()
         self.workflow_dag.check_validity()
-        self.plot_compute_graph()
         self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())
 
         if not self.settings.dry_run:
@@ -495,16 +494,6 @@ class Simulation:
         sns.lineplot(all_combinations, x='hours', y='loss', ax=ax[0])
         sns.lineplot(all_combinations, x='hours', y='accuracy', ax=ax[1])
         plt.savefig(os.path.join(self.settings.data_dir, "accuracies.png"))
-
-    def plot_compute_graph(self):
-        self.logger.info("Plotting compute graph")
-        graph, position, colors, color_key = self.workflow_dag.to_nx(self.settings.compute_graph_plot_size)
-        nx.draw(graph, position, node_color=colors, node_size=50, arrows=True)
-        # Dummy points for legend
-        dummy_points = [plt.Line2D([0], [-1], marker='o', color='w', markerfacecolor=color, markersize=10,
-                                   label=f'{node}') for node, color in color_key.items()]
-        plt.legend(handles=dummy_points)
-        plt.savefig(os.path.join(self.settings.data_dir, "compute_graph.png"))
 
     def merge_accuracies_files(self):
         paths = [os.path.join(self.settings.data_dir, "accuracies_" + str(i) + ".csv")
