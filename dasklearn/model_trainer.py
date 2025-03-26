@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 
 from flwr_datasets import FederatedDataset
 
+from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
 from dasklearn.optimizer.sgd import SGDOptimizer
 from dasklearn.session_settings import SessionSettings
 
@@ -75,6 +76,9 @@ class ModelTrainer:
                 # filter removes the silent samples from testing/training as they don't really have a label
                 from dasklearn.datasets.transforms import preprocess_audio_train as transforms
                 self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)
+            elif self.settings.dataset == "tiny_imagenet":
+                transforms = apply_transforms_tiny_imagenet_resnet
+                self.partition = self.partition.with_transform(transforms)
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
@@ -93,7 +97,14 @@ class ModelTrainer:
                           self.settings.learning.learning_rate, self.settings.learning.weight_decay)
 
         samples_trained_on = 0
-        feature_column_name = "x" if self.settings.dataset == "femnist" else "img"
+
+        if self.settings.dataset == "femnist":
+            feature_column_name = "x"
+        elif self.settings.dataset == "tiny_imagenet":
+            feature_column_name = "image"
+        else:
+            feature_column_name = "img"
+
         label_column_name = "y" if self.settings.dataset == "femnist" else "label"
         for local_step, batch in enumerate(train_loader):
             data, target = batch[feature_column_name], batch[label_column_name]

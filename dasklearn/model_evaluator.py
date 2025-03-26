@@ -25,7 +25,8 @@ class ModelEvaluator:
 
     def evaluate_accuracy(self, model, device_name: str = "cpu"):
         if not self.partition:
-            self.partition = self.dataset.load_split("test")
+            partition_name = "valid" if self.settings.dataset == "tiny_imagenet" else "test"
+            self.partition = self.dataset.load_split(partition_name)
             if self.settings.dataset == "cifar10":
                 from dasklearn.datasets.transforms import apply_transforms_cifar10, apply_transforms_cifar10_resnet
                 transforms = apply_transforms_cifar10_resnet if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else apply_transforms_cifar10
@@ -36,7 +37,10 @@ class ModelEvaluator:
             elif self.settings.dataset == "google_speech":
                 from dasklearn.datasets.transforms import preprocess_audio_test as transforms
                 # filter removes the silent samples from testing/training as they don't really have a label
-                self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)  
+                self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)
+            elif self.settings.dataset == "tiny_imagenet":
+                from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
+                self.partition = self.partition.with_transform(apply_transforms_tiny_imagenet_resnet)
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
@@ -47,7 +51,13 @@ class ModelEvaluator:
         model.to(device)
         model.eval()
 
-        feature_column_name = "x" if self.settings.dataset == "femnist" else "img"
+        if self.settings.dataset == "femnist":
+            feature_column_name = "x"
+        elif self.settings.dataset == "tiny_imagenet":
+            feature_column_name = "image"
+        else:
+            feature_column_name = "img"
+
         label_column_name = "y" if self.settings.dataset == "femnist" else "label"
 
         if self.settings.dataset == "cifar10":

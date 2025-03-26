@@ -23,5 +23,7 @@ def create_dataset(settings: SessionSettings) -> FederatedDataset:
         return FederatedDataset(dataset="coscotuff/femnist", partitioners={"train": partitioner})
     elif settings.dataset == "google_speech":
         return FederatedDataset(dataset="speech_commands", subset = "v0.02", partitioners={"train": partitioner}, trust_remote_code=True)
+    elif settings.dataset == "tiny_imagenet":
+        return FederatedDataset(dataset="zh-plus/tiny-imagenet", partitioners={"train": partitioner})
     else:
         raise RuntimeError("Unknown dataset %s" % settings.dataset)

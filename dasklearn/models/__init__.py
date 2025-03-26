@@ -38,5 +38,11 @@ def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
     elif dataset == "google_speech":
         from dasklearn.models.resnet_speech import resnet34
         return resnet34(num_classes=35, in_channels=1)
+    elif dataset == "tiny_imagenet":
+        if architecture in ["resnet18", "mobilenet_v3_large"]:
+            import torchvision.models as tormodels
+            return tormodels.__dict__[architecture](num_classes=200)
+        else:
+            raise RuntimeError("Unknown model architecture for Tiny Imagenet: %s" % architecture)
     else:
         raise RuntimeError("Unknown dataset %s" % dataset)

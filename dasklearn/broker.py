@@ -194,7 +194,7 @@ class Broker:
                               received_by_broker_time - task_start_time)
                 self.task_statistics.append(task_stats)
 
-                self.logger.debug("Task %s completed", task.name)
+                self.logger.info("Task %s completed", task.name)
 
                 # If this is a sink task, inform the coordinator about the result
                 if not task.outputs:

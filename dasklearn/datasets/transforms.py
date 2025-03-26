@@ -7,6 +7,7 @@ from dasklearn.datasets.transforms_wav import ChangeAmplitude, ChangeSpeedAndPit
     ToMelSpectrogram, LoadAudio
 
 cifar10_normalization_vectors = (0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)
+tiny_imagenet_normalization_vectors = (0.4802, 0.4481, 0.3975), (0.2302, 0.2265, 0.2262)
 
 transforms_tens = T.Compose([
     T.ToTensor(),
@@ -17,6 +18,13 @@ transforms_tens_resnet = T.Compose([
     T.Resize((224, 224)),  # Ensure input size is large enough for ResNet
     T.ToTensor(),
     T.Normalize(*cifar10_normalization_vectors),
+])
+
+tiny_imagenet_transforms_tens_resnet = T.Compose([
+    T.Lambda(lambda img: img.convert("RGB")),
+    T.Resize((224, 224)),  # Ensure input size is large enough for ResNet
+    T.ToTensor(),
+    T.Normalize(*tiny_imagenet_normalization_vectors),
 ])
 
 transforms_tens = T.Compose([
@@ -36,6 +44,10 @@ def apply_transforms_cifar10(batch):
 
 def apply_transforms_cifar10_resnet(batch):
     batch["img"] = [transforms_tens_resnet(img) for img in batch["img"]]
+    return batch
+
+def apply_transforms_tiny_imagenet_resnet(batch):
+    batch["image"] = [tiny_imagenet_transforms_tens_resnet(img) for img in batch["image"]]
     return batch
 
 def apply_transforms_femnist(batch):
