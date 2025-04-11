@@ -159,7 +159,6 @@ class SlotBWScheduler:
             other_schedule.incoming_slots[in_idx] = None
         if out_idx is not None:
             other_schedule.outgoing_slots[out_idx] = None
-        #other_schedule.remove_transfer_finish_from_event_queue(transfer)
 
         self.logger.debug(f"Transfer {transfer.transfer_id} killed.")
 

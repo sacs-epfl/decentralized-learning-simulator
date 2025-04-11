@@ -23,6 +23,7 @@ ALGORITHM_MAPPING = {
     "conflux": ("dasklearn.simulation.conflux.settings.ConfluxSettings", "dasklearn.simulation.conflux.simulation.ConfluxSimulation"),
     "teleportation": ("dasklearn.simulation.teleportation.settings.TeleportationSettings", "dasklearn.simulation.teleportation.simulation.TeleportationSimulation"),
     "shatter": ("dasklearn.simulation.shatter.settings.ShatterSettings", "dasklearn.simulation.shatter.simulation.ShatterSimulation"),
+    "pushsum": ("dasklearn.simulation.pushsum.settings.PushSumSettings", "dasklearn.simulation.pushsum.simulation.PushSumSimulation"),
 }
 
 def get_torch_device() -> str:
@@ -129,6 +130,7 @@ def run():
         "conflux": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction},
         "teleportation": {"sample_size": args.sample_size},
         "shatter": {"k": args.k, "r": args.r},
+        "pushsum": {"sample_size": args.sample_size},
     }
 
     # Instantiate settings and simulation class

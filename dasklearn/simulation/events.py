@@ -37,6 +37,7 @@ GRADIENT_UPDATE = "gradient_update"
 ONLINE = "online"
 OFFLINE = "offline"
 SEND_CHUNKS = "send_chunks"
+FINISH_PUSH_SUM = "finish_push_sum"
 
 # Global events
 MONITOR_BANDWIDTH_UTILIZATION = "monitor_bandwidth_utilization"
