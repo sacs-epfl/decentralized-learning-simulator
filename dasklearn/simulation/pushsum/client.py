@@ -175,7 +175,7 @@ class PushSumClient(AsynchronousClient):
         self.fill_all_available_slots(round_info.round_nr)
         
         # Schedule the end of push-sum after the specified duration
-        end_time = self.simulator.current_time + self.simulator.settings.push_sum_duration * MICROSECONDS
+        end_time = self.simulator.current_time + int(self.simulator.settings.push_sum_duration * MICROSECONDS)
         end_event = Event(end_time, self.index, FINISH_PUSH_SUM, 
                           data={"round": round_info.round_nr})
         self.simulator.schedule(end_event)
@@ -299,17 +299,17 @@ class PushSumClient(AsynchronousClient):
             chunk_idx = metadata["chunk"]
             round_nr = metadata["round"]
             weight = metadata["weight"]
-            model_name = event.data["model"]
+            incoming_chunk = event.data["model"]
             
             self.client_log(f"Client {self.index} received chunk {chunk_idx} from {event.data['from']} "
                            f"with weight {weight:.4f} in round {round_nr}")
             
-            self.received_model_chunk(round_nr, model_name, chunk_idx, weight)
+            self.received_model_chunk(round_nr, incoming_chunk, chunk_idx, weight)
         else:
             # This is a complete model for the next round
             self.process_incoming_complete_model(event)
             
-    def received_model_chunk(self, round_nr: int, model_name: str, chunk_idx: int, weight: float):
+    def received_model_chunk(self, round_nr: int, incoming_chunk: Tuple[str, int], chunk_idx: int, weight: float):
         """
         Process a received model chunk with its weight
         """
@@ -318,16 +318,12 @@ class PushSumClient(AsynchronousClient):
             self.round_info[round_nr] = new_round
         round_info = self.round_info[round_nr]
         
-        # Update weight for this chunk
-        if chunk_idx in round_info.weights:
-            round_info.weights[chunk_idx] += weight
-        else:
-            round_info.weights[chunk_idx] = weight
+        round_info.weights[chunk_idx] += weight
             
         # Add to received chunks
         task_name = Task.generate_name("add_chunks")
         task = Task(task_name, "add_chunks", data={
-            "chunks": [(model_name, chunk_idx), round_info.pushsum_chunks[chunk_idx]], "round": round_info.round_nr,
+            "chunks": [incoming_chunk, round_info.pushsum_chunks[chunk_idx]], "round": round_info.round_nr,
             "time": self.simulator.current_time, "peer": self.index
         })
         self.add_compute_task(task)
@@ -360,9 +356,12 @@ class PushSumClient(AsynchronousClient):
         self.add_compute_task(task)
         round_info.model = (task_name, 0)
 
+        print(round_info.weights)
+
         # Kill all the outgoing transfers related to this round
         for transfer in self.bw_scheduler.outgoing_slots:
             if transfer and transfer.metadata["round"] == round_nr:
+                print(transfer.metadata)
                 self.bw_scheduler.kill_transfer(transfer)
         round_info.sending.clear()
 
@@ -407,7 +406,7 @@ class PushSumClient(AsynchronousClient):
         round_nr = event.data["metadata"]["round"]
         model = event.data["model"]
         
-        self.client_log(f"Client {self.index} received complete model from {event.data['from']} for round {round_nr}")
+        self.client_log(f"Client {self.index} received complete model {model} from {event.data['from']} for round {round_nr}")
         
         # Create new round
         new_round = Round(round_nr)

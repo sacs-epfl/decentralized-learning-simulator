@@ -43,6 +43,7 @@ def get_args():
     parser.add_argument('--k', type=int, default=0)
     parser.add_argument('--r', type=int, default=0)
     parser.add_argument('--no_weights', action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument('--push-sum-duration', type=float, default=50)
 
     # Traces
     parser.add_argument('--min-bandwidth', type=int, default=0)  # The minimum bandwidth a node must have to participate, in bytes/s.

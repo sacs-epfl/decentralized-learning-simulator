@@ -51,3 +51,17 @@ class ChunkManager:
             pointer += numel
 
         return model
+    
+    @staticmethod
+    def weighted_reconstruct_model(chunks: List[torch.Tensor], model: nn.Module, weights: List[float]) -> nn.Module:
+        flat_params = torch.cat(chunks)
+
+        # Copy the flat tensor into the model
+        pointer = 0
+        for param in model.state_dict().values():
+            numel = param.data.numel()
+            param_shape = param.data.shape
+            param.data.copy_(flat_params[pointer:pointer + numel].view(param_shape))
+            pointer += numel
+
+        return model

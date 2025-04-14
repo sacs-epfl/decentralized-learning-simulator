@@ -149,35 +149,19 @@ def reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[tor
     return [model]
 
 
-def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict):
-    """
-    Reconstruct a model from weighted chunks using the PushSum algorithm's weights.
-    """
+def split_chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
+    chunk = params["chunk"].clone() / 2
+    return [chunk]
+
+
+def add_chunks(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
     chunks = params["chunks"]
-    weights = params.get("weights", {})
-    round_nr = params["round"]
-    
-    logger.info("Reconstructing model from %d chunks for round %d", len(chunks), round_nr)
-    
-    # Get all chunk models
-    models = []
-    for chunk_idx, chunks_for_index in enumerate(chunks):
-        if not chunks_for_index:
-            continue
-        
-        chunk_models = []
-        chunk_weights = []
-        
-        for model_name, model_chunk_idx, weight in chunks_for_index:
-            if model_name is None:
-                continue
-                
-            chunk_models.append((model_name, model_chunk_idx))
-            chunk_weights.append(weight / weights.get(chunk_idx, 1.0))
-            
-        models.append((chunk_models, chunk_weights))
-    
-    # Reconstruct the model
-    model = ChunkManager.reconstruct_model_with_weights(models, create_model(settings.dataset, architecture=settings.model))
-    
+    return [sum(chunks)]
+
+
+def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:
+    chunks = params["chunks"]
+    weights = params["weights"]
+    model = create_model(settings.dataset, architecture=settings.model)
+    model = ChunkManager.weighted_reconstruct_model(chunks, model, weights)
     return [model]

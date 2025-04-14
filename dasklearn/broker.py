@@ -3,6 +3,7 @@ import threading
 from asyncio import ensure_future
 
 import psutil
+from dasklearn.simulation.pushsum.settings import PushSumSettings
 from dasklearn.util.utils import start_profile, stop_profile
 import torch.multiprocessing as multiprocessing
 from torch.multiprocessing.reductions import shared_cache as mp_torch_sc
@@ -259,6 +260,7 @@ class Broker:
         self.shutdown()
 
     def put_in_worker_queue(self, task: Task):
+        self.logger.info("Putting task %s in worker queue", task.name)
         self.items_in_worker_queue += 1
         self.worker_queue.put((task.name, task.func, task.data))
 
@@ -307,7 +309,8 @@ class Broker:
                 "ConfluxSettings": ConfluxSettings,
                 "TeleportationSettings": TeleportationSettings,
                 "DPSGDSettings": DPSGDSettings,
-                "ShatterSettings": ShatterSettings,               
+                "ShatterSettings": ShatterSettings,
+                "PushSumSettings": PushSumSettings,
             }
             self.settings = name_to_cls[msg["settings_class"]].from_dict(msg["settings"])
             os.makedirs(self.settings.data_dir, exist_ok=True)

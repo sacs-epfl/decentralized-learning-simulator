@@ -130,7 +130,7 @@ def run():
         "conflux": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction},
         "teleportation": {"sample_size": args.sample_size},
         "shatter": {"k": args.k, "r": args.r},
-        "pushsum": {"sample_size": args.sample_size},
+        "pushsum": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "push_sum_duration": args.push_sum_duration},
     }
 
     # Instantiate settings and simulation class

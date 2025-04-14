@@ -9,4 +9,4 @@ from dasklearn.session_settings import SessionSettings
 class PushSumSettings(SessionSettings):
     sample_size: int = 0
     chunks_in_sample: int = 10
-    push_sum_duration: float = 100
+    push_sum_duration: float = 50
