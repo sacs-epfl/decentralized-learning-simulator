@@ -159,6 +159,15 @@ class PushSumClient(AsynchronousClient):
             round_info: Round = self.round_info[event.data["message"]["round"]]
             round_info.clients_ready.append(event.data["from"])
             self.fill_all_available_slots(round_info.round_nr)
+
+            # If we received ready messages from sufficient clients, we can start the push-sum process
+            if len(round_info.clients_ready) >= self.simulator.settings.sample_size * 0.8:
+                # Schedule the end of push-sum after the specified duration
+                self.client_log(f"Client {self.index} scheduled end of push-sum in round {round_info.round_nr}")
+                end_time = self.simulator.current_time + int(self.simulator.settings.push_sum_duration * MICROSECONDS)
+                end_event = Event(end_time, self.index, FINISH_PUSH_SUM,
+                                data={"round": round_info.round_nr})
+                self.simulator.schedule(end_event)
         else:
             raise ValueError("Unknown message type: %s" % event.data["type"])
         
@@ -173,12 +182,6 @@ class PushSumClient(AsynchronousClient):
         
         # Fill all available slots immediately
         self.fill_all_available_slots(round_info.round_nr)
-        
-        # Schedule the end of push-sum after the specified duration
-        end_time = self.simulator.current_time + int(self.simulator.settings.push_sum_duration * MICROSECONDS)
-        end_event = Event(end_time, self.index, FINISH_PUSH_SUM, 
-                          data={"round": round_info.round_nr})
-        self.simulator.schedule(end_event)
     
     def fill_all_available_slots(self, round_nr: int):
         """
@@ -208,12 +211,12 @@ class PushSumClient(AsynchronousClient):
         if not self.bw_scheduler.has_free_outgoing_slot():
             return False
 
-        # Find eligible recipients (online clients in the sample with free incoming slots)
+        # Find eligible recipients (online clients in the sample with free incoming slots that are still receiving chunks during the gossip phase)
         eligible_recipients = []
         for idx in round_info.clients_ready:
             if idx != self.index and self.simulator.clients[idx].online:
                 receiver = self.simulator.clients[idx]
-                if receiver.bw_scheduler.has_free_incoming_slot():
+                if receiver.bw_scheduler.has_free_incoming_slot() and round_info.round_nr in receiver.round_info and not receiver.round_info[round_info.round_nr].push_sum_ended:
                     eligible_recipients.append(idx)
         
         if not eligible_recipients:
@@ -286,6 +289,10 @@ class PushSumClient(AsynchronousClient):
             round_info: Round = self.round_info[metadata["round"]]
             round_info.sending.remove((metadata["to"], metadata["chunk"]))
             self.fill_all_available_slots(metadata["round"])
+
+            # Check if this is the last transfer for this round
+            if self.count_transfers(metadata["round"]) == 0:
+                self.reconstruct_and_send_model(metadata["round"])
         
     def on_incoming_model(self, event: Event):
         """
@@ -305,6 +312,10 @@ class PushSumClient(AsynchronousClient):
                            f"with weight {weight:.4f} in round {round_nr}")
             
             self.received_model_chunk(round_nr, incoming_chunk, chunk_idx, weight)
+
+            # Check if this is the last transfer for this round
+            if self.count_transfers(metadata["round"]) == 0:
+                self.reconstruct_and_send_model(metadata["round"])
         else:
             # This is a complete model for the next round
             self.process_incoming_complete_model(event)
@@ -342,7 +353,26 @@ class PushSumClient(AsynchronousClient):
         round_info = self.round_info[round_nr]
         round_info.push_sum_ended = True
 
-        self.client_log(f"Client {self.index} finished push-sum in round {round_nr}, reconstructing model")
+        self.client_log(f"Client {self.index} finished push-sum in round {round_nr}, reconstructing model - waiting for pending transfers to be finished")
+
+        if self.count_transfers(round_nr) == 0:
+            self.reconstruct_and_send_model(round_nr)
+
+    def count_transfers(self, round_nr: int) -> int:
+        """
+        Count the number of incoming and outgoing transfers associated with a given round
+        """
+        count = 0
+        for transfer in self.bw_scheduler.incoming_slots:
+            if transfer and transfer.metadata["round"] == round_nr:
+                count += 1
+        for transfer in self.bw_scheduler.outgoing_slots:
+            if transfer and transfer.metadata["round"] == round_nr:
+                count += 1
+        return count
+
+    def reconstruct_and_send_model(self, round_nr: int):
+        round_info: Round = self.round_info[round_nr]
 
         # Reconstruct the model from weighted chunks
         task_name = Task.generate_name("weighted_reconstruct")
@@ -355,8 +385,6 @@ class PushSumClient(AsynchronousClient):
         })
         self.add_compute_task(task)
         round_info.model = (task_name, 0)
-
-        print(round_info.weights)
 
         # Kill all the outgoing transfers related to this round
         for transfer in self.bw_scheduler.outgoing_slots:

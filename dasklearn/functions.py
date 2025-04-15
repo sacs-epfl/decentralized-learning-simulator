@@ -162,6 +162,11 @@ def add_chunks(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
 def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:
     chunks = params["chunks"]
     weights = params["weights"]
+
+    # Apply the weights
+    for i in range(len(chunks)):
+        chunks[i] = chunks[i] / weights[i]
+
     model = create_model(settings.dataset, architecture=settings.model)
     model = ChunkManager.weighted_reconstruct_model(chunks, model, weights)
     return [model]
