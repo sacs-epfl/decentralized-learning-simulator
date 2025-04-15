@@ -147,6 +147,7 @@ class PushSumClient(AsynchronousClient):
             self.client_manager.get_active_clients(),
             self.simulator.settings.sample_size
         )
+        self.logger.warning("Client %d will send to sample %s", self.index, sample)
         for client_index in sample:
             if client_index != self.index:
                 self.send_message_to_client(client_index, "ready_for_push_sum", {"round": round_info.round_nr})
@@ -156,18 +157,25 @@ class PushSumClient(AsynchronousClient):
 
     def on_message(self, event: Event):
         if event.data["type"] == "ready_for_push_sum":
-            round_info: Round = self.round_info[event.data["message"]["round"]]
+            round_nr = event.data["message"]["round"]
+            if round_nr not in self.round_info:
+                new_round = Round(round_nr)
+                self.round_info[round_nr] = new_round
+
+            round_info: Round = self.round_info[round_nr]
             round_info.clients_ready.append(event.data["from"])
             self.fill_all_available_slots(round_info.round_nr)
 
             # If we received ready messages from sufficient clients, we can start the push-sum process
-            if len(round_info.clients_ready) >= self.simulator.settings.sample_size * 0.8:
+            self.logger.error("This is client %d, round %d, ready from %s", self.index, round_info.round_nr, round_info.clients_ready)
+            if (len(round_info.clients_ready) + 1) >= self.simulator.settings.sample_size * 0.8 and not round_info.scheduled_push_sum_end:
                 # Schedule the end of push-sum after the specified duration
                 self.client_log(f"Client {self.index} scheduled end of push-sum in round {round_info.round_nr}")
                 end_time = self.simulator.current_time + int(self.simulator.settings.push_sum_duration * MICROSECONDS)
                 end_event = Event(end_time, self.index, FINISH_PUSH_SUM,
                                 data={"round": round_info.round_nr})
                 self.simulator.schedule(end_event)
+                round_info.scheduled_push_sum_end = True
         else:
             raise ValueError("Unknown message type: %s" % event.data["type"])
         
@@ -386,13 +394,6 @@ class PushSumClient(AsynchronousClient):
         self.add_compute_task(task)
         round_info.model = (task_name, 0)
 
-        # Kill all the outgoing transfers related to this round
-        for transfer in self.bw_scheduler.outgoing_slots:
-            if transfer and transfer.metadata["round"] == round_nr:
-                print(transfer.metadata)
-                self.bw_scheduler.kill_transfer(transfer)
-        round_info.sending.clear()
-
         # Send to next sample
         self.send_to_next_sample(round_info)
     
@@ -436,10 +437,14 @@ class PushSumClient(AsynchronousClient):
         
         self.client_log(f"Client {self.index} received complete model {model} from {event.data['from']} for round {round_nr}")
         
-        # Create new round
-        new_round = Round(round_nr)
-        new_round.model = model
+        if round_nr in self.round_info:
+            round_info = self.round_info[round_nr]
+            round_info.model = model
+        else:
+            new_round = Round(round_nr)
+            new_round.model = model
+            self.round_info[round_nr] = new_round
         
         # Start the round
-        start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=new_round)
+        start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=self.round_info[round_nr])
         self.simulator.schedule(start_round_event)

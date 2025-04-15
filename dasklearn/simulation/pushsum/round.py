@@ -15,6 +15,7 @@ class Round:
         self.train_done: bool = False
         self.push_sum_start_time: int = 0
         self.push_sum_ended: bool = False
+        self.scheduled_push_sum_end: bool = False
         self.clients_ready: List[int] = []
         self.pushsum_chunks: List[Tuple[str, int]] = []
         self.weights: List[float] = []  # Weights for each chunk
