@@ -1,14 +1,12 @@
 import random
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Tuple
 
 from dasklearn.simulation.asynchronous_client import AsynchronousClient
 from dasklearn.simulation.conflux.client_manager import ClientManager
-from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.simulation.conflux.sample_manager import SampleManager
 from dasklearn.simulation.events import *
 from dasklearn.simulation.pushsum import NodeMembershipChange
 from dasklearn.simulation.pushsum.round import Round
-from dasklearn.simulation.slot_bandwidth_scheduler import SlotBWScheduler
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS, time_to_sec
 
@@ -17,6 +15,7 @@ class PushSumClient(AsynchronousClient):
     """
     Client implementation for the PushSum algorithm.
     """
+    MAX_OUTGOING_TRANSFERS: int = 5
 
     def __init__(self, simulator, index: int):
         super().__init__(simulator, index)
@@ -25,9 +24,6 @@ class PushSumClient(AsynchronousClient):
         self.train_sample_estimate: int = 0
 
     def init_client(self, _: Event):
-        # Replace the bandwidth scheduler with a slot-based one
-        self.bw_scheduler = SlotBWScheduler(self, total_bw=self.bw_scheduler.bw_limit)
-
         active_clients: List[int] = self.client_manager.get_active_clients()
         sample: List[int] = SampleManager.get_sample(1, active_clients, self.simulator.settings.sample_size)
 
@@ -147,7 +143,6 @@ class PushSumClient(AsynchronousClient):
             self.client_manager.get_active_clients(),
             self.simulator.settings.sample_size
         )
-        self.logger.warning("Client %d will send to sample %s", self.index, sample)
         for client_index in sample:
             if client_index != self.index:
                 self.send_message_to_client(client_index, "ready_for_push_sum", {"round": round_info.round_nr})
@@ -167,7 +162,6 @@ class PushSumClient(AsynchronousClient):
             self.fill_all_available_slots(round_info.round_nr)
 
             # If we received ready messages from sufficient clients, we can start the push-sum process
-            self.logger.error("This is client %d, round %d, ready from %s", self.index, round_info.round_nr, round_info.clients_ready)
             if (len(round_info.clients_ready) + 1) >= self.simulator.settings.sample_size * 0.8 and not round_info.scheduled_push_sum_end:
                 # Schedule the end of push-sum after the specified duration
                 self.client_log(f"Client {self.index} scheduled end of push-sum in round {round_info.round_nr}")
@@ -203,7 +197,7 @@ class PushSumClient(AsynchronousClient):
             return
         
         # Keep sending chunks until we can't send more
-        while self.bw_scheduler.has_free_outgoing_slot():
+        while len(round_info.sending) < self.MAX_OUTGOING_TRANSFERS:
             res = self.send_chunk(round_nr)
             if not res:
                 break
@@ -216,7 +210,7 @@ class PushSumClient(AsynchronousClient):
             return False
 
         # Check if we have slots available for sending
-        if not self.bw_scheduler.has_free_outgoing_slot():
+        if len(round_info.sending) >= self.MAX_OUTGOING_TRANSFERS:
             return False
 
         # Find eligible recipients (online clients in the sample with free incoming slots that are still receiving chunks during the gossip phase)
@@ -224,7 +218,7 @@ class PushSumClient(AsynchronousClient):
         for idx in round_info.clients_ready:
             if idx != self.index and self.simulator.clients[idx].online:
                 receiver = self.simulator.clients[idx]
-                if receiver.bw_scheduler.has_free_incoming_slot() and round_info.round_nr in receiver.round_info and not receiver.round_info[round_info.round_nr].push_sum_ended:
+                if round_info.round_nr in receiver.round_info and not receiver.round_info[round_info.round_nr].push_sum_ended:
                     eligible_recipients.append(idx)
         
         if not eligible_recipients:
@@ -371,10 +365,7 @@ class PushSumClient(AsynchronousClient):
         Count the number of incoming and outgoing transfers associated with a given round
         """
         count = 0
-        for transfer in self.bw_scheduler.incoming_slots:
-            if transfer and transfer.metadata["round"] == round_nr:
-                count += 1
-        for transfer in self.bw_scheduler.outgoing_slots:
+        for transfer in self.bw_scheduler.get_all_transfers():
             if transfer and transfer.metadata["round"] == round_nr:
                 count += 1
         return count

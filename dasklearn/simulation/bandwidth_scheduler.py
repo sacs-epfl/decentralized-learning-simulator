@@ -40,6 +40,14 @@ class BWScheduler:
         self.total_bytes_sent = 0
         self.total_bytes_received = 0
 
+    def get_all_transfers(self) -> List:
+        """
+        Get all transfers that we know about.
+        """
+        return list(self.incoming_transfers.values()) + list(self.outgoing_transfers.values()) + \
+               list(self.incoming_requests.values()) + list(self.outgoing_requests.values())
+
+
     def register_transfer(self, transfer, is_outgoing=False):
         if not self.incoming_transfers and not self.outgoing_transfers:
             self.is_active = True
