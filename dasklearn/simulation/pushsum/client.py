@@ -132,10 +132,6 @@ class PushSumClient(AsynchronousClient):
         
         # Store the chunked model
         round_info.init_received_chunks(task_name, self.simulator.settings.chunks_in_sample)
-        
-        # Initialize weights for each chunk to 1.0
-        for i in range(self.simulator.settings.chunks_in_sample):
-            round_info.weights[i] = 1.0
 
         # Inform all nodes in the current sample that this node is ready
         sample: List[int] = SampleManager.get_sample(
@@ -238,43 +234,34 @@ class PushSumClient(AsynchronousClient):
         round_info.sending.add((target_idx, chunk_idx))
         
         # Split our weight
-        task_name = Task.generate_name("split_chunk")
-        task = Task(task_name, "split_chunk", data={
-            "chunk": round_info.pushsum_chunks[chunk_idx], "round": round_info.round_nr,
-            "time": self.simulator.current_time, "peer": self.index
-        })
-        self.add_compute_task(task)
-        round_info.pushsum_chunks[chunk_idx] = (task_name, 0)
-
-        weight = round_info.weights[chunk_idx]
-        send_weight = weight / 2
-        round_info.weights[chunk_idx] = weight / 2
+        split_chunk = round_info.split_chunk(round_info.pushsum_chunks[chunk_idx])
+        round_info.pushsum_chunks[chunk_idx] = split_chunk  # Update the local chunk
         
         # Send the chunk with its weight
-        self.send_chunk_with_weight(round_info, round_info.pushsum_chunks[chunk_idx], chunk_idx, target_idx, send_weight)
+        self.send_chunk_with_weight(round_info, split_chunk, chunk_idx, target_idx)
         return True
         
-    def send_chunk_with_weight(self, round_info: Round, model_name: str, chunk_idx: int, recipient_idx: int, weight: float):
+    def send_chunk_with_weight(self, round_info: Round, chunk: Dict[Tuple[int, str], float], chunk_idx: int, recipient_idx: int):
         """
         Send a chunk with its weight to another node
         """
-        self.client_log(f"Client {self.index} sending chunk {chunk_idx} with weight {weight:.4f} to {recipient_idx}")
+        self.client_log(f"Client {self.index} sending chunk {chunk} @ {chunk_idx} to {recipient_idx}")
         
         event_data = {
             "from": self.index,
             "to": recipient_idx,
-            "model": model_name,
+            "model": "none",
             "metadata": {
                 "to": recipient_idx,
-                "chunk": chunk_idx,
+                "chunk": chunk,
+                "chunk_idx": chunk_idx,
                 "round": round_info.round_nr,
-                "weight": weight
             }
         }
         start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
-        self.start_transfer(start_transfer_event)
+        self.start_chunk_transfer(start_transfer_event)
         
-    def start_transfer(self, event: Event):
+    def start_chunk_transfer(self, event: Event):
         """
         Start a bandwidth-slot based transfer
         """
@@ -289,7 +276,7 @@ class PushSumClient(AsynchronousClient):
         metadata = event.data["transfer"].metadata
         if "chunk" in metadata:
             round_info: Round = self.round_info[metadata["round"]]
-            round_info.sending.remove((metadata["to"], metadata["chunk"]))
+            round_info.sending.remove((metadata["to"], metadata["chunk_idx"]))
             self.fill_all_available_slots(metadata["round"])
 
             # Check if this is the last transfer for this round
@@ -305,15 +292,12 @@ class PushSumClient(AsynchronousClient):
         # Check if this is a chunk or a complete model
         if "chunk" in metadata:
             # This is a chunk with a weight
-            chunk_idx = metadata["chunk"]
+            chunk: Dict[Tuple[str, int], float] = metadata["chunk"]
+            chunk_idx: int = metadata["chunk_idx"]
             round_nr = metadata["round"]
-            weight = metadata["weight"]
-            incoming_chunk = event.data["model"]
             
-            self.client_log(f"Client {self.index} received chunk {chunk_idx} from {event.data['from']} "
-                           f"with weight {weight:.4f} in round {round_nr}")
-            
-            self.received_model_chunk(round_nr, incoming_chunk, chunk_idx, weight)
+            self.client_log(f"Client {self.index} received chunk {chunk} @ {chunk_idx} from {event.data['from']} in round {round_nr}")
+            self.received_model_chunk(round_nr, chunk, chunk_idx)
 
             # Check if this is the last transfer for this round
             if self.count_transfers(metadata["round"]) == 0:
@@ -322,25 +306,15 @@ class PushSumClient(AsynchronousClient):
             # This is a complete model for the next round
             self.process_incoming_complete_model(event)
             
-    def received_model_chunk(self, round_nr: int, incoming_chunk: Tuple[str, int], chunk_idx: int, weight: float):
+    def received_model_chunk(self, round_nr: int, incoming_chunk: Dict[Tuple[str, int], float], chunk_idx: int):
         """
-        Process a received model chunk with its weight
+        Process a received model chunk
         """
         if round_nr not in self.round_info:
             new_round = Round(round_nr)
             self.round_info[round_nr] = new_round
         round_info = self.round_info[round_nr]
-        
-        round_info.weights[chunk_idx] += weight
-            
-        # Add to received chunks
-        task_name = Task.generate_name("add_chunks")
-        task = Task(task_name, "add_chunks", data={
-            "chunks": [incoming_chunk, round_info.pushsum_chunks[chunk_idx]], "round": round_info.round_nr,
-            "time": self.simulator.current_time, "peer": self.index
-        })
-        self.add_compute_task(task)
-        round_info.pushsum_chunks[chunk_idx] = (task_name, 0)
+        round_info.merge_chunk(incoming_chunk, chunk_idx)
 
         self.fill_all_available_slots(round_nr)
 
@@ -377,7 +351,6 @@ class PushSumClient(AsynchronousClient):
         task_name = Task.generate_name("weighted_reconstruct")
         task = Task(task_name, "weighted_reconstruct_from_chunks", data={
             "chunks": round_info.pushsum_chunks,
-            "weights": round_info.weights,
             "round": round_nr,
             "time": self.simulator.current_time,
             "peer": self.index
