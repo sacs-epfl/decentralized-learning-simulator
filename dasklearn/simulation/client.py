@@ -126,16 +126,11 @@ class BaseClient:
                     task.inputs.append((preceding_task, chunk_idx))
         elif task.func == "weighted_reconstruct_from_chunks":
             for chunk_idx, chunk in enumerate(task.data["chunks"]):
-                print(chunk)
-                for granular_chunk in chunk.keys():
-                    model_name, output_idx = granular_chunk
+                for chunk_info, _ in chunk:
+                    model_name, output_idx = chunk_info
                     preceding_task: Task = self.simulator.workflow_dag.tasks[model_name]
                     preceding_task.outputs.append((task, output_idx))
                     task.inputs.append((preceding_task, output_idx))
-
-                preceding_task: Task = self.simulator.workflow_dag.tasks[model_name]
-                preceding_task.outputs.append((task, output_idx))
-                task.inputs.append((preceding_task, output_idx))
         if inputs:
             for input_task_name, input_index in inputs:
                 input_task: Task = self.simulator.workflow_dag.tasks[input_task_name]

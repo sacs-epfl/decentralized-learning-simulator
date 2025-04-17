@@ -347,10 +347,18 @@ class PushSumClient(AsynchronousClient):
     def reconstruct_and_send_model(self, round_nr: int):
         round_info: Round = self.round_info[round_nr]
 
+        # Convert the pushsum chunks from a dictionary to a list of lists
+        chunks: List[List[Tuple[str, int]]] = []
+        for _, pushsum_chunks in enumerate(round_info.pushsum_chunks):
+            chunks_at_index: List[List[Tuple[str, int], float]] = []
+            for chunk_key, chunk_value in pushsum_chunks.items():
+                chunks_at_index.append([chunk_key, chunk_value])
+            chunks.append(chunks_at_index)
+
         # Reconstruct the model from weighted chunks
         task_name = Task.generate_name("weighted_reconstruct")
         task = Task(task_name, "weighted_reconstruct_from_chunks", data={
-            "chunks": round_info.pushsum_chunks,
+            "chunks": chunks,
             "round": round_nr,
             "time": self.simulator.current_time,
             "peer": self.index
