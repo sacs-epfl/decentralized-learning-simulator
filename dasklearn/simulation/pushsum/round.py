@@ -19,6 +19,7 @@ class Round:
         self.clients_ready: List[int] = []
         self.pushsum_chunks: List[Tuple[str, int]] = []
         self.sending: Set[int, int] = set()  # Set of clients - chunk index we are sending
+        self.completed_round: bool = False
 
     def split_chunk(self, chunk: Dict[Tuple[str, int], float]) -> Dict[Tuple[str, int], float]:
         """

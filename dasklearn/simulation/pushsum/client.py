@@ -1,3 +1,4 @@
+from copy import deepcopy
 import random
 from typing import Dict, List, Tuple
 
@@ -235,7 +236,7 @@ class PushSumClient(AsynchronousClient):
         
         # Split our weight
         split_chunk = round_info.split_chunk(round_info.pushsum_chunks[chunk_idx])
-        round_info.pushsum_chunks[chunk_idx] = split_chunk  # Update the local chunk
+        round_info.pushsum_chunks[chunk_idx] = deepcopy(split_chunk)  # Update the local chunk
         
         # Send the chunk with its weight
         self.send_chunk_with_weight(round_info, split_chunk, chunk_idx, target_idx)
@@ -347,6 +348,9 @@ class PushSumClient(AsynchronousClient):
     def reconstruct_and_send_model(self, round_nr: int):
         round_info: Round = self.round_info[round_nr]
 
+        if round_info.completed_round:
+            return
+
         # Convert the pushsum chunks from a dictionary to a list of lists
         chunks: List[List[Tuple[str, int]]] = []
         for _, pushsum_chunks in enumerate(round_info.pushsum_chunks):
@@ -399,6 +403,8 @@ class PushSumClient(AsynchronousClient):
             self.client_log(f"Client {self.index} sending model to {target_idx} for round {next_round_nr}")
             self.send_model(target_idx, round_info.model, metadata={"round": next_round_nr})
             # TODO we assume all nodes are online here!
+
+        round_info.completed_round = True
     
     def process_incoming_complete_model(self, event: Event):
         """

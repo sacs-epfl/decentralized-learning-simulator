@@ -53,7 +53,7 @@ class ChunkManager:
         return model
     
     @staticmethod
-    def weighted_reconstruct_model(chunks: List[torch.Tensor], model: nn.Module, weights: List[float]) -> nn.Module:
+    def weighted_reconstruct_model(chunks: List[torch.Tensor], model: nn.Module) -> nn.Module:
         flat_params = torch.cat(chunks)
 
         # Copy the flat tensor into the model

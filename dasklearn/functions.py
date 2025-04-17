@@ -149,24 +149,13 @@ def reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[tor
     return [model]
 
 
-def split_chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
-    chunk = params["chunk"].clone() / 2
-    return [chunk]
-
-
-def add_chunks(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
-    chunks = params["chunks"]
-    return [sum(chunks)]
-
-
 def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:
     chunks = params["chunks"]
-    weights = params["weights"]
-
-    # Apply the weights
-    for i in range(len(chunks)):
-        chunks[i] = chunks[i] / weights[i]
+    result = []
+    for sublist in chunks:
+        weighted_sum = sum(tensor * weight for tensor, weight in sublist)
+        result.append(weighted_sum)
 
     model = create_model(settings.dataset, architecture=settings.model)
-    model = ChunkManager.weighted_reconstruct_model(chunks, model, weights)
+    model = ChunkManager.weighted_reconstruct_model(result, model)
     return [model]
