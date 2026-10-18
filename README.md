@@ -384,6 +384,27 @@ ordinary per-model kernels on independent streams; direct model-axis
 vectorization is not selected on CUDA because it failed the ResNet18 numerical
 guard. No BatchNorm statistics are disabled or shared between clients.
 
+On `sacs006` (RTX 5000 Ada, Torch 2.14.1), 32 independent ResNet18 client tasks
+with five SGD steps and batch size 32 gave these three-repeat median times:
+
+| Training executor | Seconds | Speedup over reference |
+| --- | ---: | ---: |
+| Reference | 2.452 | 1.00× |
+| GPU residency, serial | 1.694 | 1.45× |
+| GPU residency, two-client batches | 1.380 | 1.78× |
+| GPU residency, four-client batches | 1.570 | 1.56× |
+| GPU residency, eight-client batches | 1.614 | 1.52× |
+
+Every output parameter and BatchNorm buffer matched the reference bit for bit.
+Two-client batches were fastest and are the default. This isolated training
+speedup does not include DAG construction, chunk aggregation or evaluation.
+Batching can only use independent tasks already ready in the DAG; Shatter's
+later training frontier often contains only one such task. The production
+calibration can therefore select serial training on another workload/platform.
+The [benchmark and execution plan](output/tiny-imagenet-validation/gpu-training/plan.json)
+and [raw timing results](output/tiny-imagenet-validation/gpu-training/benchmark.json)
+record the exact source and commands.
+
 #### Tiny ImageNet results on 128 nodes
 
 The one-seed heterogeneous runs completed on `sacs006`. At 1,800 simulated
@@ -413,12 +434,38 @@ first pass. It reuses 2,201 of 2,272 reconstructions (71 unique input sets),
 peaks at 45,155,008 cached tensor bytes, and releases the cache by completion.
 All 768 individual-node curve rows, 128 full-validation rows, the complete DAG,
 traffic and training-task counts match both earlier V2 executions exactly.
-The latest Shatter code also passes the original eight-node full-evaluation
-comparison; its full 128-node timing above measures the first pass.
-Focused validation passes 45 tests on Linux/CUDA and 43 on macOS/CPU, with two
+That pass also preserves the original eight-node Shatter full-evaluation
+comparison; the Shatter timing above measures the first pass.
+Its focused validation passed 45 tests on Linux/CUDA and 43 on macOS/CPU, with two
 GPU-only checks skipped on the CPU host. The saved
 [optimization audit](output/tiny-imagenet-validation/tiny128-memoized/equivalence.json)
 contains the measured timings and final cache counters.
+
+The GPU training pass (`03da38a`) further reduces full execution time, including
+dataset loading, startup calibration and evaluation:
+
+| Protocol | Previous optimized execution | GPU residency + batching | Time saved |
+| --- | ---: | ---: | ---: |
+| Shatter degree 2 | 13.95 min | 11.25 min | 19.4% |
+| Conflux V2 | 4.02 min | 2.61 min | 35.0% |
+
+Both use the same new source, with the opt-out flags at their defaults. For
+each protocol, all 768 per-node curve rows, 128 final full-validation rows,
+the complete DAG, traffic and training counts exactly match the original and
+first optimized executions. V2 also exactly matches the memoized execution.
+These are single observed runs on GPU 1 while the existing long Shatter job
+continues on GPU 0, sharing server CPU/memory; they are not controlled timing
+replicates. The one-seed learning results above are unchanged.
+
+Shatter batches 142 of 5,660 tasks, whereas V2 batches 1,034 of 2,304; most later
+Shatter training tasks become ready individually. Both input-version caches
+peak at 45,155,008 bytes and release their contents by completion; prefetching
+holds at most two output models. Neither run required a fallback. Validation
+passes 62 tests on Linux/CUDA and 56 on macOS/CPU, with six CUDA checks skipped
+on the CPU host. The [complete GPU execution audit](output/tiny-imagenet-validation/gpu-training/equivalence.json)
+records every comparison and final execution counter. Raw DAGs and per-node
+files remain under `/mnt/data/mdevos/conflux/results/tiny128-gpu-training`.
+The existing long jobs retain their original frozen execution source.
 
 The original execution source is `d14b771`; the paired first-pass optimized
 source is `ce1c7a4`. Both protocols within each pair share the same execution

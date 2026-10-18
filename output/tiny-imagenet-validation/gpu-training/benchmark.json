@@ -1,0 +1,145 @@
+{
+  "source_sha256": "99e4f916043d7a761735f730c0473f7728c49b93b6087a86956dff29eafbcdea",
+  "torch": "2.14.1+cu130",
+  "device": "cuda:0",
+  "shared_inputs": false,
+  "dataset_loading_s": 2.0084827359532937,
+  "records": [
+    {
+      "mode": "reference",
+      "tasks": 32,
+      "repeats_s": [
+        2.3782932329922915,
+        2.5431535280076787,
+        2.4517941100057214
+      ],
+      "median_s": 2.4517941100057214,
+      "warmup_s": 3.0503072389401495,
+      "max_state_abs_error": 0.0,
+      "peak_gpu_bytes": 266536448,
+      "backend": null,
+      "speedup_vs_reference": 1.0
+    },
+    {
+      "mode": "resident",
+      "tasks": 32,
+      "repeats_s": [
+        1.6935188160277903,
+        1.6364003950729966,
+        1.798954211990349
+      ],
+      "median_s": 1.6935188160277903,
+      "warmup_s": 1.9073674969840795,
+      "max_state_abs_error": 0.0,
+      "peak_gpu_bytes": 266536448,
+      "backend": {
+        "device": "cuda:0",
+        "resident": true,
+        "batching_requested": false,
+        "batched_tasks": 0,
+        "serial_tasks": 128,
+        "batches": 0,
+        "calibration_tasks": 0,
+        "input_cache_hits": 0,
+        "input_cache_peak_bytes": 0,
+        "fallback_reasons": [],
+        "batching_active": false,
+        "strategy": "cuda-streams",
+        "input_cache_bytes": 0
+      },
+      "speedup_vs_reference": 1.4477513251116354
+    },
+    {
+      "mode": "batch-2",
+      "tasks": 32,
+      "repeats_s": [
+        1.3718501350376755,
+        1.3800091970479116,
+        1.5243851540144533
+      ],
+      "median_s": 1.3800091970479116,
+      "warmup_s": 1.4694665960269049,
+      "max_state_abs_error": 0.0,
+      "peak_gpu_bytes": 667292160,
+      "backend": {
+        "device": "cuda:0",
+        "resident": true,
+        "batching_requested": true,
+        "batched_tasks": 128,
+        "serial_tasks": 0,
+        "batches": 64,
+        "calibration_tasks": 0,
+        "input_cache_hits": 0,
+        "input_cache_peak_bytes": 0,
+        "fallback_reasons": [],
+        "batching_active": true,
+        "strategy": "cuda-streams",
+        "input_cache_bytes": 0
+      },
+      "speedup_vs_reference": 1.7766505580184182
+    },
+    {
+      "mode": "batch-4",
+      "tasks": 32,
+      "repeats_s": [
+        1.5764964290428907,
+        1.4353335140040144,
+        1.5701585670467466
+      ],
+      "median_s": 1.5701585670467466,
+      "warmup_s": 1.5640720510855317,
+      "max_state_abs_error": 0.0,
+      "peak_gpu_bytes": 1728062464,
+      "backend": {
+        "device": "cuda:0",
+        "resident": true,
+        "batching_requested": true,
+        "batched_tasks": 128,
+        "serial_tasks": 0,
+        "batches": 32,
+        "calibration_tasks": 0,
+        "input_cache_hits": 0,
+        "input_cache_peak_bytes": 0,
+        "fallback_reasons": [],
+        "batching_active": true,
+        "strategy": "cuda-streams",
+        "input_cache_bytes": 0
+      },
+      "speedup_vs_reference": 1.5614945913502294
+    },
+    {
+      "mode": "batch-8",
+      "tasks": 32,
+      "repeats_s": [
+        1.6139593200059608,
+        1.5710531220538542,
+        1.6185480550630018
+      ],
+      "median_s": 1.6139593200059608,
+      "warmup_s": 2.048142710002139,
+      "max_state_abs_error": 0.0,
+      "peak_gpu_bytes": 4653336576,
+      "backend": {
+        "device": "cuda:0",
+        "resident": true,
+        "batching_requested": true,
+        "batched_tasks": 128,
+        "serial_tasks": 0,
+        "batches": 16,
+        "calibration_tasks": 0,
+        "input_cache_hits": 0,
+        "input_cache_peak_bytes": 0,
+        "fallback_reasons": [],
+        "batching_active": true,
+        "strategy": "cuda-streams",
+        "input_cache_bytes": 0
+      },
+      "speedup_vs_reference": 1.519117662765296
+    }
+  ],
+  "tolerance": {
+    "rtol": 0.0001,
+    "atol": 1e-05
+  },
+  "optimizer": "Fresh SGD per task, lr .01, momentum .9, 5 steps, batch 32"
+}
