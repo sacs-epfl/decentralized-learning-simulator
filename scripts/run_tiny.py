@@ -22,6 +22,7 @@ from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.tasks.local import execute_local
 from dasklearn.tasks.training import add_training_arguments
+from dasklearn.simulation.peer_baselines import BASELINE_VARIANTS, baseline_spec
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS
 from dasklearn import AUGMENTATION_FACTOR_SIM
@@ -32,10 +33,12 @@ async def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--data", required=True)
-    p.add_argument("--variant", choices=["shatter-r2", "conflux-v2"], required=True)
+    p.add_argument("--variant", choices=["shatter-r2", "conflux-v2", *BASELINE_VARIANTS], required=True)
     p.add_argument("--peers", type=int, default=128)
     p.add_argument("--sample-size", type=int, default=32)
     p.add_argument("--chunks", type=int, default=16)
+    p.add_argument("--group-size", type=int, default=8)
+    p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--duration", type=int, default=1800)
     p.add_argument("--test-period", type=int, default=300)
     p.add_argument("--evaluation-examples", type=int, default=2000)
@@ -65,7 +68,10 @@ async def main():
     Task.COUNTER.clear()
     cls, config = (ShatterSimulation, ShatterSettings) if args.variant == "shatter-r2" else (ConfluxV2Simulation, ConfluxV2Settings)
     specific = {"k": args.chunks, "r": 2} if args.variant == "shatter-r2" else {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": 1}
-    settings = config(algorithm="shatter" if args.variant == "shatter-r2" else "conflux-v2", seed=args.seed,
+    if args.variant in BASELINE_VARIANTS:
+        cls, config, specific = baseline_spec(args.variant, args.peers, args.sample_size,
+                                             args.group_size, args.averaging_steps)
+    settings = config(algorithm="shatter" if args.variant == "shatter-r2" else args.variant, seed=args.seed,
         work_dir=str(args.output), dataset="tiny_imagenet", model="resnet18", participants=args.peers,
         dataset_base_path=args.data, partitioner="dirichlet", alpha=.1,
         torch_device_name=str(device), torch_threads=args.torch_threads,

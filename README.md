@@ -345,6 +345,14 @@ unused output model; cached sink metrics additionally avoid copying a model
 that will not be evaluated. Regression tests cover eviction, budget bypass,
 last-use release and exact snapshot equality for both protocols.
 
+Additional peer-reviewed comparison methods are available: Moshpit SGD
+(NeurIPS 2021), repaired Teleportation (ICLR 2025; ring and hypercube), and a
+full-participation D-Local-SGD ring reference. See the
+[literature selection, protocol contracts and benchmark design](docs/peer-baselines.md).
+All new baselines support the shared local executor and require zero momentum
+and stable membership. Their validation includes exact averaging, token
+handoff/causality, bandwidth-aware allocation and network-byte conservation.
+
 The local executor additionally enables GPU residency and training batching by
 default on CUDA. Residency reuses private GPU training workspaces and a bounded
 cache of repeated input-model versions (256 MiB by default). Independent ready

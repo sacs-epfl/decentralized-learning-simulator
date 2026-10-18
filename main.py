@@ -23,6 +23,7 @@ ALGORITHM_MAPPING = {
     "conflux": ("dasklearn.simulation.conflux.settings.ConfluxSettings", "dasklearn.simulation.conflux.simulation.ConfluxSimulation"),
     "conflux-v2": ("dasklearn.simulation.conflux_v2.settings.ConfluxV2Settings", "dasklearn.simulation.conflux_v2.simulation.ConfluxV2Simulation"),
     "teleportation": ("dasklearn.simulation.teleportation.settings.TeleportationSettings", "dasklearn.simulation.teleportation.simulation.TeleportationSimulation"),
+    "moshpit": ("dasklearn.simulation.moshpit.settings.MoshpitSettings", "dasklearn.simulation.moshpit.simulation.MoshpitSimulation"),
     "shatter": ("dasklearn.simulation.shatter.settings.ShatterSettings", "dasklearn.simulation.shatter.simulation.ShatterSimulation"),
     "pushsum": ("dasklearn.simulation.pushsum.settings.PushSumSettings", "dasklearn.simulation.pushsum.simulation.PushSumSimulation"),
 }
@@ -132,7 +133,8 @@ def run():
         "lubor": {"k": args.k, "no_weights": args.no_weights},
         "conflux": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction},
         "conflux-v2": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction, "relay_count": args.relay_count},
-        "teleportation": {"sample_size": args.sample_size},
+        "teleportation": {"sample_size": args.sample_size, "topology": args.teleportation_topology},
+        "moshpit": {"group_size": args.group_size, "averaging_steps": args.averaging_steps},
         "shatter": {"k": args.k, "r": args.r},
         "pushsum": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "push_sum_duration": args.push_sum_duration},
     }

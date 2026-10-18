@@ -1,114 +1,81 @@
-from typing import List
-from dasklearn.simulation.asynchronous_client import AsynchronousClient
-from dasklearn.simulation.teleportation.round import Round
-from dasklearn.simulation.teleportation.sample_manager import SampleManager
-from dasklearn.simulation.events import *
+"""Causal, token-preserving SGD -> same-round gossip -> model handoff."""
+from collections import defaultdict
+from dasklearn.simulation.client import BaseClient
+from dasklearn.simulation.events import Event, START_ROUND, START_TRAIN, INCOMING_MODEL
 from dasklearn.tasks.task import Task
 
 
-class TeleportationClient(AsynchronousClient):
-
-    def __init__(self, simulator, index: int):
+class TeleportationClient(BaseClient):
+    def __init__(self, simulator, index):
         super().__init__(simulator, index)
-        self.round_info: Dict[int, Round] = {}
+        self.rounds = defaultdict(lambda: {"incoming": {}, "started": False,
+                                          "trained": False, "mixed": False})
 
-    def init_client(self, _: Event):
-        sample: List[int] = SampleManager.get_sample(1, len(self.simulator.clients), self.simulator.settings.sample_size)
+    def init_client(self, event):
+        if self.index in self.simulator.sample(1):
+            self.simulator.schedule(Event(event.time, self.index, START_ROUND,
+                                          {"round": 1, "model": (None, 0)}))
 
-        if self.index in sample:
-            round = Round(1)
-            start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round)
-            self.simulator.schedule(start_round_event)
+    def start_round(self, event):
+        state = self.rounds[event.data["round"]]
+        if state["started"]:
+            return
+        state["started"] = True
+        self.simulator.schedule(Event(self.simulator.current_time, self.index, START_TRAIN, event.data))
 
-    def start_round(self, event: Event):
-        round_info: Round = event.data
-        self.round_info[round_info.round_nr] = round_info
-        round_nr: int = round_info.round_nr
-        if round_nr < 1:
-            raise RuntimeError("Round number %d invalid!" % round_nr)
-        
-        # Should we test the model?
-        if round_nr > 1 and (round_nr - 1) % self.simulator.settings.test_interval == 0:
-            test_task_name = "test_%d_%d" % (self.index, round_nr)
-            task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr - 1, "time": self.simulator.current_time, "peer": self.index})
-            self.add_compute_task(task)
-            round_info.model = (test_task_name, 0)
-
-        self.client_log(f"Node {self.index} starts training in round {round_nr}")
-
-        # 1. Train the model
-        self.schedule_train(round_info)
-
-    def finish_train(self, event: Event):
-        """
-        We finished training.
-        """
-        round_nr: int = event.data["round"]
-        round_info: Round = self.round_info[round_nr]
-        round_info.is_training = False
-        round_info.train_done = True
-        round_info.model = event.data["model"]
-
-        # 2. Start sharing the models in the G_k topology related ot the currente sample
-        sample: List[int] = SampleManager.get_sample(round_nr, len(self.simulator.clients), self.simulator.settings.sample_size)
-        index_in_sample: int = sample.index(self.index)
-        nbs = list(self.simulator.G_k.neighbors(index_in_sample))
-        
-        # Send the model to the neighbors
-        for nb_idx_in_graph in nbs:
-            nb = sample[nb_idx_in_graph]
-            self.send_model(nb, round_info.model, metadata={"round": round_nr, "type": "in_sample"})
-
-    def on_incoming_model(self, event: Event):
-        if event.data["metadata"]["type"] == "in_sample":
-            self.handle_incoming_model_in_sample(event)
-        elif event.data["metadata"]["type"] == "next_sample":
-            self.handle_incoming_model_next_sample(event)
-
-    def handle_incoming_model_in_sample(self, event: Event):
-        model_round = event.data["metadata"]["round"]
-        self.client_log("Peer %d received in-sample model from %d in round %d" %
-                        (self.index, event.data["from"], model_round))
-        current_sample = SampleManager.get_sample(model_round, len(self.simulator.clients), self.simulator.settings.sample_size)
-        if self.index not in current_sample:
-            raise RuntimeError("Client %d not in sample of round %d!" % (self.index, model_round))
-
-        if model_round not in self.round_info:
-            # We were not activated yet by the previous sample - start a new round
-            round_info: Round = Round(model_round)
-            self.round_info[model_round] = round_info
+    def transmit(self, peer, model, round_nr, phase):
+        metadata = {"round": round_nr, "phase": phase}
+        if peer == self.index:
+            self.simulator.schedule(Event(self.simulator.current_time, peer, INCOMING_MODEL,
+                {"from": self.index, "to": peer, "model": model, "metadata": metadata}))
         else:
-            # We are currently working on this round.
-            round_info: Round = self.round_info[model_round]
-        round_info.incoming_models[event.data["from"]] = event.data["model"]
+            self.send_model(peer, model, metadata)
 
-        # Do we have all the models?
-        index_in_sample: int = current_sample.index(self.index)
-        if len(round_info.incoming_models) == len(list(self.simulator.G_k.neighbors(index_in_sample))):
-            # We are done with training in this round - aggregate and send the model to the next sample.
-            round_info.model = self.aggregate_models(
-                list(round_info.incoming_models.values()) + [round_info.model], round_info.round_nr)
-            
-            # Send it to the next sample
-            next_sample: int = SampleManager.get_sample(model_round + 1, len(self.simulator.clients), self.simulator.settings.sample_size)
-            self.send_model(next_sample[index_in_sample], round_info.model, metadata={"round": model_round + 1, "type": "next_sample"})
+    def start_transfer(self, event):
+        self.bw_scheduler.add_transfer(self.simulator.clients[event.data["to"]].bw_scheduler,
+            self.data_transfer_size(self.simulator.model_size, event.data["metadata"]),
+            event.data["model"], event.data["metadata"])
 
-    def handle_incoming_model_next_sample(self, event: Event):
-        model_round = event.data["metadata"]["round"]
-        self.client_log("Peer %d received next-sample model from %d for round %d" %
-                        (self.index, event.data["from"], model_round))
-        current_sample = SampleManager.get_sample(model_round, len(self.simulator.clients), self.simulator.settings.sample_size)
-        if self.index not in current_sample:
-            raise RuntimeError("Client %d not in sample of round %d!" % (self.index, model_round))
+    def finish_train(self, event):
+        round_nr = event.data["round"]
+        state = self.rounds[round_nr]
+        if state["trained"]:
+            return
+        state["trained"] = True
+        state["model"] = event.data["model"]
+        self.compute_time += event.data["train_time"]
+        sample = self.simulator.sample(round_nr)
+        for token in self.simulator.neighbors(sample.index(self.index)):
+            self.transmit(sample[token], state["model"], round_nr, "mix")
+        self.try_mix(round_nr)
 
-        next_round: Round = Round(model_round)
-        next_round.model = event.data["model"]
-        self.round_info[model_round + 1] = next_round
-        start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=next_round)
-        self.simulator.schedule(start_round_event)
+    def on_incoming_model(self, event):
+        round_nr = event.data["metadata"]["round"]
+        if event.data["metadata"]["phase"] == "handoff":
+            self.simulator.schedule(Event(self.simulator.current_time, self.index, START_ROUND,
+                {"round": round_nr, "model": event.data["model"]}))
+        else:
+            self.rounds[round_nr]["incoming"][event.data["from"]] = event.data["model"]
+            self.try_mix(round_nr)
 
-    def schedule_train(self, round_info: Round):
-        round_info.is_training = True
-        start_train_event = Event(self.simulator.current_time, self.index, START_TRAIN, data={
-            "model": round_info.model, "round": round_info.round_nr})
-        self.simulator.schedule(start_train_event)
+    def try_mix(self, round_nr):
+        state = self.rounds[round_nr]
+        sample = self.simulator.sample(round_nr)
+        token = sample.index(self.index)
+        neighbors = [sample[i] for i in self.simulator.neighbors(token)]
+        if state["mixed"] or not state["trained"] or not set(neighbors).issubset(state["incoming"]):
+            return
+        state["mixed"] = True
+        models = [state["model"]] + [state["incoming"][peer] for peer in neighbors]
+        # Symmetric regular graph plus self-loop: W is doubly stochastic.
+        task = Task(Task.generate_name("teleport_mix"), "aggregate", {
+            "models": models, "round": round_nr, "peer": self.index,
+            "time": self.simulator.current_time})
+        self.add_compute_task(task)
+        model = (task.name, 0)
+        self.publish_model(round_nr, model)
+        if self.simulator.settings.test_method == "individual" and self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0:
+            self.add_compute_task(Task(Task.generate_name("test"), "test", {
+                "model": model, "round": round_nr, "peer": self.index, "time": self.simulator.current_time}))
+        if self.simulator.settings.rounds <= 0 or round_nr < self.simulator.settings.rounds:
+            self.transmit(self.simulator.sample(round_nr + 1)[token], model, round_nr + 1, "handoff")

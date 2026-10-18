@@ -168,7 +168,7 @@ def test(settings: SessionSettings, params: Dict):
 def chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
     model = params["model"]
     num_chunks = params["n"]
-    chunks = ChunkManager.chunk_model(model, num_chunks)
+    chunks = ChunkManager.chunk_model(model, num_chunks, weights=params.get("weights"))
     return chunks
 
 
