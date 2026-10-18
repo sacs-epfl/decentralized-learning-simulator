@@ -1,0 +1,137 @@
+{
+  "status": "complete",
+  "host": "sacs006",
+  "execution_commit": "bd80909",
+  "source_sha256": "9be351fee9cdac4fc49816d87665cabfcef722ba0d0c1161cdd2e22513cbe96c",
+  "code_directory": "/mnt/data/mdevos/conflux/peer-baselines-code",
+  "python": "/mnt/data/mdevos/conda/envs/conflux-gpu/bin/python",
+  "results_directory": "/mnt/data/mdevos/conflux/results/peer-baselines64",
+  "variants": [
+    "conflux-v2",
+    "shatter-r2",
+    "teleportation-ring",
+    "teleportation-hypercube",
+    "d-local-sgd-ring",
+    "moshpit"
+  ],
+  "profiles": [
+    "uniform",
+    "heterogeneous"
+  ],
+  "partitioners": [
+    "iid",
+    "dirichlet"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "peers": 64,
+  "sample_size": 16,
+  "chunks": 8,
+  "group_size": 8,
+  "averaging_steps": 1,
+  "duration_simulated_s": 900,
+  "test_period_simulated_s": 150,
+  "dataset": "cifar10",
+  "model": "gnlenet",
+  "alpha": 0.1,
+  "batch_size": 32,
+  "local_steps": 5,
+  "learning_rate": 0.01,
+  "momentum": 0,
+  "weight_decay": 0,
+  "mean_bandwidth_bytes_s": 100000,
+  "nominal_compute_step_ms": 20,
+  "latency_ms": 20,
+  "model_bytes": 346251,
+  "evaluation_examples": 10000,
+  "evaluation_split": "test",
+  "tests": {
+    "linux_cuda": "80 passed",
+    "macos_cpu": "74 passed, 6 skipped"
+  },
+  "jobs": [
+    {
+      "profile": "heterogeneous",
+      "gpu": 1,
+      "pid": 477002,
+      "log": "/mnt/data/mdevos/conflux/logs/peer-baselines64-heterogeneous.log"
+    },
+    {
+      "profile": "uniform",
+      "gpu": 0,
+      "pid": 477068,
+      "waits_for": "/mnt/data/mdevos/conflux/results/tiny128-long18000/shatter-r2/COMPLETE",
+      "log": "/mnt/data/mdevos/conflux/logs/peer-baselines64-uniform.log"
+    }
+  ],
+  "readout": "All-node stored post-aggregation checkpoint mean; latest completed V2 aggregate is saved separately. No free parameter averaging.",
+  "limitations": [
+    "Three-seed short screening under common hyperparameters, not individually tuned paper reproductions.",
+    "Stable membership; oracle membership discovery.",
+    "GPU execution time separate from simulated protocol performance."
+  ],
+  "exploratory_ablation": {
+    "variant": "moshpit",
+    "label": "Moshpit T=2 (full-grid consensus)",
+    "averaging_steps": 2,
+    "runs": 12,
+    "profiles": [
+      "uniform",
+      "heterogeneous"
+    ],
+    "partitioners": [
+      "iid",
+      "dirichlet"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "output": "/mnt/data/mdevos/conflux/results/peer-baselines64/moshpit-full",
+    "log": "/mnt/data/mdevos/conflux/logs/peer-baselines64-moshpit-full.log",
+    "starts_after": "heterogeneous/COMPLETE",
+    "purpose": "Check whether a full averaging block improves the group-averaging baseline; report both configurations without test-set selection."
+  },
+  "uniform_dispatch": {
+    "strategy": "Retain completed IID runs; split remaining Dirichlet seeds into nonoverlapping GPU cohorts. Protocol source and all learning/capacity settings unchanged.",
+    "original_pid": 477068,
+    "retained_iid_runs": 18,
+    "cohorts": [
+      {
+        "gpu": 1,
+        "seeds": [
+          0,
+          1
+        ],
+        "directory": "uniform-dir-s01"
+      },
+      {
+        "gpu": 0,
+        "seeds": [
+          2
+        ],
+        "directory": "uniform-dir-s2"
+      }
+    ],
+    "dispatcher": "split_uniform.py",
+    "per_cohort_commands": "uniform-dir-s01-dispatch.json and uniform-dir-s2-dispatch.json"
+  },
+  "audited_runs": 84,
+  "audited_per_node_checkpoint_rows": 32256,
+  "all_learning_and_capacity_assignments_exact": true,
+  "results": [
+    "comparison.csv",
+    "accuracy.png",
+    "loss.png",
+    "traffic-accuracy.png",
+    "audit.json",
+    "with-ablation/table.md",
+    "with-ablation/paired-v2-comparison.csv",
+    "with-ablation/time-to-accuracy.csv",
+    "with-ablation/audit.json"
+  ]
+}

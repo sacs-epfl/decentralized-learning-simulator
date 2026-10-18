@@ -353,6 +353,20 @@ All new baselines support the shared local executor and require zero momentum
 and stable membership. Their validation includes exact averaging, token
 handoff/causality, bandwidth-aware allocation and network-byte conservation.
 
+The completed 84-run, three-seed CIFAR-10/GNLeNet comparison uses 64 clients,
+IID/Dirichlet-alpha-0.1 data, uniform/heterogeneous networks and a common
+900-second simulated budget. In the heterogeneous non-IID case, V2 reaches
+34.63% ± 1.37% all-node accuracy, versus 31.92% ± 0.61% for two-phase Moshpit,
+30.66% ± 0.84% for one-phase Moshpit, and 20.27% ± 0.34% for Shatter. V2 reaches
+30% at 600 seconds in every seed, compared with 750–900 seconds for two-phase
+Moshpit, and sends 0.565 GB versus 1.771 GB at the full budget. Moshpit wins
+the uniform-network cases; for uniform IID it reaches 56.33% ± 0.67% versus
+V2's 47.68% ± 0.62%, using about eight times the traffic. The
+[full results and limitations](docs/peer-baselines.md#completed-results) include
+Teleportation, the ring reference, loss, paired-seed differences and censored
+targets. These common-parameter screenings are not individually tuned paper
+reproductions or a universal ranking.
+
 The local executor additionally enables GPU residency and training batching by
 default on CUDA. Residency reuses private GPU training workspaces and a bounded
 cache of repeated input-model versions (256 MiB by default). Independent ready

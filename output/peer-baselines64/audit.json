@@ -1,0 +1,734 @@
+{
+  "passed": true,
+  "runs": [
+    {
+      "variant": "conflux-v2",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "conflux-v2",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "shatter-r2",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-ring",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "teleportation-hypercube",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "d-local-sgd-ring",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    },
+    {
+      "variant": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "all_nodes_per_checkpoint": true,
+      "finite_metrics": true,
+      "final_traffic_exact": true
+    }
+  ],
+  "source_sha256": "9be351fee9cdac4fc49816d87665cabfcef722ba0d0c1161cdd2e22513cbe96c",
+  "readout": "Mean accuracy/loss across all physical nodes' stored post-aggregation checkpoints. Additional V2 latest-aggregate readout is distinct; no uncharged global parameter average.",
+  "limitations": [
+    "Three training/capacity seeds; short CIFAR screening, not a universal ranking.",
+    "Common hyperparameters, not individually tuned paper reproductions.",
+    "Stable membership and oracle discovery; full published systems are not reproduced.",
+    "Accuracy targets are first observed fixed checkpoints; unreached targets are censored.",
+    "GPU wall time is recorded separately from simulated protocol time."
+  ]
+}
