@@ -393,3 +393,14 @@ See the [accuracy curves](output/tiny-imagenet-validation/tiny128-optimized/accu
 and [source audit](output/tiny-imagenet-validation/source-audit.json).
 Full DAGs and per-node snapshot CSVs remain on the server in
 `/mnt/data/mdevos/conflux/results/tiny128` and `tiny128-optimized`.
+
+A longer follow-up was launched on `sacs006` on 18 October 2026: the same
+128-node, seed-0, heterogeneous Dirichlet-alpha-0.1 comparison, extended to
+18,000 simulated seconds. Shatter degree 2 and Conflux V2 each use one GPU.
+Learning, data, model and capacity settings are unchanged; snapshots use the
+same balanced 2,000-image subset every 900 seconds, followed by all 10,000
+heldout images at the final snapshot. The
+[launch plan](output/tiny-imagenet-validation/tiny128-long18000/plan.json)
+records the source hash, exact commands, logs and server output directory.
+Results are pending. An automated follow-up checks completion and correctness
+and collects the results without imposing a runtime cutoff.
