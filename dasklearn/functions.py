@@ -37,6 +37,10 @@ def initialize(settings: SessionSettings, params: Dict):
         return [create_model(settings.dataset, architecture=settings.model)]
 
 
+def training_seed(settings, params):
+    return (settings.seed + 1000003 * params["peer"] + 9176 * params["round"]) % (2 ** 63)
+
+
 def train(settings: SessionSettings, params: Dict):
     global dataset, model_trainers
     model = params["model"]
@@ -70,7 +74,7 @@ def train(settings: SessionSettings, params: Dict):
     if gradient_model:
         trainer.gradient_update(model, gradient_model)
     else:
-        task_seed = (settings.seed + 1000003 * peer_id + 9176 * round_nr) % (2 ** 63)
+        task_seed = training_seed(settings, params)
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(task_seed)
             train_info = trainer.train(model, local_steps, compute_gradient, settings.torch_device_name, seed=task_seed)

@@ -30,6 +30,7 @@ from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.tasks.local import execute_local
+from dasklearn.tasks.training import add_training_arguments
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS
 
@@ -49,6 +50,8 @@ async def run_one(args, variant, profile, partitioner, seed):
         dataset_base_path=getattr(args, "dataset_base_path", None),
         torch_device_name=getattr(args, "device", "cpu"),
         evaluation_split=getattr(args, "evaluation_split", "test"),
+        gpu_residency=getattr(args,"gpu_residency",True), training_batching=getattr(args,"training_batching",True),
+        training_batch_size=getattr(args,"training_batch_size",2), gpu_state_cache_mb=getattr(args,"gpu_state_cache_mb",256),
         alpha=args.alpha, learning=LearningSettings(args.learning_rate, getattr(args, "momentum", 0),
             getattr(args, "weight_decay", 0), getattr(args, "batch_size", 32), args.local_steps),
         rounds=0, duration=int(args.duration * MICROSECONDS), stop="duration",
@@ -89,6 +92,7 @@ async def run_one(args, variant, profile, partitioner, seed):
         print(json.dumps({"run": Path(sim.data_dir).name, **status}), flush=True)
     execute_local(sim, retain_results=not getattr(args, "streaming", False),
                   progress=progress if getattr(args, "streaming", False) else None)
+    (Path(sim.data_dir)/"training-executor.json").write_text(json.dumps(sim.execution_training_stats,indent=2)+"\n")
     sim.merge_accuracies_files()
     frame = pd.read_csv(Path(sim.data_dir) / "accuracies.csv")
     curve = frame.groupby("time", as_index=False).agg(accuracy=("accuracy", "mean"), loss=("loss", "mean"), nodes=("peer", "nunique"))
@@ -149,6 +153,7 @@ async def main():
     parser.add_argument("--learning-rate", type=float, default=0.1)
     parser.add_argument("--local-steps", type=int, default=5)
     parser.add_argument("--alpha", type=float, default=0.3)
+    add_training_arguments(parser)
     args = parser.parse_args()
     args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=True)

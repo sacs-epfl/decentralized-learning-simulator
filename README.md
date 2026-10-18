@@ -345,6 +345,45 @@ unused output model; cached sink metrics additionally avoid copying a model
 that will not be evaluated. Regression tests cover eviction, budget bypass,
 last-use release and exact snapshot equality for both protocols.
 
+The local executor additionally enables GPU residency and training batching by
+default on CUDA. Residency reuses private GPU training workspaces and a bounded
+cache of repeated input-model versions (256 MiB by default). Independent ready
+tasks train concurrently on separate CUDA streams, with two models per group.
+Each model retains its own parameters, SGD momentum, data batches and BatchNorm
+buffers. A new optimizer is created for every local training task. Data sampling
+happens serially with the original per-task seeds; stochastic forwards and
+non-native data pipelines retain scalar execution. DAG values, chunk averaging
+and snapshot semantics stay on CPU with their original ordering.
+
+Before enabling concurrent batches, startup calibration warms both paths,
+compares three complete-task timings, and requires exact CUDA state equality
+and at least a 5% median improvement over resident serial training. Unsupported
+batch operations and batch memory exhaustion fall back to serial execution;
+unrelated errors propagate. CPU and other devices use the reference executor.
+The actual decision, fallback reasons, input-cache counters and peak prefetch
+count are recorded in `training-executor.json` and progress logs. Prefetching
+never publishes a task before its original heap position and holds at most one
+group of extra output models. Resident resources are released on completion or
+failure.
+
+Use these options with `run_tiny.py` or `run_cifar.py`:
+
+```sh
+--no-training-batching              # Residency with serial local training
+--no-gpu-residency                  # Fresh GPU workspaces for each task/group
+--no-gpu-residency --no-training-batching  # Reference execution
+--training-batch-size 2             # Maximum independent clients per group
+--gpu-state-cache-mb 256            # Zero disables the input-version cache
+```
+
+`scripts/benchmark_training.py --data <tiny-dataset-path> --output <new-path>`
+compares reference training, residency and batch widths 2, 4 and 8 using the
+same client partitions and seeds. It times complete SGD tasks, validates model
+states, and reports dataset loading and warmup separately. CUDA batching uses
+ordinary per-model kernels on independent streams; direct model-axis
+vectorization is not selected on CUDA because it failed the ResNet18 numerical
+guard. No BatchNorm statistics are disabled or shared between clients.
+
 #### Tiny ImageNet results on 128 nodes
 
 The one-seed heterogeneous runs completed on `sacs006`. At 1,800 simulated

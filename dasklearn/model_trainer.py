@@ -60,13 +60,8 @@ class ModelTrainer:
         avg_loss = total_loss / len(validation_set)
         return float(avg_loss)
 
-    def train(self, model, local_steps: int, gradient_only: bool = False, device_name: str = "cpu", seed=None) -> Dict:
-        """
-        Train the model on a batch. Return an integer that indicates how many local steps we have done.
-        """
-        self.is_training = True
-
-        # Load the partition if it's not loaded yet
+    def prepare_partition(self):
+        """Load exactly the same partition/transforms for all execution backends."""
         if not self.partition:
             self.partition = self.dataset.load_partition(self.participant_index, "train")
             if self.settings.dataset == "cifar10":
@@ -89,6 +84,17 @@ class ModelTrainer:
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
+    def make_train_loader(self, seed=None):
+        self.prepare_partition()
+        generator = torch.Generator().manual_seed(seed) if seed is not None else None
+        return DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True, generator=generator)
+
+    def train(self, model, local_steps: int, gradient_only: bool = False, device_name: str = "cpu", seed=None,
+              keep_on_device=False) -> Dict:
+        """Train a private model; accelerator executors may retain its workspace."""
+        self.is_training = True
+        self.prepare_partition()
+
         validation_loss_global_model: Optional[float] = None
         if self.settings.compute_validation_loss_global_model and len(self.dataset.validationset) > 0:
             validation_loss_global_model = self.get_validation_loss(model)
@@ -96,8 +102,7 @@ class ModelTrainer:
         device = torch.device(device_name)
         model = model.to(device)
 
-        generator = torch.Generator().manual_seed(seed) if seed is not None else None
-        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True, generator=generator)
+        train_loader = self.make_train_loader(seed)
 
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
         self.logger.debug("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
@@ -150,7 +155,8 @@ class ModelTrainer:
             del data, target, output, loss
 
         self.is_training = False
-        model.to("cpu")
+        if not keep_on_device:
+            model.to("cpu")
         if self.settings.release_cuda_cache and torch.cuda.is_available():
             torch.cuda.empty_cache()
 

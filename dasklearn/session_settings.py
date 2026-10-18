@@ -70,3 +70,7 @@ class SessionSettings:
     evaluation_examples: int = 0
     release_cuda_cache: bool = False  # Opt in when sharing a GPU with other applications.
     model_size_bytes: Optional[int] = None  # Explicit payload size for paired/replayed experiments.
+    gpu_residency: bool = True
+    training_batching: bool = True
+    training_batch_size: int = 2
+    gpu_state_cache_mb: int = 256

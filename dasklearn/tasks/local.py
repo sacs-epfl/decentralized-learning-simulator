@@ -1,6 +1,7 @@
 """Serial execution of the real simulator DAG for small reproducible experiments."""
 import copy
 from collections import Counter, OrderedDict
+from contextlib import ExitStack
 import heapq
 import time
 import torch
@@ -8,7 +9,14 @@ from dasklearn import functions
 
 
 def execute_local(simulation, retain_results=True, progress=None, share_readonly_inputs=True,
-                  reconstruction_cache_bytes=64 * 1024 * 1024):
+                  reconstruction_cache_bytes=64 * 1024 * 1024, training_backend=None):
+    with ExitStack() as resources:
+        return _execute_local(simulation,retain_results,progress,share_readonly_inputs,
+                              reconstruction_cache_bytes,training_backend,resources)
+
+
+def _execute_local(simulation,retain_results,progress,share_readonly_inputs,
+                   reconstruction_cache_bytes,training_backend,resources):
     if reconstruction_cache_bytes < 0:
         raise ValueError("reconstruction_cache_bytes must be nonnegative")
     functions.dataset = None
@@ -74,12 +82,49 @@ def execute_local(simulation, retain_results=True, progress=None, share_readonly
             return [resolve(item, share) for item in value]
         return value
 
+    settings = simulation.settings
+    if training_backend is None and torch.device(getattr(settings,"torch_device_name","cpu")).type == "cuda" and (
+            settings.gpu_residency or settings.training_batching):
+        from dasklearn.tasks.training import TrainingExecutor
+        training_backend = TrainingExecutor(settings)
+    if training_backend:resources.callback(training_backend.close)
+    prefetched, prefetch_times = {}, {}
+    prefetch_peak = 0
+    input_counts = Counter(model_key(t.data["model"]) for t in tasks.values() if t.func == "train") if training_backend else {}
+
     while ready:
         _, _, name = heapq.heappop(ready)
         task = tasks[name]
+        if training_backend and task.func == "train" and name not in prefetched and training_backend.can_train(task.data):
+            selected = [task]
+            # Prefetch only already-ready independent tasks. Their outputs are
+            # published at the original heap position, preserving bookkeeping,
+            # snapshot references and simulated protocol timestamps exactly.
+            if training_backend.can_batch(task.data):
+                scanned = []
+                slots = max(1,training_backend.width-len(prefetched))
+                while ready and len(scanned) < 128 and len(selected) < slots:
+                    entry = heapq.heappop(ready);scanned.append(entry)
+                    candidate = tasks[entry[2]]
+                    if candidate.func == "train" and candidate.name not in prefetched and training_backend.can_batch(candidate.data):
+                        selected.append(candidate)
+                for entry in scanned:heapq.heappush(ready,entry)
+            keys = [model_key(t.data["model"]) for t in selected]
+            resolved = [resolve(t.data,share=True) for t in selected]
+            begin = time.perf_counter()
+            values = training_backend.train_many(resolved,[k if input_counts[k]>1 else None for k in keys])
+            elapsed = (time.perf_counter()-begin)/len(selected)
+            for selected_task,key,value in zip(selected,keys,values):
+                prefetched[selected_task.name]=[value];prefetch_times[selected_task.name]=elapsed
+                input_counts[key]-=1
+                if input_counts[key]==0:training_backend.drop_input(key)
+            prefetch_peak=max(prefetch_peak,len(prefetched))
+            del resolved,values
         started = time.perf_counter()
         reconstruction = reconstruction_key(task) if task.func == "reconstruct_from_chunks" else None
-        if reconstruction in reconstruction_cache:
+        if name in prefetched:
+            results[name] = prefetched.pop(name)
+        elif reconstruction in reconstruction_cache:
             results[name] = reconstruction_cache[reconstruction][0]
             reconstruction_cache.move_to_end(reconstruction)
             cache_hits += 1
@@ -115,7 +160,8 @@ def execute_local(simulation, retain_results=True, progress=None, share_readonly
                 del duplicate_counts[reconstruction]
                 if reconstruction in reconstruction_cache:
                     drop_cached(reconstruction)
-        timings[task.func] = timings.get(task.func, 0) + time.perf_counter() - started
+        task_elapsed = prefetch_times.pop(name) if name in prefetch_times else time.perf_counter()-started
+        timings[task.func] = timings.get(task.func, 0) + task_elapsed
         completed += 1
         for predecessor, _ in task.inputs:
             remaining[predecessor.name] -= 1
@@ -130,7 +176,11 @@ def execute_local(simulation, retain_results=True, progress=None, share_readonly
         if progress and (completed % 500 == 0 or completed == len(tasks)):
             progress({"completed": completed, "total": len(tasks), "live_results": len(results), "timings_s": timings,
                       "reconstruction_cache_hits": cache_hits, "reconstruction_cache_bytes": cached_bytes,
-                      "reconstruction_cache_peak_bytes": cache_peak_bytes})
+                      "reconstruction_cache_peak_bytes": cache_peak_bytes,
+                      "training_backend":training_backend.status() if training_backend else {"active":False}})
+    simulation.execution_training_stats = training_backend.status() if training_backend else {
+        "active":False,"reason":"Reference executor: non-CUDA device or both optimizations disabled"}
+    simulation.execution_training_stats["prefetch_peak_models"]=prefetch_peak
     if completed != len(tasks):
         raise RuntimeError("DAG contains a cycle or unresolved inputs")
     return results

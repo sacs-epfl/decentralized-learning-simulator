@@ -21,6 +21,7 @@ from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.tasks.local import execute_local
+from dasklearn.tasks.training import add_training_arguments
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS
 from dasklearn import AUGMENTATION_FACTOR_SIM
@@ -51,6 +52,7 @@ async def main():
                    help="Fixed simulated payload size, pinned to the original ResNet18 run")
     p.add_argument("--calibrate", action="store_true")
     p.add_argument("--no-final-full", action="store_true")
+    add_training_arguments(p)
     args = p.parse_args()
     device = args.device
     if device == "auto":
@@ -68,6 +70,8 @@ async def main():
         dataset_base_path=args.data, partitioner="dirichlet", alpha=.1,
         torch_device_name=str(device), torch_threads=args.torch_threads,
         release_cuda_cache=args.release_cuda_cache, model_size_bytes=args.model_bytes,
+        gpu_residency=args.gpu_residency, training_batching=args.training_batching,
+        training_batch_size=args.training_batch_size, gpu_state_cache_mb=args.gpu_state_cache_mb,
         learning=LearningSettings(args.learning_rate, args.momentum, 0, 32, args.local_steps),
         rounds=0, duration=args.duration*MICROSECONDS, stop="duration", test_interval=0,
         test_method="snapshot", test_period=args.test_period*MICROSECONDS,
@@ -135,6 +139,7 @@ async def main():
     def progress(status):
         print(json.dumps(status),flush=True)
     execute_local(sim,retain_results=False,progress=progress)
+    (args.output/"training-executor.json").write_text(json.dumps(sim.execution_training_stats,indent=2)+"\n")
     sim.merge_accuracies_files()
     frame=pd.read_csv(Path(sim.data_dir)/"accuracies.csv")
     curve=frame.groupby("time",as_index=False).agg(accuracy=("accuracy","mean"),loss=("loss","mean"),nodes=("peer","nunique"))

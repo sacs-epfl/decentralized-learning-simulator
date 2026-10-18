@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import torch
 from validate_conflux import run_one, plot
+from dasklearn.tasks.training import add_training_arguments
 
 
 async def main():
@@ -42,6 +43,7 @@ async def main():
     p.add_argument("--torch-threads", type=int, default=4)
     p.add_argument("--evaluation-split", choices=["test", "validation"], default="test")
     p.add_argument("--device", default="cuda:0")
+    add_training_arguments(p)
     args = p.parse_args()
     args.dataset, args.model = "cifar10", "gnlenet"
     args.success_fraction, args.equal_capacity, args.streaming = 1, True, True
