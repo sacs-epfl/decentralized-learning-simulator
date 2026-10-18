@@ -591,3 +591,5 @@ See the [combined scientific figure](output/tiny-imagenet-validation/tiny128-lon
 [aggregate and staleness checkpoints](output/tiny-imagenet-validation/tiny128-long18000/latest-v2-aggregate.csv),
 and [censored time to accuracy](output/tiny-imagenet-validation/tiny128-long18000/time-to-accuracy.csv).
 Raw DAGs and per-node files remain in the planned server results directory.
+
+[DeMo sparse Signum baseline and CIFAR evaluation](docs/demo.md).

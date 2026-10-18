@@ -193,3 +193,50 @@ def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict) ->
     model = create_model_structure(settings.dataset, architecture=settings.model)
     model = ChunkManager.weighted_reconstruct_model(result, model)
     return [model]
+
+
+def demo_prepare(settings, params):
+    """Accumulate H microbatch gradients at fixed parameters, then compress.
+
+H is compute matched to the local-SGD block in other baselines. It is gradient
+accumulation, NOT H local DeMo steps without communicating. H=1 is canonical.
+"""
+    from dasklearn.optimizer.demo import prepare
+    global dataset, model_trainers
+    if dataset is None:
+        dataset = create_dataset(settings)
+    if model_trainers is None:
+        model_trainers = [None] * settings.participants
+    peer = params['peer']
+    if model_trainers[peer] is None:
+        model_trainers[peer] = ModelTrainer(dataset, settings, peer)
+    trainer = model_trainers[peer]
+    seed = training_seed(settings, params)
+    device = settings.torch_device_name
+    model = copy.deepcopy(params['model']).to(device).train()
+    parameters = list(model.parameters())
+    gradients = [torch.zeros_like(p) for p in parameters]
+    lossf = torch.nn.NLLLoss() if settings.dataset == 'cifar10' and settings.model not in ['resnet8', 'resnet18', 'mobilenet_v3_large'] else torch.nn.CrossEntropyLoss()
+    feature = 'x' if settings.dataset == 'femnist' else 'image' if settings.dataset == 'tiny_imagenet' else 'img'
+    label = 'y' if settings.dataset == 'femnist' else 'label'
+    cuda_devices = [torch.device(device).index or 0] if torch.device(device).type == 'cuda' else []
+    with torch.random.fork_rng(devices=cuda_devices):
+        torch.manual_seed(seed)
+        loader = trainer.make_train_loader(seed); batches = iter(loader)
+        for _ in range(settings.learning.local_steps):
+            try: batch = next(batches)
+            except StopIteration:
+                batches = iter(loader); batch = next(batches)
+            model.zero_grad(set_to_none=True)
+            lossf(model(batch[feature].to(device)), batch[label].to(device)).backward()
+            for gradient, parameter in zip(gradients, parameters):
+                gradient.add_(parameter.grad / settings.learning.local_steps)
+    packet, residual = prepare(gradients, params['residual'], settings.learning.learning_rate,
+        settings.compression_decay, settings.compression_chunk, settings.compression_topk)
+    return [packet, residual]
+
+
+def demo_update(settings, params):
+    from dasklearn.optimizer.demo import update
+    return [update(params['model'], params['packets'], settings.learning.learning_rate,
+                   settings.learning.weight_decay, settings.compression_chunk)]

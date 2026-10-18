@@ -7,10 +7,16 @@ from dasklearn.simulation.dspodfl.settings import DSpodFLSettings
 from dasklearn.simulation.dspodfl.simulation import DSpodFLSimulation
 
 
-BASELINE_VARIANTS = ("teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
+from dasklearn.simulation.demo.settings import DeMoSettings
+from dasklearn.simulation.demo.simulation import DeMoSimulation
+
+
+BASELINE_VARIANTS = ("demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
 
 
 def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
+    if variant == 'demo':
+        return DeMoSimulation, DeMoSettings, {}
     if variant == 'dspodfl':
         return DSpodFLSimulation,DSpodFLSettings,{}
     if variant == "moshpit":

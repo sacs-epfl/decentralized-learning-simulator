@@ -13,6 +13,7 @@ from dasklearn.util import MICROSECONDS
 
 # Mapping of algorithms to their respective settings and simulation classes
 ALGORITHM_MAPPING = {
+    "demo": ("dasklearn.simulation.demo.settings.DeMoSettings", "dasklearn.simulation.demo.simulation.DeMoSimulation"),
     "fl": ("dasklearn.simulation.fl.settings.FLSettings", "dasklearn.simulation.fl.simulation.FLSimulation"),
     "dpsgd": ("dasklearn.simulation.dpsgd.settings.DPSGDSettings", "dasklearn.simulation.dpsgd.simulation.DPSGDSimulation"),
     "epidemic": ("dasklearn.simulation.dpsgd.settings.DPSGDSettings", "dasklearn.simulation.dpsgd.simulation.DPSGDSimulation"),
@@ -125,7 +126,9 @@ def run():
 
     # Add algorithm-specific parameters
     from dasklearn.simulation.dspodfl.settings import dspodfl_options
+    from dasklearn.simulation.demo.settings import demo_options
     algorithm_params = {
+        "demo": demo_options(args),
         "dspodfl": dspodfl_options(args),
         "fl": {"sample_size": args.sample_size},
         "dpsgd": {"el": args.el, "topology": args.topology, "k": args.k},

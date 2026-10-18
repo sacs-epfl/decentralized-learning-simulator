@@ -33,6 +33,7 @@ from dasklearn.tasks.local import execute_local
 from dasklearn.tasks.training import add_training_arguments
 from dasklearn.simulation.peer_baselines import BASELINE_VARIANTS, baseline_spec
 from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments, dspodfl_options
+from dasklearn.simulation.demo.settings import add_demo_arguments, demo_options
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS
 
@@ -56,6 +57,7 @@ async def run_one(args, variant, profile, partitioner, seed):
                             immediate_uploads=getattr(args, "immediate_uploads", False))
     else:
         raise ValueError("Unknown comparison variant: " + variant)
+    if variant=='demo':specific.update(demo_options(args))
     if variant=='dspodfl':specific.update(dspodfl_options(args))
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
         dataset=args.dataset, model=getattr(args, "model", "mlp"), participants=args.peers, partitioner=partitioner,
@@ -123,6 +125,10 @@ async def run_one(args, variant, profile, partitioner, seed):
     sim.merge_accuracies_files()
     frame = pd.read_csv(Path(sim.data_dir) / "accuracies.csv")
     pd.DataFrame(network_rows).to_csv(Path(sim.data_dir)/"network-snapshots.csv", index=False)
+    if variant == "demo":
+        completions = [{"peer": c.index, "round": r, "time": s["completed_time"] / MICROSECONDS}
+            for c in sim.clients for r, s in c.rounds.items() if s["done"]]
+        pd.DataFrame(completions).to_csv(Path(sim.data_dir) / "demo-rounds.csv", index=False)
     if variant == "conflux-v2":
         aggregate_rows = []
         for checkpoint, group in frame.groupby("time"):
@@ -144,7 +150,7 @@ async def run_one(args, variant, profile, partitioner, seed):
            "learning_rate": args.learning_rate,
            "final_accuracy": float(curve.accuracy.iloc[-1]), "final_loss": float(curve.loss.iloc[-1]),
            "model_bytes": sim.model_size, "bytes_sent": sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
-           "training_tasks": sum(t.func == "train" for t in sim.workflow_dag.tasks.values()),
+           "training_tasks": sum(t.func in {"train", "demo_prepare"} for t in sim.workflow_dag.tasks.values()),
            "simulated_compute_s": sum(c.compute_time for c in sim.clients) / MICROSECONDS,
            "actual_execution_s": time.perf_counter() - started}
     for target in [40, 50, 60, 70, 80]:
@@ -189,6 +195,7 @@ async def main():
     parser.add_argument("--relay-count", type=int, default=0)
     add_conflux_v2_arguments(parser)
     add_dspodfl_arguments(parser)
+    add_demo_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)
     parser.add_argument("--bandwidth", type=int, default=4000)
