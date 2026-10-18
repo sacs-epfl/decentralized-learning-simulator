@@ -36,7 +36,10 @@ def execute_local(simulation, retain_results=True, progress=None):
         if isinstance(value, tuple) and len(value) == 2 and value[0] in tasks:
             # Training may mutate its input model. Each DAG edge has value
             # semantics, independent of execution order or number of workers.
-            return copy.deepcopy(results[value[0]][value[1]])
+            item = results[value[0]][value[1]]
+            # deepcopy(view) copies the whole backing storage, potentially a
+            # full ResNet for every individual chunk. Clone only the slice.
+            return item.clone() if isinstance(item, torch.Tensor) else copy.deepcopy(item)
         if isinstance(value, dict):
             return {key: resolve(item) for key, item in value.items()}
         if isinstance(value, list):
@@ -49,7 +52,7 @@ def execute_local(simulation, retain_results=True, progress=None):
         data = resolve(task.data)
         started = time.perf_counter()
         if task.func == "test" and not retain_results:
-            key = model_key(task.data["model"])
+            key = (model_key(task.data["model"]), task.data.get("evaluation_examples", simulation.settings.evaluation_examples))
             data["cached_metrics"] = evaluation_cache.get(key)
             results[name] = functions.test(simulation.settings, data)
             evaluation_cache[key] = functions.last_test_metrics

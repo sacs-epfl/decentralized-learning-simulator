@@ -254,3 +254,49 @@ See the [curves](output/cifar-gpu/main128/accuracy.png),
 and [audit](output/cifar-gpu/main128/audit.json).
 Raw DAGs, individual-node CSVs, logs, dataset and Conda environment remain under
 `/mnt/data/mdevos/conflux` and `/mnt/data/mdevos/conda/envs/conflux-gpu` on the server.
+
+### Tiny ImageNet / ResNet18 comparison
+
+`scripts/prepare_tiny.py --data <dataset-path>` downloads the Tiny ImageNet
+Parquet mirror, verifies pinned SHA-256 checksums, and prepares native 64×64 RGB
+tensors. Preparation requires `pyarrow`. The loader reserves 25 training images
+per class for tuning: 95,000 images remain for training, 5,000 for tuning, and the
+10,000 labeled official validation images provide heldout evaluation. Client
+partitions are disjoint Dirichlet splits with alpha 0.1 and at least eight images
+per client. All partitions share the normalized image tensors.
+
+```sh
+export CUBLAS_WORKSPACE_CONFIG=:4096:8
+CUDA_VISIBLE_DEVICES=0 python scripts/run_tiny.py \
+  --data /mnt/data/mdevos/conflux/tiny-datasets \
+  --output /mnt/data/mdevos/conflux/results/tiny128/shatter-r2 \
+  --variant shatter-r2
+CUDA_VISIBLE_DEVICES=1 python scripts/run_tiny.py \
+  --data /mnt/data/mdevos/conflux/tiny-datasets \
+  --output /mnt/data/mdevos/conflux/results/tiny128/conflux-v2 \
+  --variant conflux-v2
+```
+
+The defaults compare Shatter degree 2 and Conflux V2 on 128 nodes, seed 0, with
+16 chunks and a V2 sample of 32. Both train torchvision ResNet18 from scratch
+with 200 outputs, the standard stem and BatchNorm, native 64×64 inputs, and no
+augmentation. Local SGD uses five steps, batch size 32, learning rate 0.01,
+momentum 0.9 and no weight decay. These are shared settings rather than the
+result of a Tiny ImageNet hyperparameter search.
+
+The heterogeneous network has an eightfold bandwidth spread, a quarter of nodes
+in the fast group, and mean bandwidth 10,000,000 bytes/s. Compute speeds are
+independently assigned and normalized to a mean simulated step time of 50 ms;
+one-way latency is 20 ms. The higher bandwidth than the CIFAR experiments suits
+the 45,195,718-byte model. Both runs use the same capacity assignment and data
+partition. They run for 1,800 simulated seconds, with measurements every 300 s.
+Curves use the same fixed, class-balanced 2,000-image heldout subset; the final
+snapshot additionally evaluates every node on all 10,000 heldout images. The
+result is the mean of individual node accuracies, without free model averaging.
+
+`--calibrate` measures actual GPU training and evaluation throughput. Actual GPU
+execution time is separate from simulated protocol time. This is an exploratory
+one-seed comparison with stable membership. The executor clones tensor slices
+without copying their entire backing model storage, which keeps large-model
+chunk processing within memory limits. Chunk reconstruction includes BatchNorm
+buffers; the focused tests check an exact full-state ResNet18 round trip.

@@ -27,7 +27,7 @@ class ModelEvaluator:
         self.settings: SessionSettings = settings
         self.partition: Optional[Dataset] = None
 
-    def evaluate_accuracy(self, model, device_name: str = "cpu"):
+    def evaluate_accuracy(self, model, device_name: str = "cpu", evaluation_examples=None):
         if not self.partition:
             partition_name = "valid" if self.settings.dataset == "tiny_imagenet" else "test"
             if self.settings.evaluation_split != "test":
@@ -52,7 +52,9 @@ class ModelEvaluator:
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
-        test_loader = DataLoader(self.partition, batch_size=256)
+        limit = self.settings.evaluation_examples if evaluation_examples is None else evaluation_examples
+        partition = self.partition.evaluation_subset(limit) if limit else self.partition
+        test_loader = DataLoader(partition, batch_size=256)
         device = torch.device(device_name)
 
         correct = example_number = total_loss = num_batches = 0

@@ -138,10 +138,11 @@ def test(settings: SessionSettings, params: Dict):
     if not evaluator:
         evaluator = ModelEvaluator(dataset, settings)
     metrics = params.get("cached_metrics")
-    accuracy, loss = metrics if metrics is not None else evaluator.evaluate_accuracy(model, device_name=settings.torch_device_name)
+    accuracy, loss = metrics if metrics is not None else evaluator.evaluate_accuracy(
+        model, device_name=settings.torch_device_name, evaluation_examples=params.get("evaluation_examples"))
     last_test_metrics = (accuracy, loss)
 
-    accuracies_file_path: str = os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv")
+    accuracies_file_path: str = os.path.join(settings.data_dir, params.get("output_prefix", "accuracies") + "_" + str(peer_id) + ".csv")
     if not os.path.exists(accuracies_file_path):
         with open(accuracies_file_path, "w") as accuracies_file:
             accuracies_file.write("algorithm,dataset,partitioner,alpha,learning_rate,peer,round,time,accuracy,loss\n")

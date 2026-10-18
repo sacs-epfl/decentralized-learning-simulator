@@ -4,6 +4,9 @@ from dasklearn.session_settings import SessionSettings
 
 
 def create_dataset(settings: SessionSettings) -> FederatedDataset:
+    if settings.dataset == "tiny_imagenet" and settings.dataset_base_path:
+        from dasklearn.datasets.tiny_imagenet import TinyImagenetDataset
+        return TinyImagenetDataset(settings)
     if settings.dataset == "cifar10" and settings.dataset_base_path:
         from dasklearn.datasets.cifar10 import Cifar10Dataset
         return Cifar10Dataset(settings)
