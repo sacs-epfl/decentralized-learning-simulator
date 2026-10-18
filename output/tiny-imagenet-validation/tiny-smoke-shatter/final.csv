@@ -1,0 +1,9 @@
+algorithm,dataset,partitioner,alpha,learning_rate,peer,round,time,accuracy,loss
+shatter,tiny_imagenet,dirichlet,0.1,0.01,7,2,60.0,0.75,5.34865
+shatter,tiny_imagenet,dirichlet,0.1,0.01,0,2,60.0,0.46,5.403009
+shatter,tiny_imagenet,dirichlet,0.1,0.01,3,1,60.0,0.52,5.476194
+shatter,tiny_imagenet,dirichlet,0.1,0.01,4,2,60.0,0.46,5.329944
+shatter,tiny_imagenet,dirichlet,0.1,0.01,2,1,60.0,0.5,5.342336
+shatter,tiny_imagenet,dirichlet,0.1,0.01,1,2,60.0,0.44,5.341655
+shatter,tiny_imagenet,dirichlet,0.1,0.01,5,2,60.0,0.59,5.340871
+shatter,tiny_imagenet,dirichlet,0.1,0.01,6,2,60.0,0.57,5.368896

@@ -1,0 +1,67 @@
+{
+  "host": "sacs006",
+  "gpus": "2 x NVIDIA RTX 5000 Ada, 32 GB each",
+  "focused_validation": {
+    "macos_cpu_passed": 43,
+    "macos_cuda_checks_skipped": 2,
+    "linux_cuda_passed": 45,
+    "test_files": [
+      "test_bw_scheduler.py",
+      "test_conflux_comparison.py",
+      "test_comparison_edge_cases.py",
+      "test_cifar_scaling.py",
+      "test_tiny_validation.py",
+      "test_execution_optimizations.py"
+    ]
+  },
+  "first_pass_full_workloads": {
+    "shatter-r2": {
+      "complete_reference": true,
+      "complete_optimized": true,
+      "exact_all128_node_snapshots_s": [
+        300.0,
+        600.0,
+        900.0,
+        1200.0,
+        1500.0,
+        1800.0
+      ],
+      "final_full_metrics_exact": true,
+      "reference_execution_s": 2069.2229142370634,
+      "optimized_execution_s": 837.2269428849686,
+      "observed_execution_speedup": 2.471519737655368,
+      "full_accuracy": 1.423203125
+    },
+    "conflux-v2": {
+      "complete_reference": true,
+      "complete_optimized": true,
+      "exact_all128_node_snapshots_s": [
+        300.0,
+        600.0,
+        900.0,
+        1200.0,
+        1500.0,
+        1800.0
+      ],
+      "final_full_metrics_exact": true,
+      "reference_execution_s": 841.231321732048,
+      "optimized_execution_s": 321.1985280739609,
+      "observed_execution_speedup": 2.619038532886245,
+      "full_accuracy": 4.553203125
+    }
+  },
+  "second_pass_v2": {
+    "reference_s": 841.231321732048,
+    "first_pass_s": 321.1985280739609,
+    "final_s": 241.12498431198765,
+    "observed_speedup": 3.4887770926450017,
+    "reduction_from_first_pass": 0.24929611054610779,
+    "exact_per_node_results": true,
+    "cache_peak_bytes": 45155008,
+    "reused_reconstructions": 2201,
+    "total_reconstructions": 2272,
+    "unique_reconstructions": 71
+  },
+  "timing_limitations": "Single measured executions with concurrent jobs and differing overlap. These are observed wall times, separate from protocol time and not controlled performance estimates across hardware.",
+  "scope": "Standard CPU/PyTorch operations, tested on macOS CPU and Linux CUDA; no precision, aggregation order, optimizer, SGD-step or dataset-size changes."
+}

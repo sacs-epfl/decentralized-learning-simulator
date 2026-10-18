@@ -344,3 +344,52 @@ still receives a private copy. Sink evaluation tasks avoid constructing an
 unused output model; cached sink metrics additionally avoid copying a model
 that will not be evaluated. Regression tests cover eviction, budget bypass,
 last-use release and exact snapshot equality for both protocols.
+
+#### Tiny ImageNet results on 128 nodes
+
+The one-seed heterogeneous runs completed on `sacs006`. At 1,800 simulated
+seconds, mean individual-node heldout accuracy on all 10,000 images was:
+
+| Protocol | Full heldout accuracy | Simulated bytes sent | Local training tasks |
+| --- | ---: | ---: | ---: |
+| Shatter degree 2 | 1.42% | 505.42 GB | 5,660 |
+| Conflux V2 | 4.55% | 204.85 GB | 2,304 |
+
+V2 sends 59.5% fewer bytes and reaches 2% on the fixed curve subset at the
+900-second checkpoint; Shatter remains below 2% at every checkpoint in this
+budget. Accuracy is still low for both methods. These early learning results
+need a longer training budget and additional seeds to assess convergence.
+
+Full reference and optimized executions produce exactly the same complete DAGs,
+all 128 per-node metrics at all six checkpoints, final full-validation metrics,
+training-task counts and modeled byte totals. Original execution took 34.49 min
+for Shatter and 14.02 min for V2. The first optimization pass reduced those times
+to 13.95 min and 5.35 min respectively (observed 2.47× and 2.62× improvements).
+These actual execution times include evaluation and reflect concurrent jobs on
+the server; they are distinct from simulated learning/protocol speed.
+
+The second pass (`ec3778f`) completes the same V2 workload in 4.02 min, an
+observed 3.49× improvement over the original and another 25% reduction from the
+first pass. It reuses 2,201 of 2,272 reconstructions (71 unique input sets),
+peaks at 45,155,008 cached tensor bytes, and releases the cache by completion.
+All 768 individual-node curve rows, 128 full-validation rows, the complete DAG,
+traffic and training-task counts match both earlier V2 executions exactly.
+The latest Shatter code also passes the original eight-node full-evaluation
+comparison; its full 128-node timing above measures the first pass.
+Focused validation passes 45 tests on Linux/CUDA and 43 on macOS/CPU, with two
+GPU-only checks skipped on the CPU host. The saved
+[optimization audit](output/tiny-imagenet-validation/tiny128-memoized/equivalence.json)
+contains the measured timings and final cache counters.
+
+The original execution source is `d14b771`; the paired first-pass optimized
+source is `ce1c7a4`. Both protocols within each pair share the same execution
+source. The source audit verifies every module against its commit and records
+macOS transfer sidecars that affected the optimized directory's raw hash.
+
+See the [accuracy curves](output/tiny-imagenet-validation/tiny128-optimized/accuracy.png),
+[results table](output/tiny-imagenet-validation/tiny128-optimized/table.md),
+[configuration and snapshot audit](output/tiny-imagenet-validation/tiny128-optimized/audit.json),
+[complete reference equivalence check](output/tiny-imagenet-validation/tiny128-optimized/equivalence.json),
+and [source audit](output/tiny-imagenet-validation/source-audit.json).
+Full DAGs and per-node snapshot CSVs remain on the server in
+`/mnt/data/mdevos/conflux/results/tiny128` and `tiny128-optimized`.

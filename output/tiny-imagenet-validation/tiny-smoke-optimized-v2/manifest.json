@@ -1,0 +1,52 @@
+{
+  "output": "/mnt/data/mdevos/conflux/results/tiny-smoke-optimized-v2",
+  "data": "/mnt/data/mdevos/conflux/tiny-datasets",
+  "variant": "conflux-v2",
+  "peers": 8,
+  "sample_size": 4,
+  "chunks": 4,
+  "duration": 60,
+  "test_period": 30,
+  "evaluation_examples": 2000,
+  "bandwidth": 10000000,
+  "step_ms": 50,
+  "learning_rate": 0.01,
+  "momentum": 0.9,
+  "local_steps": 5,
+  "seed": 0,
+  "torch_threads": 4,
+  "calibrate": false,
+  "no_final_full": false,
+  "dataset": "tiny_imagenet",
+  "model": "resnet18",
+  "alpha": 0.1,
+  "torch": "2.14.1+cu130",
+  "python": "3.12.15",
+  "numpy": "2.5.4",
+  "source_sha256": "8b109202e41b4f88faae5e4cd51f68d4de916a80287d195cccc710d7b3ba373e",
+  "gpu": "NVIDIA RTX 5000 Ada Generation",
+  "cuda_visible_devices": "1",
+  "input_size": 64,
+  "pretrained": false,
+  "train_images": 95000,
+  "tuning_images": 5000,
+  "heldout_images": 10000,
+  "curve_examples": 2000,
+  "final_examples": 10000,
+  "network": "quarter fast, 8x spread, 10 MB/s mean by default; independent compute ranking",
+  "provenance": {
+    "source": "zh-plus/tiny-imagenet",
+    "files": {
+      "train": [
+        "train-00000-of-00001-1359597a978bc4fa.parquet",
+        "220fde5ae5e6ad267b513b5cb1442aa97d69bf535da8f4d16910c59a70388cd3",
+        100000
+      ],
+      "valid": [
+        "valid-00000-of-00001-70d52db3c749a935.parquet",
+        "fc85b521b6ee9506df978a65ba46cf869133ae27a3f63e029ffabd78ce268640",
+        10000
+      ]
+    }
+  }
+}

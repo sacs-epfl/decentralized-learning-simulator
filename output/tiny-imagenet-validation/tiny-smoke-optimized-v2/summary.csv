@@ -1,0 +1,2 @@
+variant,seed,peers,model_bytes,final_accuracy_2000,final_loss_2000,final_accuracy_10000,final_loss_10000,bytes_sent,training_tasks,actual_execution_s
+conflux-v2,0,8,45195718,0.425,5.36651825,0.4625,5.36613725,1320520754,16,6.815210564993322

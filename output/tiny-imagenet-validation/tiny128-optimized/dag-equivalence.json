@@ -1,0 +1,16 @@
+{
+  "shatter-r2": {
+    "identical_complete_dag": true,
+    "tasks": 17746,
+    "dag_sha256": "85e3754d2bb37b05b483c72f5a696a91b7ee6fc2925b135b0c84264fdc190f00",
+    "reconstructions": 5532,
+    "unique_reconstructions": 5532
+  },
+  "conflux-v2": {
+    "identical_complete_dag": true,
+    "tasks": 8913,
+    "dag_sha256": "c6dce434b64739d9ad9e977732827c6be326d37aeaaaee4c5ec3324324d8c275",
+    "reconstructions": 2272,
+    "unique_reconstructions": 71
+  }
+}
