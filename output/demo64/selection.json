@@ -1,0 +1,14 @@
+{
+  "selected": {
+    "1": 0.003,
+    "5": 0.001
+  },
+  "rule": "Independently for H=5 and H=1 maximize mean uniform IID/Dirichlet validation accuracy, seed 0, 900s; lower LR breaks ties.",
+  "candidates": [
+    0.0003,
+    0.001,
+    0.003,
+    0.01
+  ],
+  "split": "5000 validation images, test excluded"
+}

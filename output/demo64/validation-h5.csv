@@ -1,0 +1,5 @@
+local_steps,learning_rate,mean_validation_accuracy,iid_validation_accuracy,dirichlet_validation_accuracy
+5,0.0003,43.61,50.86,36.36
+5,0.001,48.42,53.74,43.1
+5,0.003,45.57,48.52,42.62
+5,0.01,38.25,41.1,35.4

@@ -138,3 +138,21 @@ async def test_ring_buffers_future_packets_under_skew(tmp_path):
 def test_reject_unsupported_configs(tmp_path):
     for kw in [dict(churn='synthetic'),dict(compression_decay=float('nan')),dict(compression_topk=0),dict(model='resnet18',dataset='cifar10')]:
         with pytest.raises(ValueError):DeMoSimulation(settings(DeMoSettings,tmp_path,**kw))
+
+
+def test_broker_accepts_demo_configuration(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    import dasklearn.broker as module
+    config=settings(DeMoSettings,tmp_path,compression_topk=7,compression_chunk=16)
+    config.data_dir=str(tmp_path)
+    broker=module.Broker(SimpleNamespace())
+    monkeypatch.setattr(broker,'connect_to_brokers',lambda:None)
+    monkeypatch.setattr(module,'setup_logging',lambda *a,**kw:None)
+    scheduled=[]
+    monkeypatch.setattr(module,'ensure_future',lambda coroutine:(scheduled.append(True),coroutine.close()))
+    broker.on_message('coordinator',{'type':'config','brokers':{},'brokers_to_clients':{},
+        'settings_class':'DeMoSettings','settings':config.to_dict(),'dag':[]})
+    assert isinstance(broker.settings,DeMoSettings)
+    assert broker.settings.compression_topk==7 and broker.settings.compression_chunk==16
+    assert broker.settings.learning.local_steps==config.learning.local_steps
+    assert scheduled==[True]

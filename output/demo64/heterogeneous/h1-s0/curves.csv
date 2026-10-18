@@ -1,0 +1,13 @@
+time,accuracy,loss,nodes,variant,profile,partitioner,seed
+150.0,18.13,2.215559,64,demo,heterogeneous,iid,0
+300.0,24.36,2.011515,64,demo,heterogeneous,iid,0
+450.0,27.17,2.018118,64,demo,heterogeneous,iid,0
+600.0,32.03,1.871949,64,demo,heterogeneous,iid,0
+750.0,34.5228125,1.7808333437500001,64,demo,heterogeneous,iid,0
+900.0,38.75,1.718963,64,demo,heterogeneous,iid,0
+150.0,19.76,2.12238,64,demo,heterogeneous,dirichlet,0
+300.0,16.19,2.430638,64,demo,heterogeneous,dirichlet,0
+450.0,27.22,2.034449,64,demo,heterogeneous,dirichlet,0
+600.0,31.82,1.894434,64,demo,heterogeneous,dirichlet,0
+750.0,35.02828125,1.80517665625,64,demo,heterogeneous,dirichlet,0
+900.0,37.2,1.734702,64,demo,heterogeneous,dirichlet,0

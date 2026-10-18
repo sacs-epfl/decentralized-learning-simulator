@@ -1,0 +1,3 @@
+variant,profile,partitioner,seed,learning_rate,final_accuracy,final_loss,model_bytes,bytes_sent,training_tasks,simulated_compute_s,actual_execution_s,tta_40_s,tta_50_s,tta_60_s,tta_70_s,tta_80_s
+conflux-v2,uniform,iid,0,0.01,55.343125,1.25102621875,346251,1254941372,1840,184.0,27.693081969977356,300.0,600.0,,,
+conflux-v2,uniform,dirichlet,0,0.01,42.86421875,1.544638265625,346251,1254941372,1840,184.0,27.855330778984353,750.0,,,,

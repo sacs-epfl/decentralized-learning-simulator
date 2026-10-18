@@ -18,6 +18,7 @@ from dasklearn.communication import Communication
 from dasklearn.functions import *
 from dasklearn.simulation.conflux.settings import ConfluxSettings
 from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
+from dasklearn.simulation.demo.settings import DeMoSettings
 from dasklearn.simulation.dpsgd.settings import DPSGDSettings
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.teleportation.settings import TeleportationSettings
@@ -309,6 +310,7 @@ class Broker:
                 "SessionSettings": SessionSettings,
                 "ConfluxSettings": ConfluxSettings,
                 "ConfluxV2Settings": ConfluxV2Settings,
+                "DeMoSettings": DeMoSettings,
                 "TeleportationSettings": TeleportationSettings,
                 "DPSGDSettings": DPSGDSettings,
                 "ShatterSettings": ShatterSettings,

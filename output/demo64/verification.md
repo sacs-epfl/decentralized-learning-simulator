@@ -1,0 +1,7 @@
+Focused comparison regression suite: 111 passed, six CUDA-only skips on macOS; 117 passed on Linux/CUDA (sacs006). The 13 new DeMo checks pass on both. The optional pinned official optimizer audit uses three workers and seven steps: parameter difference zero, maximum residual difference 4.190951585769653e-09. `einops` was installed only to import that optional external reference; simulator execution does not depend on it.
+
+The broad repository test discovery also reaches pre-existing legacy fixtures: 148 errors from removed settings such as `capability_traces`, two failures in the old Task tests (string inputs and missing index construction), and the script-level shared-memory smoke test fails during collection in the local sandbox. These unchanged legacy files are outside the focused comparison suite; the entire repository test tree is not claimed to pass.
+
+Both canonical H=1 and H=5 gradient accumulation are retained. Learning rates are selected on the separate validation split before any DeMo heldout-test runs. Four fresh V2 replays verify cached test metrics and traffic exactly; all 12 cached V2 runs retain their original execution provenance and timings.
+
+A subsequent DeMo broker configuration registration check passes on macOS and Linux. On the server it loaded the patched broker in an isolated check directory, leaving the frozen execution source untouched (`broker-check.txt`).
