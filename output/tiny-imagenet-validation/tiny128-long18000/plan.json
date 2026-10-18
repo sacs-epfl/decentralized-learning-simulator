@@ -1,5 +1,5 @@
 {
-  "status": "launched",
+  "status": "complete",
   "started_utc": "2026-10-18T13:29:34.753153+00:00",
   "host": "sacs006",
   "source_commit": "49c58e1",
@@ -86,5 +86,16 @@
         "900"
       ]
     }
+  ],
+  "results_audited": true,
+  "result_files": [
+    "summary.csv",
+    "curves.csv",
+    "latest-v2-aggregate.csv",
+    "final-v2-aggregate.json",
+    "time-to-accuracy.csv",
+    "audit.json",
+    "comparison.png",
+    "comparison.svg"
   ]
 }

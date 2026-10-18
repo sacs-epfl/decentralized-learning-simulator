@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "variants": {
+    "shatter-r2": {
+      "curve_rows": 2560,
+      "checkpoints": 20,
+      "nodes_per_snapshot": 128,
+      "final_full_rows": 128,
+      "prefix_900_1800_exact_rows": 256,
+      "finite_metrics": true,
+      "traffic_balanced": true,
+      "source_sha256": "cc1c2670f8cbfcbc1c5011a0a065f7540b614de7b770e149488098367646d58e"
+    },
+    "conflux-v2": {
+      "curve_rows": 2560,
+      "checkpoints": 20,
+      "nodes_per_snapshot": 128,
+      "final_full_rows": 128,
+      "prefix_900_1800_exact_rows": 256,
+      "finite_metrics": true,
+      "traffic_balanced": true,
+      "source_sha256": "cc1c2670f8cbfcbc1c5011a0a065f7540b614de7b770e149488098367646d58e"
+    }
+  },
+  "common_configuration_exact": true,
+  "latest_v2_recipients_identical_at_every_checkpoint_and_final": true,
+  "source_sha256": "cc1c2670f8cbfcbc1c5011a0a065f7540b614de7b770e149488098367646d58e",
+  "one_seed": true,
+  "curve_examples": 2000,
+  "final_examples": 10000,
+  "traffic": "Measured endpoint totals at the common 18000-second budget; intermediate cumulative traffic was not recorded.",
+  "execution_note": "GPU execution uses the original frozen executor; separate optimization validation uses newer code.",
+  "model_note": "Stored completed post-aggregation checkpoints, not intermediate SGD weights. No free global parameter averaging."
+}

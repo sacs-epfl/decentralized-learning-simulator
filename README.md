@@ -496,5 +496,45 @@ same balanced 2,000-image subset every 900 seconds, followed by all 10,000
 heldout images at the final snapshot. The
 [launch plan](output/tiny-imagenet-validation/tiny128-long18000/plan.json)
 records the source hash, exact commands, logs and server output directory.
-Results are pending. An automated follow-up checks completion and correctness
-and collects the results without imposing a runtime cutoff.
+Both runs completed and passed the common-source/configuration audit. Every
+one of the 20 checkpoints contains all 128 nodes, all metrics are finite, and
+all 256 per-node rows at 900/1,800 seconds exactly match the earlier short run
+for each protocol. The final full-validation files each contain 128 rows.
+
+| Protocol/readout after 18,000 simulated seconds | Full 10,000-image accuracy | Full-validation loss | Total traffic |
+| --- | ---: | ---: | ---: |
+| Shatter degree 2, all-node checkpoint mean | 11.09% | 4.2013 | 4.795 TB |
+| Conflux V2, all-node checkpoint mean | 22.20% | 3.5099 | 2.045 TB |
+| Conflux V2, latest completed sample aggregate | 22.70% | 3.4854 | Same V2 traffic |
+
+V2 uses 57.4% less traffic at this common time budget. On the fixed 2,000-image
+curve subset, the all-node mean first reaches 10% at 4,500 simulated seconds
+for V2 and 16,200 seconds for Shatter (3.6× earlier at the saved checkpoint
+resolution). V2 reaches 20% at 11,700 seconds; Shatter never reaches 15% or 20%
+within the budget. Neither protocol reaches 25%. Unreached targets remain
+explicitly censored in the saved time-to-accuracy table.
+
+The final curve-subset means are 11.41% for Shatter and 22.98% for V2, with
+23.10% for V2's latest aggregate. These curve metrics are distinct from the
+10,000-image final metrics above. V2's freshest saved model is identified by
+maximum recorded round (712), and all 32 recipients have identical accuracy
+and loss on both evaluation sets. At the final snapshot, V2's stored node
+checkpoints are on average 2.625 rounds behind this aggregate, with a maximum
+age of 15 rounds. The additional aggregate curve measures a different quantity
+from the all-node mean. Shatter retains distinct mixed models and has no single
+shared aggregate. These records evaluate fixed snapshots, not every all-reduce;
+the saved DAG contains references and protocol history, not trained weights.
+
+This remains a **one-seed** result, not evidence of a universal advantage or
+final convergence. Actual execution took 103.17 min for Shatter and 35.47 min
+for V2 on the original frozen executor; those hardware times are separate from
+the five simulated protocol hours and from the newer GPU-backend validation.
+Intermediate cumulative traffic was not recorded in these original jobs, so
+the traffic comparison uses measured totals at the common final budget.
+
+See the [combined scientific figure](output/tiny-imagenet-validation/tiny128-long18000/comparison.png),
+[final summaries](output/tiny-imagenet-validation/tiny128-long18000/summary.csv),
+[audit](output/tiny-imagenet-validation/tiny128-long18000/audit.json),
+[aggregate and staleness checkpoints](output/tiny-imagenet-validation/tiny128-long18000/latest-v2-aggregate.csv),
+and [censored time to accuracy](output/tiny-imagenet-validation/tiny128-long18000/time-to-accuracy.csv).
+Raw DAGs and per-node files remain in the planned server results directory.
