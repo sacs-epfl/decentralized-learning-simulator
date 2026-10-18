@@ -377,6 +377,13 @@ unused output model; cached sink metrics additionally avoid copying a model
 that will not be evaluated. Regression tests cover eviction, budget bypass,
 last-use release and exact snapshot equality for both protocols.
 
+The simulator also implements [DSpodFL (ICLR 2025)](docs/dspodfl.md), with sporadic
+local training and symmetric old-model exchange. Its one-step equation and
+five-step local-SGD extension are distinguished explicitly in the CIFAR comparison.
+The completed 24-run DSpodFL matrix trails optimized V2 in all four settings;
+the [results and implementation limits](docs/dspodfl.md#completed-results) include
+both variants, traffic, censored accuracy targets and the complete audit.
+
 Additional peer-reviewed comparison methods are available: Moshpit SGD
 (NeurIPS 2021), repaired Teleportation (ICLR 2025; ring and hypercube), and a
 full-participation D-Local-SGD ring reference. See the

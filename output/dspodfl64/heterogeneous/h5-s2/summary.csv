@@ -1,0 +1,3 @@
+variant,profile,partitioner,seed,learning_rate,final_accuracy,final_loss,model_bytes,bytes_sent,training_tasks,simulated_compute_s,actual_execution_s,tta_40_s,tta_50_s,tta_60_s,tta_70_s,tta_80_s
+dspodfl,heterogeneous,iid,2,0.01,33.1434375,1.8270774375,346251,1100384756,1699,139.175,51.799433980020694,,,,,
+dspodfl,heterogeneous,dirichlet,2,0.01,15.81625,3.449811546875,346251,1100384756,1699,139.175,50.57474585901946,,,,,

@@ -183,6 +183,10 @@ Compact results and the audit are in
 
 ## Selection
 
+A subsequent [DSpodFL (ICLR 2025) comparison](dspodfl.md) implements and evaluates
+sporadic old-model exchange with both one-step and five-step local updates in the
+same CIFAR matrix. Its 24 new runs reuse the audited V2/Moshpit comparators.
+
 
 | Method | Peer-reviewed source | Why compare it |
 | --- | --- | --- |

@@ -1,0 +1,13 @@
+time,accuracy,loss,nodes,variant,profile,partitioner,seed
+150.0,22.41421875,2.123095421875,64,dspodfl,uniform,iid,2
+300.0,27.85953125,1.971345375,64,dspodfl,uniform,iid,2
+450.0,32.18515625,1.867621953125,64,dspodfl,uniform,iid,2
+600.0,34.4453125,1.79356559375,64,dspodfl,uniform,iid,2
+750.0,35.6571875,1.752986421875,64,dspodfl,uniform,iid,2
+900.0,37.7896875,1.7140547343749999,64,dspodfl,uniform,iid,2
+150.0,12.8453125,3.2925559375,64,dspodfl,uniform,dirichlet,2
+300.0,13.83921875,3.171789140625,64,dspodfl,uniform,dirichlet,2
+450.0,15.86875,2.897222546875,64,dspodfl,uniform,dirichlet,2
+600.0,17.6384375,2.697483203125,64,dspodfl,uniform,dirichlet,2
+750.0,17.61859375,2.954581109375,64,dspodfl,uniform,dirichlet,2
+900.0,18.94609375,2.89057315625,64,dspodfl,uniform,dirichlet,2
