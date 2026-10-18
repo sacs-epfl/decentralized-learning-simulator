@@ -22,6 +22,7 @@ ALGORITHM_MAPPING = {
     "lubor": ("dasklearn.simulation.lubor.settings.LuborSettings", "dasklearn.simulation.lubor.simulation.LuborSimulation"),
     "conflux": ("dasklearn.simulation.conflux.settings.ConfluxSettings", "dasklearn.simulation.conflux.simulation.ConfluxSimulation"),
     "conflux-v2": ("dasklearn.simulation.conflux_v2.settings.ConfluxV2Settings", "dasklearn.simulation.conflux_v2.simulation.ConfluxV2Simulation"),
+    "dspodfl": ("dasklearn.simulation.dspodfl.settings.DSpodFLSettings", "dasklearn.simulation.dspodfl.simulation.DSpodFLSimulation"),
     "teleportation": ("dasklearn.simulation.teleportation.settings.TeleportationSettings", "dasklearn.simulation.teleportation.simulation.TeleportationSimulation"),
     "moshpit": ("dasklearn.simulation.moshpit.settings.MoshpitSettings", "dasklearn.simulation.moshpit.simulation.MoshpitSimulation"),
     "shatter": ("dasklearn.simulation.shatter.settings.ShatterSettings", "dasklearn.simulation.shatter.simulation.ShatterSimulation"),
@@ -123,7 +124,9 @@ def run():
     settings_class_path, simulation_class_path = ALGORITHM_MAPPING[args.algorithm]
 
     # Add algorithm-specific parameters
+    from dasklearn.simulation.dspodfl.settings import dspodfl_options
     algorithm_params = {
+        "dspodfl": dspodfl_options(args),
         "fl": {"sample_size": args.sample_size},
         "dpsgd": {"el": args.el, "topology": args.topology, "k": args.k},
         "epidemic": {"el": args.el, "topology": args.topology, "k": args.k},

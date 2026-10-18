@@ -17,6 +17,7 @@ import torch
 from validate_conflux import run_one, plot
 from dasklearn.tasks.training import add_training_arguments
 from dasklearn.simulation.conflux_v2.settings import add_conflux_v2_arguments
+from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments
 
 
 async def main():
@@ -32,6 +33,7 @@ async def main():
     p.add_argument("--chunks", type=int, default=16)
     p.add_argument("--relay-count", type=int, default=0)
     add_conflux_v2_arguments(p)
+    add_dspodfl_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--model-bytes", type=int)

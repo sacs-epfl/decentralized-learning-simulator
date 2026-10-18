@@ -32,6 +32,7 @@ from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.tasks.local import execute_local
 from dasklearn.tasks.training import add_training_arguments
 from dasklearn.simulation.peer_baselines import BASELINE_VARIANTS, baseline_spec
+from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments, dspodfl_options
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS
 
@@ -55,6 +56,7 @@ async def run_one(args, variant, profile, partitioner, seed):
                             immediate_uploads=getattr(args, "immediate_uploads", False))
     else:
         raise ValueError("Unknown comparison variant: " + variant)
+    if variant=='dspodfl':specific.update(dspodfl_options(args))
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
         dataset=args.dataset, model=getattr(args, "model", "mlp"), participants=args.peers, partitioner=partitioner,
         dataset_base_path=getattr(args, "dataset_base_path", None),
@@ -186,6 +188,7 @@ async def main():
     parser.add_argument("--success-fraction", type=float, default=1)
     parser.add_argument("--relay-count", type=int, default=0)
     add_conflux_v2_arguments(parser)
+    add_dspodfl_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)
     parser.add_argument("--bandwidth", type=int, default=4000)

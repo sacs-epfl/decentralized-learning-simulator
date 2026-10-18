@@ -23,6 +23,7 @@ from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.tasks.local import execute_local
 from dasklearn.tasks.training import add_training_arguments
 from dasklearn.simulation.peer_baselines import BASELINE_VARIANTS, baseline_spec
+from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments,dspodfl_options
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS
 from dasklearn import AUGMENTATION_FACTOR_SIM
@@ -39,6 +40,7 @@ async def main():
     p.add_argument("--chunks", type=int, default=16)
     p.add_argument("--relay-count", type=int, default=0)
     add_conflux_v2_arguments(p)
+    add_dspodfl_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--duration", type=int, default=1800)
@@ -75,6 +77,7 @@ async def main():
                                              args.group_size, args.averaging_steps)
     if args.variant == "conflux-v2":
         specific.update(relay_count=args.relay_count, immediate_uploads=args.immediate_uploads)
+    if args.variant=='dspodfl':specific.update(dspodfl_options(args))
     settings = config(algorithm="shatter" if args.variant == "shatter-r2" else args.variant, seed=args.seed,
         work_dir=str(args.output), dataset="tiny_imagenet", model="resnet18", participants=args.peers,
         dataset_base_path=args.data, partitioner="dirichlet", alpha=.1,
