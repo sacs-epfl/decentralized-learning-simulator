@@ -92,7 +92,7 @@ class ModelEvaluator:
 
         # We move the model back to the CPU to avoid memory leaks
         model.to("cpu")
-        if torch.cuda.is_available():
+        if self.settings.release_cuda_cache and torch.cuda.is_available():
             torch.cuda.empty_cache()
 
         accuracy = float(correct) / float(example_number) * 100.0

@@ -1,4 +1,6 @@
 import pickle
+import copy
+from functools import lru_cache
 from typing import Optional
 
 import torch
@@ -14,6 +16,27 @@ def unserialize_model(serialized_model: bytes, dataset: str, architecture: Optio
     model = create_model(dataset, architecture=architecture)
     model.load_state_dict(pickle.loads(serialized_model))
     return model
+
+
+@lru_cache(maxsize=4)
+def _model_structure(dataset: str, architecture: Optional[str]):
+    # Only used when every state entry will be overwritten. Keep the prototype
+    # private and on CPU; callers always receive independent parameters/buffers.
+    # Constructing it must not perturb task-specific training randomness.
+    with torch.random.fork_rng(devices=[]):
+        return create_model(dataset, architecture=architecture).cpu()
+
+
+def create_model_structure(dataset: str, architecture: Optional[str] = None) -> torch.nn.Module:
+    """Fresh model structure for a complete state overwrite, without reinitialization."""
+    return copy.deepcopy(_model_structure(dataset, architecture))
+
+
+def copy_model_state(model: torch.nn.Module, dataset: str, architecture: Optional[str] = None) -> torch.nn.Module:
+    """Equivalent state transfer to serialize/unserialize, without the wire encoding."""
+    result = create_model_structure(dataset, architecture)
+    result.load_state_dict(model.state_dict())
+    return result
 
 
 def create_model(dataset: str, architecture: Optional[str] = None) -> Model:

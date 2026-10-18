@@ -151,7 +151,7 @@ class ModelTrainer:
 
         self.is_training = False
         model.to("cpu")
-        if torch.cuda.is_available():
+        if self.settings.release_cuda_cache and torch.cuda.is_available():
             torch.cuda.empty_cache()
 
         return {"samples": samples_trained_on, "validation_loss_global": validation_loss_global_model}

@@ -6,7 +6,7 @@ import torch
 from dasklearn import functions
 
 
-def execute_local(simulation, retain_results=True, progress=None):
+def execute_local(simulation, retain_results=True, progress=None, share_readonly_inputs=True):
     functions.dataset = None
     functions.model_trainers = None
     functions.evaluator = None
@@ -32,24 +32,32 @@ def execute_local(simulation, retain_results=True, progress=None):
             return (source.func, repr(source.data["chunks"]))
         return ref
 
-    def resolve(value):
+    # These built-ins read their inputs or make their own private model copy.
+    # Unknown functions retain defensive edge copies. Test/evaluation moves the
+    # input model between devices and changes its mode, so it also needs a copy.
+    readonly = {"train", "compute_gradient", "gradient_update", "aggregate", "chunk",
+                "aggregate_chunk", "reconstruct_from_chunks", "weighted_reconstruct_from_chunks"}
+
+    def resolve(value, share=False):
         if isinstance(value, tuple) and len(value) == 2 and value[0] in tasks:
             # Training may mutate its input model. Each DAG edge has value
             # semantics, independent of execution order or number of workers.
             item = results[value[0]][value[1]]
+            if share:
+                return item
             # deepcopy(view) copies the whole backing storage, potentially a
             # full ResNet for every individual chunk. Clone only the slice.
             return item.clone() if isinstance(item, torch.Tensor) else copy.deepcopy(item)
         if isinstance(value, dict):
-            return {key: resolve(item) for key, item in value.items()}
+            return {key: resolve(item, share) for key, item in value.items()}
         if isinstance(value, list):
-            return [resolve(item) for item in value]
+            return [resolve(item, share) for item in value]
         return value
 
     while ready:
         _, _, name = heapq.heappop(ready)
         task = tasks[name]
-        data = resolve(task.data)
+        data = resolve(task.data, share_readonly_inputs and task.func in readonly)
         started = time.perf_counter()
         if task.func == "test" and not retain_results:
             key = (model_key(task.data["model"]), task.data.get("evaluation_examples", simulation.settings.evaluation_examples))

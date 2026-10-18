@@ -410,7 +410,12 @@ class Simulation:
             self.schedule(checkpoint_event)
 
         # Determine the size of the model, which will be used to determine the duration of model transfers
-        self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
+        if self.settings.model_size_bytes is None:
+            self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
+        else:
+            if self.settings.model_size_bytes <= 0:
+                raise ValueError("model_size_bytes must be positive")
+            self.model_size = self.settings.model_size_bytes
         self.logger.info("Determine model size: %d bytes", self.model_size)
 
         process = psutil.Process()

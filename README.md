@@ -300,3 +300,37 @@ one-seed comparison with stable membership. The executor clones tensor slices
 without copying their entire backing model storage, which keeps large-model
 chunk processing within memory limits. Chunk reconstruction includes BatchNorm
 buffers; the focused tests check an exact full-state ResNet18 round trip.
+
+#### Execution optimizations
+
+Task outputs copy the complete state directly into an independent CPU model,
+avoiding an unnecessary pickle round trip. Reconstruction deep-copies a private
+CPU prototype instead of randomly initializing weights that it immediately
+overwrites. The prototype cache is bounded to four dataset/architecture pairs
+per process. Initial training models still use the original seeded initializer.
+The local executor shares inputs only with built-ins that read them or clone
+them before mutation; evaluation and unknown task functions keep defensive
+copies. Models, chunk values and BatchNorm buffers remain independent DAG values.
+
+PyTorch's CUDA allocator cache is retained between tasks by default; set
+`SessionSettings.release_cuda_cache=True` (or `run_tiny.py --release-cuda-cache`)
+when releasing unused GPU memory between tasks is needed. The changes use normal
+CPU/PyTorch operations and require no GPU-specific kernel or extra dependency.
+`run_tiny.py --device auto` selects CUDA when available and otherwise CPU; an
+explicit device can also be supplied. No mixed precision, changed aggregation
+order, fewer SGD steps, or reduced evaluation set is involved.
+
+Tiny ImageNet runs pin the simulated payload to the original measured
+45,195,718 bytes (`--model-bytes`), because pickle storage metadata can vary
+slightly between processes. Other simulators retain automatic measurement unless
+`SessionSettings.model_size_bytes` is explicitly supplied. This setting changes
+only the modeled transfer size, not the model's state or precision.
+
+Regression checks compare the reference wire-copy executor and optimized
+executor bit for bit for both protocols, including every intermediate model,
+chunk and snapshot. GPU checks additionally compare ResNet18 training state with
+the experiment's deterministic algorithms enabled. The eight-node GPU smoke
+runs produced identical recorded curves, full-validation accuracies and losses;
+execution took 10.84 s versus 18.07 s for Shatter, and 6.82 s versus 13.38 s for
+V2. These short-run timings include dataset loading and evaluation and are not
+claims about simulated protocol speed or other machines.

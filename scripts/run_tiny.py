@@ -45,9 +45,17 @@ async def main():
     p.add_argument("--local-steps", type=int, default=5)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--torch-threads", type=int, default=4)
+    p.add_argument("--device", default="auto", help="auto, cpu, cuda[:index], or mps")
+    p.add_argument("--release-cuda-cache", action="store_true")
+    p.add_argument("--model-bytes", type=int, default=45195718,
+                   help="Fixed simulated payload size, pinned to the original ResNet18 run")
     p.add_argument("--calibrate", action="store_true")
     p.add_argument("--no-final-full", action="store_true")
     args = p.parse_args()
+    device = args.device
+    if device == "auto":
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device)
     args.output = args.output.resolve(); args.output.mkdir(parents=True, exist_ok=True)
     torch.set_num_threads(args.torch_threads)
     torch.use_deterministic_algorithms(True)
@@ -58,7 +66,8 @@ async def main():
     settings = config(algorithm="shatter" if args.variant == "shatter-r2" else "conflux-v2", seed=args.seed,
         work_dir=str(args.output), dataset="tiny_imagenet", model="resnet18", participants=args.peers,
         dataset_base_path=args.data, partitioner="dirichlet", alpha=.1,
-        torch_device_name="cuda:0", torch_threads=args.torch_threads,
+        torch_device_name=str(device), torch_threads=args.torch_threads,
+        release_cuda_cache=args.release_cuda_cache, model_size_bytes=args.model_bytes,
         learning=LearningSettings(args.learning_rate, args.momentum, 0, 32, args.local_steps),
         rounds=0, duration=args.duration*MICROSECONDS, stop="duration", test_interval=0,
         test_method="snapshot", test_period=args.test_period*MICROSECONDS,
@@ -68,7 +77,8 @@ async def main():
         digest.update(str(path.relative_to(root)).encode());digest.update(path.read_bytes())
     manifest = {**vars(args), "output":str(args.output), "dataset":"tiny_imagenet", "model":"resnet18",
         "alpha":.1, "torch":torch.__version__, "python":platform.python_version(), "numpy":np.__version__,
-        "source_sha256":digest.hexdigest(), "gpu":torch.cuda.get_device_name(),
+        "source_sha256":digest.hexdigest(), "gpu":torch.cuda.get_device_name(device) if device.type=="cuda" else None,
+        "device":str(device),
         "cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"), "input_size":64,
         "pretrained":False,"train_images":95000,"tuning_images":5000,"heldout_images":10000,
         "curve_examples":args.evaluation_examples,"final_examples":0 if args.no_final_full else 10000,
@@ -93,9 +103,10 @@ async def main():
             result=functions.train(settings,params)
         training=(time.perf_counter()-started)/3
         evaluator=ModelEvaluator(functions.dataset,settings)
-        started=time.perf_counter();accuracy,loss=evaluator.evaluate_accuracy(result[0],"cuda:0")
+        started=time.perf_counter();accuracy,loss=evaluator.evaluate_accuracy(result[0],str(device))
         report={"training_task_s":training,"evaluation_2000_s":time.perf_counter()-started,
-                "accuracy_after_one_local_update":accuracy,"loss":loss,"peak_gpu_bytes":torch.cuda.max_memory_allocated()}
+                "accuracy_after_one_local_update":accuracy,"loss":loss,
+                "peak_gpu_bytes":torch.cuda.max_memory_allocated(device) if device.type=="cuda" else None}
         (args.output/"calibration.json").write_text(json.dumps(report,indent=2)+"\n");print(json.dumps(report),flush=True)
         return
 

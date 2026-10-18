@@ -17,7 +17,7 @@ from dasklearn.datasets import create_dataset
 from dasklearn.model_evaluator import ModelEvaluator
 from dasklearn.model_manager import ModelManager
 from dasklearn.model_trainer import ModelTrainer
-from dasklearn.models import unserialize_model, serialize_model, create_model
+from dasklearn.models import copy_model_state, create_model, create_model_structure
 from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.util import MICROSECONDS
@@ -80,15 +80,15 @@ def train(settings: SessionSettings, params: Dict):
 
     if compute_gradient:
         grad = model.gradient
-        detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+        detached_model = copy_model_state(model, settings.dataset, architecture=settings.model)
         detached_model.gradient = []
         for g in grad:
             g = g.cpu()
             detached_model.gradient.append(g)
     else:
-        detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+        detached_model = copy_model_state(model, settings.dataset, architecture=settings.model)
 
-    if torch.cuda.is_available():
+    if settings.release_cuda_cache and torch.cuda.is_available():
         torch.cuda.empty_cache()
 
     logger.debug("Peer %d training in round %d...", peer_id, round_nr)
@@ -155,7 +155,7 @@ def test(settings: SessionSettings, params: Dict):
 
     logger.info("[t=%.2f] Model accuracy (peer %d, round %d): %f, loss: %f", cur_time / MICROSECONDS, peer_id, round_nr, accuracy, loss)
 
-    detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+    detached_model = copy_model_state(model, settings.dataset, architecture=settings.model)
     return [detached_model]
 
 
@@ -168,7 +168,7 @@ def chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
 
 def reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:
     chunks = params["chunks"]
-    model = create_model(settings.dataset, architecture=settings.model)
+    model = create_model_structure(settings.dataset, architecture=settings.model)
     model = ChunkManager.reconstruct_model(chunks, model)
     return [model]
 
@@ -184,6 +184,6 @@ def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict) ->
         weighted_sum = sum(tensor * weight for tensor, weight in sublist)
         result.append(weighted_sum)
 
-    model = create_model(settings.dataset, architecture=settings.model)
+    model = create_model_structure(settings.dataset, architecture=settings.model)
     model = ChunkManager.weighted_reconstruct_model(result, model)
     return [model]

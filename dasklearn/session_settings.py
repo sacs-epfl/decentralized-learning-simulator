@@ -68,3 +68,5 @@ class SessionSettings:
     network_latency_ms: float = 0
     evaluation_split: str = "test"
     evaluation_examples: int = 0
+    release_cuda_cache: bool = False  # Opt in when sharing a GPU with other applications.
+    model_size_bytes: Optional[int] = None  # Explicit payload size for paired/replayed experiments.
