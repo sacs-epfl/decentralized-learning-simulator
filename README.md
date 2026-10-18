@@ -334,3 +334,13 @@ runs produced identical recorded curves, full-validation accuracies and losses;
 execution took 10.84 s versus 18.07 s for Shatter, and 6.82 s versus 13.38 s for
 V2. These short-run timings include dataset loading and evaluation and are not
 claims about simulated protocol speed or other machines.
+
+Streaming execution also reuses reconstructions whose complete chunk references
+are identical. This cache expires entries after their final duplicate task and
+has both a 64 MiB tensor-payload budget and a four-entry limit. Oversized models
+are recomputed normally. Set `execute_local(..., reconstruction_cache_bytes=0)`
+to disable it. Retained results are never memoized, and every mutating consumer
+still receives a private copy. Sink evaluation tasks avoid constructing an
+unused output model; cached sink metrics additionally avoid copying a model
+that will not be evaluated. Regression tests cover eviction, budget bypass,
+last-use release and exact snapshot equality for both protocols.

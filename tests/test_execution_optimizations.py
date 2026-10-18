@@ -147,3 +147,67 @@ async def test_gradient_only_copy_preserves_gradients_and_predecessor(tmp_path, 
         assert torch.equal(actual, expected)
     for key, value in model.state_dict().items():
         assert torch.equal(value, before[key])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cls,config,kwargs", [
+    (ShatterSimulation, ShatterSettings, {"k":3, "r":2}),
+    (ConfluxV2Simulation, ConfluxV2Settings, {"sample_size":3, "chunks_in_sample":3})])
+async def test_reconstruction_memo_preserves_all_snapshots(tmp_path, monkeypatch, cls, config, kwargs):
+    frames = []
+    reconstruct = functions.reconstruct_from_chunks
+    for budget in (0, 1, 64*1024*1024):
+        sim = simulate(cls, settings(config, tmp_path/str(budget), model_size_bytes=12000, **kwargs))
+        tasks = [task for task in sim.workflow_dag.tasks.values() if task.func == "reconstruct_from_chunks"]
+        unique = len({repr(task.data["chunks"]) for task in tasks})
+        calls = []
+        def counted(*args):
+            calls.append(1)
+            return reconstruct(*args)
+        status = []
+        with monkeypatch.context() as patch:
+            patch.setattr(functions, "reconstruct_from_chunks", counted)
+            execute_local(sim, retain_results=False, reconstruction_cache_bytes=budget, progress=status.append)
+        assert len(calls) == (unique if budget > 1 else len(tasks))
+        assert status[-1]["reconstruction_cache_peak_bytes"] <= budget
+        assert status[-1]["reconstruction_cache_bytes"] == 0
+        sim.merge_accuracies_files()
+        frames.append(pd.read_csv(sim.data_dir+"/accuracies.csv").sort_values(["peer","time"]).reset_index(drop=True))
+    for actual in frames[1:]:
+        pd.testing.assert_frame_equal(frames[0], actual, check_exact=True)
+
+
+@pytest.mark.parametrize("models_in_budget,expected_calls", [(1,3), (2,2)])
+def test_reconstruction_cache_eviction_and_release(monkeypatch, models_in_budget, expected_calls):
+    from types import SimpleNamespace
+    config = SessionSettings(algorithm="test", seed=4, work_dir="", dataset="synthetic", participants=1,
+        learning=LearningSettings(.1,0,0,16,1), torch_threads=1)
+    tasks = [Task("init", "initialize", {})]
+    for label in ("a", "b"):
+        tasks.append(Task(label, "chunk", {"model":("init",0), "n":2}))
+    for i,label in enumerate(("a","b","a","b")):
+        tasks.append(Task("recon"+str(i), "reconstruct_from_chunks",
+            {"chunks":[[(label,0)],[(label,1)]], "time":i+1}))
+    by_name = {task.name:task for task in tasks}
+    def connect(task, value):
+        if isinstance(value, tuple) and value[0] in by_name:
+            source = by_name[value[0]]
+            task.inputs.append((source,value[1]));source.outputs.append((task,value[1]))
+        elif isinstance(value, dict):
+            for item in value.values(): connect(task,item)
+        elif isinstance(value, list):
+            for item in value: connect(task,item)
+    for task in tasks: connect(task,task.data)
+    sim = SimpleNamespace(settings=config, workflow_dag=SimpleNamespace(tasks=by_name))
+    size = sum(v.numel()*v.element_size() for v in create_model("synthetic").state_dict().values())
+    calls, status = [], []
+    reconstruct = functions.reconstruct_from_chunks
+    def counted(*args):
+        calls.append(1)
+        return reconstruct(*args)
+    monkeypatch.setattr(functions,"reconstruct_from_chunks",counted)
+    execute_local(sim,retain_results=False, reconstruction_cache_bytes=models_in_budget*size, progress=status.append)
+    # The last A use needs no cache insertion, leaving B available for its hit.
+    assert len(calls) == expected_calls
+    assert status[-1]["reconstruction_cache_peak_bytes"] <= models_in_budget*size
+    assert status[-1]["reconstruction_cache_bytes"] == 0

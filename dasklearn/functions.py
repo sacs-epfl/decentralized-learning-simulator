@@ -155,6 +155,8 @@ def test(settings: SessionSettings, params: Dict):
 
     logger.info("[t=%.2f] Model accuracy (peer %d, round %d): %f, loss: %f", cur_time / MICROSECONDS, peer_id, round_nr, accuracy, loss)
 
+    if not params.get("return_model", True):
+        return []
     detached_model = copy_model_state(model, settings.dataset, architecture=settings.model)
     return [detached_model]
 
