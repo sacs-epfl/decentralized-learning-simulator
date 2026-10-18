@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "source_sha256": "c0281ddd84a9367dffd81239d3aa235f863aaaae1b0aa7ba793d382214a08305",
+  "runs": 2,
+  "curve_node_rows": 1536,
+  "full_validation_rows": 256,
+  "reference_exact_to_previous_gpu_run": true,
+  "same_learning_and_capacities": true,
+  "latest_aggregate_recipients_identical": true,
+  "byte_conservation": true,
+  "limitation": "One seed and a short low-accuracy horizon; no Moshpit/Tiny comparison."
+}

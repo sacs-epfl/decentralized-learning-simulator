@@ -1,0 +1,7 @@
+time,accuracy,loss,nodes,variant,profile,partitioner,seed
+300.0,0.755859375,5.3178569609375,128,conflux-v2,heterogeneous,dirichlet,0
+600.0,1.689453125,5.21701140625,128,conflux-v2,heterogeneous,dirichlet,0
+900.0,2.513671875,5.0930360546875,128,conflux-v2,heterogeneous,dirichlet,0
+1200.0,3.163671875,5.0032617265625,128,conflux-v2,heterogeneous,dirichlet,0
+1500.0,3.9109375,4.9153570390625,128,conflux-v2,heterogeneous,dirichlet,0
+1800.0,4.7984374999999995,4.8362347734375,128,conflux-v2,heterogeneous,dirichlet,0

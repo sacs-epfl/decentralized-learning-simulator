@@ -100,6 +100,38 @@ minimizes assigned load relative to public bandwidth capacity. Reducers may be
 outside the training sample. More chunks can spread work over more relays, while
 `--relay-count` caps potential reducers. Capacity ties rotate between rounds.
 
+`--immediate-uploads` overlaps uploads with other clients' training when
+`--success-fraction 1` makes the full contributor set known beforehand. It skips
+the readiness/plan exchange, but reducers still wait for every contributor and
+preserve contributor order. Partial-contribution rounds retain the coordinated
+path. The scheduling change is opt-in; `--no-immediate-uploads` explicitly restores
+the original behavior. The same flags work in the CIFAR, Tiny ImageNet and offline
+validation runners. Broader placement uses the existing chunk and relay controls:
+for a 16-client sample, `--chunks-in-sample 16 --relay-count 16` allows up to 16
+reducers (use `--chunks 16` in the comparison runners).
+
+The fixed scheduling/placement ablation, including the original V2 and Moshpit,
+can be reproduced with:
+
+```sh
+python scripts/benchmark_conflux_v2_uploads.py --output output/v2-uploads64 \
+  --dataset-base-path /path/to/cifar-cache --profile uniform --device cuda:0
+python scripts/benchmark_conflux_v2_uploads.py --output output/v2-uploads64 \
+  --dataset-base-path /path/to/cifar-cache --profile heterogeneous --device cuda:1
+```
+
+Each profile contains 30 runs: five configurations, two data distributions and
+three seeds, with 64 nodes and 900 simulated seconds. Run the profiles sequentially
+on a single GPU or concurrently on separate GPUs. All learning settings, capacity
+assignments and evaluation intervals are shared; only upload scheduling and the
+V2 chunk/reducer count change.
+
+The completed [scheduling/placement results](docs/peer-baselines.md#v2-upload-scheduling-and-reducer-placement)
+include all 60 CIFAR runs, the full correctness audit, and a supplementary
+Tiny ImageNet/ResNet18 check. The gains are strongest in the uniform network;
+individual time-to-accuracy targets can still regress, so the new schedule remains
+opt-in.
+
 This version requires stable membership and explicitly rejects churn. Capacities
 are public and fixed; coordinator/reducer recovery and changing membership need
 further work. Success fraction below 1 introduces completion-dependent participation,

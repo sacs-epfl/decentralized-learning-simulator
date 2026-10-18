@@ -1,0 +1,754 @@
+{
+  "passed": true,
+  "runs": 60,
+  "aggregate_checkpoint_rows": 360,
+  "per_node_rows": 23040,
+  "source_sha256": "c0281ddd84a9367dffd81239d3aa235f863aaaae1b0aa7ba793d382214a08305",
+  "checks": [
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "wide",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "immediate-wide",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "node_rows": 384,
+      "finite": true,
+      "byte_conservation": true
+    }
+  ],
+  "old_baseline_replays": [
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "reference",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    },
+    {
+      "case": "moshpit",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows_exact": 384,
+      "traffic_and_capacities_exact": true
+    }
+  ],
+  "old_replay_node_rows": 9216,
+  "learning_and_capacity_assignments_exact": true,
+  "limitations": [
+    "Three seeds; short CIFAR/GNLeNet experiment, stable membership.",
+    "Common hyperparameters; Moshpit is the stable-membership specialization.",
+    "Targets use fixed 150-second checkpoint resolution; unreached targets are censored.",
+    "All-node checkpoints and latest V2 aggregates are distinct quantities.",
+    "More completed updates can increase endpoint traffic; bytes-to-target reported separately.",
+    "Chunking and aggregation instantaneous in simulated time for all methods; local training explicitly timed.",
+    "GPU execution seconds are separate from simulated protocol time."
+  ]
+}

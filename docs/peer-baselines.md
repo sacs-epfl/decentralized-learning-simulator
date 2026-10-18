@@ -60,7 +60,129 @@ Validation passes 80 tests on Linux/CUDA and 74 on macOS/CPU, with six CUDA
 checks skipped on the CPU host. Raw DAGs and per-node files remain under
 `/mnt/data/mdevos/conflux/results/peer-baselines64`.
 
+## V2 upload scheduling and reducer placement
+
+A fixed follow-up compares the original V2 schedule, immediate uploads, 16
+reducers instead of eight, their combination, and one-phase Moshpit. All five
+configurations use the same CIFAR/GNLeNet settings above: 64 nodes, 16 sampled
+trainers, 900 simulated seconds, both network profiles and data distributions,
+and three paired seeds. The four V2 configurations form a 2×2 factorial comparison;
+all configurations are reported without choosing hyperparameters on test accuracy.
+
+| Configuration | Uniform IID | Uniform Dirichlet | Heterogeneous IID | Heterogeneous Dirichlet |
+| --- | ---: | ---: | ---: | ---: |
+| V2 original, 8 reducers | 47.68 ± 0.62 | 34.78 ± 2.55 | 46.05 ± 0.59 | 34.63 ± 1.37 |
+| V2 immediate uploads, 8 reducers | 49.69 ± 0.54 | 37.73 ± 0.29 | 46.06 ± 0.49 | 34.79 ± 0.89 |
+| V2 original schedule, 16 reducers | 54.34 ± 0.67 | 41.20 ± 1.37 | 46.44 ± 0.65 | 35.00 ± 1.02 |
+| V2 immediate uploads, 16 reducers | 54.86 ± 0.54 | **42.52 ± 0.86** | **47.33 ± 0.55** | **35.28 ± 1.40** |
+| Moshpit, one phase | **56.33 ± 0.67** | 41.71 ± 0.90 | 45.02 ± 0.68 | 30.66 ± 0.84 |
+
+These are all-node mean accuracies, not the accuracy of a selected aggregate.
+The combination improves the uniform non-IID mean by 7.74 percentage points and
+the IID mean by 7.19 points. It narrows the IID gap to Moshpit and exceeds its
+non-IID mean, but does not beat it in every setting. The heterogeneous improvements
+are smaller (1.28 IID points and 0.65 non-IID points); three seeds do not establish
+a population-level significance claim.
+
+Broader placement accounts for most of the uniform-network improvement. Immediate
+uploads alone help the uniform profile but barely change heterogeneous throughput.
+The combined configuration schedules about 90% more local training tasks in the
+uniform profile and 11% more in the heterogeneous profile. Those extra updates
+consume more bytes at the fixed endpoint: 1.253 GB versus 0.654 GB in the uniform
+network, and 0.630 GB versus 0.565 GB in the heterogeneous network. Moshpit uses
+5.226 GB and 1.761 GB respectively. Thus the combined V2 still uses about 76% fewer
+bytes than Moshpit in the uniform network and 64% fewer in the heterogeneous
+network, while spending more than the original V2. Endpoint traffic alone does
+not establish better bytes-to-accuracy; first observed targets and censored results
+are saved separately.
+
+Time-to-accuracy also shows why this remains opt-in. For uniform non-IID data,
+the combination and Moshpit both first reach 40% at 750, 900 and 900 seconds in
+the three paired seeds. V2 uses 1.183 GB on average at those checkpoints versus
+Moshpit's 4.936 GB; original V2 never reaches 40% within the budget. For
+heterogeneous IID data, the combination first reaches 40% at 600, 450 and 450
+seconds versus original V2's 600 seconds in every seed. However, for heterogeneous
+non-IID data, original V2 first reaches 30% at 600 seconds in all three seeds,
+whereas the combination reaches it at 600, 600 and 750 seconds and uses 0.454 GB
+on average versus 0.378 GB. Higher final accuracy and more completed rounds do
+not guarantee improvements at every observed target. These are fixed 150-second
+checkpoint observations, rather than interpolated crossing times.
+
+At the fixed 900-second endpoint, the combined V2's separate latest-aggregate
+accuracy averages 54.93% / 42.51% for uniform IID / Dirichlet and 48.29% / 35.24%
+for heterogeneous IID / Dirichlet. The all-node metrics in the table also include
+older checkpoints. Mean staleness is 2.82 rounds in the uniform profile and 3.24
+rounds in the heterogeneous profile; the largest observed ages are 16 and 26
+rounds. Latest-round recipients must have identical metrics, even when an aggregate
+has only reached some recipients at the time boundary. Moshpit has distinct mixed
+local models and is represented by the network-wide metric throughout.
+
+The implementation adds `--immediate-uploads` and `--no-immediate-uploads` to the
+simulator and comparison runners. This option is currently opt-in. When success
+fraction is exactly one, every reducer already knows the complete contributor set.
+Clients upload immediately after training; reducers still wait for all sampled
+contributors and average in the original sorted order. Partial-contribution rounds
+retain the original ready/plan protocol. Stable membership is still required.
+The wider configuration uses the existing placement algorithm with 16 chunks and
+`--relay-count 16`, allowing more reducers to carry traffic without changing
+sampling or aggregation weights. Main-simulator chunk syntax is
+`--chunks-in-sample 16`; comparison runners use `--chunks 16`.
+
+Fixed-round differential tests verify bit-exact models for immediate uploads with
+unchanged chunking, numerical equivalence for broader chunking, actual upload/training
+overlap, exact partial-round fallback, and byte conservation. The focused suite
+passes 91 tests on Linux/CUDA and 85 on macOS/CPU (six CUDA checks skipped).
+The completed experiment audit covers all 60 CIFAR runs, 360 aggregate checkpoint
+rows and 23,040 per-node rows. All 24 original-V2/Moshpit replays exactly reproduce
+the previous study's 9,216 per-node metrics, client statistics and traffic curves.
+Every method has identical learning settings and per-node capacity assignments.
+
+The execution code is frozen at commit `e11ac43`, SHA256
+`c0281ddd84a9367dffd81239d3aa235f863aaaae1b0aa7ba793d382214a08305`, under
+`/mnt/data/mdevos/conflux/v2-uploads-code`. GPU execution time is recorded separately
+from simulated protocol time. For example, more learning tasks make the combined
+uniform IID run take 26.71 execution seconds on average versus 16.86 for original
+V2; this is a protocol-performance optimization, rather than a reduction in the
+cost of executing a given training DAG. Chunking and aggregation remain instantaneous
+in simulated time for every method.
+
+![V2 scheduling and placement comparison](../output/v2-uploads64/accuracy.png)
+
+Results, fixed-checkpoint time to accuracy, paired differences and audits are in
+[`output/v2-uploads64`](../output/v2-uploads64). Reproduce both network profiles
+with `scripts/benchmark_conflux_v2_uploads.py`; commands are shown in the repository
+README. Raw DAGs and per-node measurements remain on `sacs006`.
+
+A supplementary Tiny ImageNet/ResNet18 check uses the previous short-run setup:
+128 nodes, sample 32, seed 0, heterogeneous capacities, Dirichlet α = 0.1, 1,800
+simulated seconds, five local steps, batch 32, learning rate 0.01 and momentum
+0.9. The original uses 16 chunks/reducers; the combined variant uses immediate
+uploads and 32 chunks/reducers. Both retain the same learning and capacity settings.
+
+| Tiny ImageNet readout | Original V2 | Both changes |
+| --- | ---: | ---: |
+| All-node accuracy, final full 10,000 images | 4.5532% | 5.2386% |
+| All-node loss, final full 10,000 images | 4.84250 | 4.77835 |
+| Latest aggregate accuracy, final full 10,000 images | 4.62% | 5.50% |
+| All-node accuracy, fixed 2,000-image curve subset at 1,800 s | 4.7984% | 5.2941% |
+| Latest completed aggregate round | 71 | 82 |
+| Scheduled local training tasks | 2,304 | 2,656 |
+| Traffic at 1,800 s, decimal GB | 204.854 | 236.132 |
+| GPU execution seconds | 158.92 | 197.75 |
+
+Latest-round recipients have identical metrics (32 recipients at the final
+snapshot). Mean node staleness is 3.0703 / 3.0078 rounds for original / combined;
+the maximum is 19 / 30 rounds. The replay exactly matches the previous GPU run's
+768 per-node curve rows, 128 final full-validation rows and client statistics.
+Both new runs pass node-coverage, finite-metric, shared-capacity and byte-accounting
+checks. The 2,000-image curve metric is distinct from the final 10,000-image metric.
+This one-seed, early low-accuracy check supports the throughput mechanism; it does
+not establish final convergence or performance against Moshpit on Tiny ImageNet.
+Compact results and the audit are in
+[`output/v2-uploads64/tiny-check`](../output/v2-uploads64/tiny-check).
+
 ## Selection
+
 
 | Method | Peer-reviewed source | Why compare it |
 | --- | --- | --- |

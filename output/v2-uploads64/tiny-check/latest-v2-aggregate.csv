@@ -1,0 +1,15 @@
+case,metric,time,round,accuracy,loss,recipients,mean_staleness_rounds,max_staleness_rounds
+reference,curve_2000,300.0,12,0.8,5.295302,6,3.8046875,12
+reference,curve_2000,600.0,24,2.0,5.180311,6,4.0546875,19
+reference,curve_2000,900.0,36,3.05,5.062635,10,3.40625,18
+reference,curve_2000,1200.0,47,3.6,4.974117,32,3.1875,20
+reference,curve_2000,1500.0,59,3.85,4.895195,32,2.9765625,13
+reference,curve_2000,1800.0,71,5.25,4.817906,32,3.0703125,19
+reference,final_10000,1800.0,71,4.62,4.821331,32,3.0703125,19
+immediate-wide,curve_2000,300.0,13,1.55,5.288897,32,3.265625,13
+immediate-wide,curve_2000,600.0,27,2.55,5.150117,32,2.7890625,22
+immediate-wide,curve_2000,900.0,41,2.8,5.026199,9,3.65625,23
+immediate-wide,curve_2000,1200.0,54,4.1,4.941897,32,2.859375,14
+immediate-wide,curve_2000,1500.0,68,4.7,4.836085,32,2.7421875,16
+immediate-wide,curve_2000,1800.0,82,5.65,4.750234,32,3.0078125,30
+immediate-wide,final_10000,1800.0,82,5.5,4.762396,32,3.0078125,30
