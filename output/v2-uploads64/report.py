@@ -178,7 +178,11 @@ def plot(curves,root):
         fig.legend(handles,labels,loc='lower center',ncol=3,frameon=False,bbox_to_anchor=(.5,.005))
         fig.suptitle('CIFAR-10 / GNLeNet · 64 nodes · 3 seeds · mean ± sample SD')
         fig.tight_layout(rect=[0,.09,1,.95])
-        for extension in ['png','svg']:fig.savefig(root/f'{name}.{extension}',dpi=180)
+        for extension in ['png','svg']:
+            path=root/f'{name}.{extension}'
+            fig.savefig(path,dpi=180)
+            if extension=='svg':
+                path.write_text('\n'.join(line.rstrip() for line in path.read_text().splitlines())+'\n')
         plt.close(fig)
 
 
