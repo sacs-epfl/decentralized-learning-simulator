@@ -1,5 +1,6 @@
 import logging
 import random
+import math
 
 from dasklearn.simulation.events import *
 from dasklearn.util import MICROSECONDS
@@ -20,7 +21,7 @@ class SlotTransfer:
         self.start_time = -1
         self.last_time_updated = 0
         # Each slot gets an equal share of the sender's total bandwidth.
-        self.allocated_bw = sender.slot_bw
+        self.allocated_bw = min(sender.slot_bw, receiver.slot_bw)
 
     def update(self):
         """
@@ -28,7 +29,7 @@ class SlotTransfer:
         """
         current_time = self.sender.client.simulator.current_time
         time_elapsed = (current_time - self.last_time_updated) / MICROSECONDS
-        self.transferred += int(self.allocated_bw * time_elapsed)
+        self.transferred = min(self.transfer_size, self.transferred + int(self.allocated_bw * time_elapsed))
         self.last_time_updated = current_time
 
     def is_complete(self):
@@ -104,7 +105,7 @@ class SlotBWScheduler:
 
         # Calculate the estimated duration based on the fixed slot bandwidth.
         estimated_duration = transfer_size / min(self.slot_bw, receiver_scheduler.slot_bw)
-        finish_time = self.client.simulator.current_time + int(estimated_duration * MICROSECONDS)
+        finish_time = self.client.simulator.current_time + math.ceil(estimated_duration * MICROSECONDS)
         finish_event = Event(finish_time, self.client.index, FINISH_OUTGOING_TRANSFER, {"transfer": transfer})
         self.client.simulator.schedule(finish_event)
         self.logger.debug(f"Transfer {transfer.transfer_id} scheduled in slot {sender_slot_index} "
@@ -113,6 +114,7 @@ class SlotBWScheduler:
     
     def on_outgoing_transfer_complete(self, transfer):
         transfer.finish()
+        transfer.transferred = transfer.transfer_size
         self.total_bytes_sent += transfer.transferred
 
         self.outgoing_slots[transfer.slot_index] = None
@@ -131,7 +133,7 @@ class SlotBWScheduler:
         cur_time = self.client.simulator.current_time
         data = {
             "from": completed_transfer.sender.client.index,
-            "to": completed_transfer.sender.client.index,
+            "to": self.client.index,
             "model": completed_transfer.model,
             "metadata": completed_transfer.metadata,
         }
@@ -149,6 +151,8 @@ class SlotBWScheduler:
         if out_idx is not None:
             self.outgoing_slots[out_idx] = None
         transfer.finish()
+        transfer.sender.total_bytes_sent += transfer.transferred
+        transfer.receiver.total_bytes_received += transfer.transferred
         self.remove_transfer_finish_from_event_queue(transfer)
 
         # Remove the transfer from the other side as well

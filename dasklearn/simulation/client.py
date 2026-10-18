@@ -1,10 +1,12 @@
 import logging
+import copy
+import pickle
 from typing import Optional, Any, Dict, List, Tuple
 from collections import Counter
 
 from dasklearn import AUGMENTATION_FACTOR_SIM
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
-from dasklearn.simulation.events import FINISH_TRAIN, Event, SEND_MESSAGE, START_TRANSFER
+from dasklearn.simulation.events import FINISH_TRAIN, Event, SEND_MESSAGE, START_TRANSFER, START_CONTROL_TRANSFER
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS, time_to_sec
 
@@ -26,6 +28,7 @@ class BaseClient:
         self.train_function: str = "train"
 
         self.compute_time: int = 0  # Total time spent training
+        self.training_until: int = 0
         # Log of aggregations (client, model, age)
         self.aggregations: List[List[Tuple[int, str, int]]] = []
         self.incoming_counter: Dict[int, int] = Counter()
@@ -53,6 +56,9 @@ class BaseClient:
         """
         We started training. Schedule when the training has ended.
         """
+        if self.simulator.current_time < self.training_until:
+            self.simulator.schedule(Event(self.training_until, self.index, "start_train", event.data))
+            return
         task_name = Task.generate_name(self.train_function)
         task = Task(task_name, self.train_function, data={
             "model": event.data["model"], "round": event.data["round"],
@@ -60,6 +66,7 @@ class BaseClient:
         self.add_compute_task(task)
 
         train_time: int = self.get_train_time()
+        self.training_until = self.simulator.current_time + train_time
         finish_train_event = Event(self.simulator.current_time + train_time, self.index, FINISH_TRAIN,
                                    data={"model": (task_name, 0), "round": event.data["round"], "train_time": train_time})
         self.simulator.schedule(finish_train_event)
@@ -95,9 +102,32 @@ class BaseClient:
         return (task_name, 0)
     
     def send_message_to_client(self, to: int, type: str, message: Dict, send_time: int = 0) -> None:
-        event_data = {"from": self.index, "to": to, "type": type, "message": message}
-        start_transfer_event = Event(self.simulator.current_time + send_time, to, SEND_MESSAGE, data=event_data)
+        # Freeze the payload: later mutations of a local population view must not
+        # change an already sent advertisement or an evaluation snapshot.
+        event_data = {"from": self.index, "to": to, "type": type, "message": copy.deepcopy(message)}
+        action = SEND_MESSAGE if to == self.index else START_CONTROL_TRANSFER
+        target = to if to == self.index else self.index
+        start_transfer_event = Event(self.simulator.current_time + send_time, target, action, data=event_data)
         self.simulator.schedule(start_transfer_event)
+
+    def start_control_transfer(self, event: Event):
+        self.bw_scheduler.add_transfer(
+            self.simulator.clients[event.data["to"]].bw_scheduler,
+            len(pickle.dumps(event.data)) + self.simulator.settings.control_message_bytes,
+            None, {"_control_message": event.data})
+
+    def chunk_transfer_size(self, index: int, count: int) -> int:
+        # Charge all bytes, including the last chunk's remainder.
+        size, remainder = divmod(self.simulator.model_size, count)
+        return size + (remainder if index == count - 1 else 0)
+
+    def data_transfer_size(self, payload_size, metadata):
+        return payload_size + self.simulator.settings.control_message_bytes + len(pickle.dumps(metadata))
+
+    def publish_model(self, round_nr, model):
+        previous = self.simulator.latest_models.get(self.index)
+        if previous is None or round_nr >= previous[0]:
+            self.simulator.latest_models[self.index] = (round_nr, model)
 
     def add_compute_task(self, task: Task, inputs: Optional[Tuple[str, int]] = None) -> None:
         self.simulator.workflow_dag.tasks[task.name] = task
@@ -122,8 +152,13 @@ class BaseClient:
             for chunk_idx, chunks in enumerate(task.data["chunks"]):
                 for chunk in chunks:
                     preceding_task: Task = self.simulator.workflow_dag.tasks[chunk[0]]
-                    preceding_task.outputs.append((task, chunk_idx))
-                    task.inputs.append((preceding_task, chunk_idx))
+                    preceding_task.outputs.append((task, chunk[1]))
+                    task.inputs.append((preceding_task, chunk[1]))
+        elif task.func == "aggregate_chunk":
+            for model_name, output_idx in task.data["chunks"]:
+                preceding_task = self.simulator.workflow_dag.tasks[model_name]
+                preceding_task.outputs.append((task, output_idx))
+                task.inputs.append((preceding_task, output_idx))
         elif task.func == "weighted_reconstruct_from_chunks":
             for chunk_idx, chunk in enumerate(task.data["chunks"]):
                 for chunk_info, _ in chunk:

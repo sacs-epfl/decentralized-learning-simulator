@@ -56,6 +56,7 @@ class Simulation:
         self.workflow_dag = WorkflowDAG()
         self.model_size: int = 0
         self.current_time: int = 0
+        self.latest_models = {}
         self.brokers_available_future: Future = Future()
         self.simulation_start_time: float = 0
         self.churn_manager: ChurnManager = ChurnManager(settings)
@@ -78,6 +79,9 @@ class Simulation:
         self.register_event_callback(INIT_CLIENT, "init_client")
         self.register_event_callback(START_TRAIN, "start_train")
         self.register_event_callback(START_TRANSFER, "start_transfer")
+        self.register_event_callback(INCOMING_MODEL, "on_incoming_model")
+        self.register_event_callback(START_CONTROL_TRANSFER, "start_control_transfer")
+        self.register_event_callback(TEST_SNAPSHOT, "test_snapshot")
         self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
         self.register_event_callback(SEND_MESSAGE, "on_message")
         self.register_event_callback(ONLINE, "come_online")
@@ -307,11 +311,21 @@ class Simulation:
                 total_in_used += client.bw_scheduler.get_allocated_incoming_bw()
                 total_out_used += client.bw_scheduler.get_allocated_outgoing_bw()
 
-        self.bw_utilization.append((time_to_sec(self.current_time), total_in_used / total_in, total_out_used / total_out))
+        self.bw_utilization.append((time_to_sec(self.current_time), total_in_used / total_in if total_in else 0, total_out_used / total_out if total_out else 0))
 
         # Schedule the next event
         next_event = Event(self.current_time + MICROSECONDS, 0, MONITOR_BANDWIDTH_UTILIZATION, is_global=True)
         self.schedule(next_event)
+
+    def test_snapshot(self, event: Event):
+        # The same wall-clock cadence and the same available-node metric for
+        # sampled and all-node algorithms. No free global parameter averaging.
+        for peer, (round_nr, model) in sorted(self.latest_models.items()):
+            if self.clients[peer].online:
+                task = Task(Task.generate_name("test_snapshot"), "test", data={
+                    "model": model, "round": round_nr, "time": self.current_time, "peer": peer})
+                self.clients[peer].add_compute_task(task)
+        self.schedule(Event(self.current_time + self.settings.test_period, 0, TEST_SNAPSHOT, is_global=True))
 
     def checkpoint_dag(self, _: Event) -> None:
         self.logger.info("Checkpointing workflow DAG...")
@@ -378,6 +392,11 @@ class Simulation:
 
         # Initialize the clients
         self.initialize_clients()
+        if self.settings.test_method == "snapshot" and self.settings.test_period > 0:
+            initial = Task(Task.generate_name("initialize"), "initialize", {"peer": 0, "round": 0, "time": 0})
+            self.clients[0].add_compute_task(initial)
+            self.latest_models = {peer: (0, (initial.name, 0)) for peer in range(self.settings.participants)}
+            self.schedule(Event(self.settings.test_period, 0, TEST_SNAPSHOT, is_global=True))
 
         # Initialize the bandwidth utilization monitor if needed
         if self.settings.log_bandwidth_utilization:
@@ -398,6 +417,9 @@ class Simulation:
         self.memory_log.append((self.current_time, process.memory_info()))
 
         while self.events and self.current_time < self.settings.duration:
+            if self.events[0][0] > self.settings.duration:
+                self.current_time = self.settings.duration
+                break
             # Process synchronous events
             _, _, event = self.events.pop(0)
             assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
@@ -407,6 +429,13 @@ class Simulation:
             if random.random() < 0.1 / self.settings.participants:
                 self.memory_log.append((self.current_time, process.memory_info()))
         
+        # The common time budget may end mid-transfer. These bytes consumed
+        # bandwidth even though the payload cannot yet be used for learning.
+        for client in self.clients:
+            for transfer in list(client.bw_scheduler.outgoing_transfers.values()):
+                transfer.update()
+                transfer.sender_scheduler.total_bytes_sent += transfer.transferred
+                transfer.receiver_scheduler.total_bytes_received += transfer.transferred
         self.events = []
 
         # We're done - summarize statistics
@@ -485,9 +514,6 @@ class Simulation:
             self.schedule_tasks_on_broker(tasks, broker)
 
     def plot_loss(self):
-        if not seaborn_available:
-            self.logger.warning("Seaborn not available - skipping plotting.")
-            return
         # Check if the accuracies file exists
         path = os.path.join(self.settings.data_dir, "accuracies.csv")
         if not os.path.exists(path):
@@ -502,19 +528,25 @@ class Simulation:
         all_combinations.sort_values('time', inplace=True)
         all_combinations = all_combinations.groupby('peer').ffill()
         # Convert to hours
-        all_combinations['hours'] = all_combinations['time'] / MICROSECONDS / 3600
+        # functions.test writes seconds, not simulation microseconds.
+        all_combinations['hours'] = all_combinations['time'] / 3600
         # Plot
         fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-        sns.lineplot(all_combinations, x='hours', y='loss', ax=ax[0])
-        sns.lineplot(all_combinations, x='hours', y='accuracy', ax=ax[1])
+        for axis, metric in zip(ax, ["loss", "accuracy"]):
+            grouped = all_combinations.groupby("hours")[metric]
+            mean, std = grouped.mean(), grouped.std().fillna(0)
+            axis.plot(mean.index, mean.values)
+            axis.fill_between(mean.index, mean - std, mean + std, alpha=0.2)
+            axis.set(xlabel="Time [h]", ylabel=metric)
         plt.savefig(os.path.join(self.settings.data_dir, "accuracies.png"))
+        plt.close(fig)
 
     def merge_accuracies_files(self):
         paths = [os.path.join(self.settings.data_dir, "accuracies_" + str(i) + ".csv")
                  for i in range(self.settings.participants)]
 
         with open(os.path.join(self.settings.data_dir, "accuracies.csv"), "w") as output_file:
-            output_file.write("algorithm,dataset,partitioner,alpha,peer,round,time,accuracy,loss\n")
+            output_file.write("algorithm,dataset,partitioner,alpha,learning_rate,peer,round,time,accuracy,loss\n")
             for path in paths:
                 if os.path.exists(path):
                     with open(path, "r") as input_file:

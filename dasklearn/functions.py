@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+import copy
 import os
 import time
 import threading
@@ -6,7 +9,9 @@ from typing import Dict, List, Optional
 
 import torch
 
-from flwr_datasets import FederatedDataset
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from flwr_datasets import FederatedDataset
 
 from dasklearn.datasets import create_dataset
 from dasklearn.model_evaluator import ModelEvaluator
@@ -23,6 +28,12 @@ model_trainers: Optional[List[ModelTrainer]] = None
 dataset: Optional[FederatedDataset] = None
 evaluator = None
 lock = threading.Lock()
+
+
+def initialize(settings: SessionSettings, params: Dict):
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(settings.seed)
+        return [create_model(settings.dataset, architecture=settings.model)]
 
 
 def train(settings: SessionSettings, params: Dict):
@@ -46,6 +57,10 @@ def train(settings: SessionSettings, params: Dict):
     if not model:
         torch.manual_seed(settings.seed)
         model = create_model(settings.dataset, architecture=settings.model)
+    else:
+        # A model can feed several training tasks, possibly on one worker.
+        # Never mutate the shared predecessor value in the workflow DAG.
+        model = copy.deepcopy(model)
 
     if model_trainers[peer_id] is None:
         model_trainers[peer_id] = ModelTrainer(dataset, settings, peer_id)
@@ -54,7 +69,10 @@ def train(settings: SessionSettings, params: Dict):
     if gradient_model:
         trainer.gradient_update(model, gradient_model)
     else:
-        train_info = trainer.train(model, local_steps, compute_gradient, settings.torch_device_name)
+        task_seed = (settings.seed + 1000003 * peer_id + 9176 * round_nr) % (2 ** 63)
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(task_seed)
+            train_info = trainer.train(model, local_steps, compute_gradient, settings.torch_device_name, seed=task_seed)
         if train_info["validation_loss_global"] is not None:
             with open(os.path.join(settings.data_dir, "validation_losses.csv"), "a") as loss_file:
                 loss_file.write("%d,%d,%f,%f\n" % (peer_id, round_nr, cur_time, train_info["validation_loss_global"]))
@@ -147,6 +165,10 @@ def reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[tor
     model = create_model(settings.dataset, architecture=settings.model)
     model = ChunkManager.reconstruct_model(chunks, model)
     return [model]
+
+
+def aggregate_chunk(settings: SessionSettings, params: Dict):
+    return [torch.stack(params["chunks"]).mean(dim=0)]
 
 
 def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:

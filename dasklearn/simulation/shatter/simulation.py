@@ -14,11 +14,16 @@ class ShatterSimulation(Simulation):
     CLIENT_CLASS = ShatterClient
 
     def __init__(self, settings: SessionSettings):
+        if settings.k < 1 or settings.participants < 1:
+            raise ValueError("Shatter requires positive participant and chunk counts (--k)")
         super().__init__(settings)
         self.topologies = []
         self.finished: Dict[int, List[Tuple[str, int]]] = {}
         if self.settings.r == 0:
-            self.settings.r = math.floor(math.log2(self.settings.participants * self.settings.k))
+            self.settings.r = max(1, math.floor(math.log2(self.settings.participants * self.settings.k)))
+        vertices = settings.participants * settings.k
+        if not 0 < settings.r < vertices or settings.r * vertices % 2:
+            raise ValueError("Shatter degree must be below the virtual-node count and give an even degree sum")
 
         self.register_event_callback(START_ROUND, "start_round")
         self.register_event_callback(FINISH_TRAIN, "finish_train")

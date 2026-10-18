@@ -11,7 +11,7 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--local-steps', type=int, default=5)
 
-    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist", "movielens", "google_speech", "tiny_imagenet"])
+    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist", "movielens", "google_speech", "tiny_imagenet", "synthetic", "digits"])
     parser.add_argument('--partitioner', type=str, default="iid", choices=["iid", "natural", "shards", "dirichlet"])
     parser.add_argument('--dataset-base-path', type=str, default=None)
     parser.add_argument('--peers', type=int, default=2)
@@ -29,11 +29,14 @@ def get_args():
 
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
-    parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor", "conflux", "teleportation", "shatter", "pushsum"])
+    parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor", "conflux", "conflux-v2", "teleportation", "shatter", "pushsum"])
     parser.add_argument('--topology', type=str, default="kreg", choices=["ring", "kreg"])
     parser.add_argument('--sample-size', type=int, default=10)
     parser.add_argument('--chunks-in-sample', type=int, default=10)
     parser.add_argument('--success-fraction', type=float, default=1)
+    parser.add_argument('--relay-count', type=int, default=0)
+    parser.add_argument('--control-message-bytes', type=int, default=64)
+    parser.add_argument('--network-latency-ms', type=float, default=0)
     parser.add_argument('--duration', type=int, default=100)
     parser.add_argument('--gl-period', type=int, default=10)
     parser.add_argument('--agg', type=str, default="default", choices=["default", "average", "age"])
@@ -57,7 +60,7 @@ def get_args():
     parser.add_argument('--compute-validation-loss-global-model', action=argparse.BooleanOptionalAction)
     parser.add_argument('--test-interval', type=int, default=5)
     parser.add_argument('--test-period', type=int, default=60)
-    parser.add_argument('--test-method', type=str, default="individual", choices=["individual", "global"])
+    parser.add_argument('--test-method', type=str, default="individual", choices=["individual", "global", "snapshot"])
 
     # Plots
     parser.add_argument('--compute-graph-plot-size', type=int, default=100)

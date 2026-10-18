@@ -14,6 +14,8 @@ class ChunkManager:
         # Chunk
         flat_params = ChunkManager.get_flat_params(model)
         total_elements = flat_params.numel()
+        if not 1 <= num_chunks <= total_elements:
+            raise ValueError("Chunk count must be between one and the model's state size")
         chunk_size = total_elements // num_chunks
         chunks: List[torch.Tensor] = [flat_params[i * chunk_size: (i + 1) * chunk_size] for i in range(num_chunks)]
 
@@ -36,11 +38,10 @@ class ChunkManager:
             assert chunks[idx], "No chunks received at index %d!" % idx
 
         # Aggregate the chunks at every index
-        for chunk_idx, chunks_at_idx in enumerate(chunks):
-            chunks[chunk_idx] = torch.mean(torch.stack(chunks_at_idx), dim=0)
+        averaged_chunks = [torch.mean(torch.stack(chunks_at_idx), dim=0) for chunks_at_idx in chunks]
 
         # Reconstruct the flat tensor
-        flat_params = torch.cat(chunks)
+        flat_params = torch.cat(averaged_chunks)
 
         # Copy the flat tensor into the model
         pointer = 0

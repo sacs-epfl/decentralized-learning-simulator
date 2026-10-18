@@ -41,7 +41,7 @@ class SessionSettings:
     torch_device_name: str = "cpu"
     test_interval: int = 0
     scheduler: Optional[str] = None
-    brokers: Optional[int] = None
+    brokers: int = 1
     traces: str = "none"
     churn: str = "none"
     min_bandwidth: int = 0
@@ -60,7 +60,9 @@ class SessionSettings:
     wait: bool = False
     stragglers_proportion: float = 0.0  # value between 0=none and 1=all
     stragglers_ratio: float = 0.1  # value between 0=no_action and 1=no_struggle
-    profile: bool = False,
+    profile: bool = False
     log_bandwidth_utilization: bool = False
     from_dir: Optional[str] = None
     dag_checkpoint_interval: int = 0
+    control_message_bytes: int = 64  # Header, in addition to the serialized control payload.
+    network_latency_ms: float = 0

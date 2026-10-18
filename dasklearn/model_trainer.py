@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Optional, Dict
 
@@ -6,13 +8,15 @@ from torch.autograd import Variable
 from torch.nn import CrossEntropyLoss, MSELoss, NLLLoss
 from torch.utils.data import DataLoader
 
-from flwr_datasets import FederatedDataset
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from flwr_datasets import FederatedDataset
 
-from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
 from dasklearn.optimizer.sgd import SGDOptimizer
 from dasklearn.session_settings import SessionSettings
 
-from datasets import Dataset
+if TYPE_CHECKING:
+    from datasets import Dataset
 
 
 class ModelTrainer:
@@ -56,7 +60,7 @@ class ModelTrainer:
         avg_loss = total_loss / len(validation_set)
         return float(avg_loss)
 
-    def train(self, model, local_steps: int, gradient_only: bool = False, device_name: str = "cpu") -> Dict:
+    def train(self, model, local_steps: int, gradient_only: bool = False, device_name: str = "cpu", seed=None) -> Dict:
         """
         Train the model on a batch. Return an integer that indicates how many local steps we have done.
         """
@@ -77,8 +81,11 @@ class ModelTrainer:
                 from dasklearn.datasets.transforms import preprocess_audio_train as transforms
                 self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)
             elif self.settings.dataset == "tiny_imagenet":
+                from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
                 transforms = apply_transforms_tiny_imagenet_resnet
                 self.partition = self.partition.with_transform(transforms)
+            elif self.settings.dataset in ["synthetic", "digits"]:
+                pass
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
@@ -89,7 +96,8 @@ class ModelTrainer:
         device = torch.device(device_name)
         model = model.to(device)
 
-        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True)
+        generator = torch.Generator().manual_seed(seed) if seed is not None else None
+        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True, generator=generator)
 
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
         self.logger.debug("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
@@ -106,10 +114,14 @@ class ModelTrainer:
             feature_column_name = "img"
 
         label_column_name = "y" if self.settings.dataset == "femnist" else "label"
-        for local_step, batch in enumerate(train_loader):
+        batches = iter(train_loader)
+        for local_step in range(local_steps):
+            try:
+                batch = next(batches)
+            except StopIteration:
+                batches = iter(train_loader)
+                batch = next(batches)
             data, target = batch[feature_column_name], batch[label_column_name]
-            if local_step >= local_steps:
-                break
 
             model.train()
             data, target = data.to(device), target.to(device)

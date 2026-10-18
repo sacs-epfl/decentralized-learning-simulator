@@ -157,12 +157,14 @@ class ShatterClient(BaseClient):
             "model": model_name,
             "metadata": {"chunk": chunk_idx, "round": round_info.round_nr}
         }
-        start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
+        action = INCOMING_MODEL if recipient_idx == self.index else START_TRANSFER
+        start_transfer_event = Event(self.simulator.current_time, self.index, action, data=event_data)
         self.simulator.schedule(start_transfer_event)
 
     def start_transfer(self, event: Event):
         to = event.data["to"]
-        transfer_size = self.simulator.model_size // self.simulator.settings.k
+        transfer_size = self.chunk_transfer_size(event.data["metadata"]["chunk"], self.simulator.settings.k)
+        transfer_size = self.data_transfer_size(transfer_size, event.data["metadata"])
         receiver_scheduler: BWScheduler = self.simulator.clients[to].bw_scheduler
         self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
 
@@ -209,6 +211,7 @@ class ShatterClient(BaseClient):
             })
             self.add_compute_task(task)
             round_info.model = (task_name, 0)
+            self.publish_model(round_nr, round_info.model)
             if (self.simulator.settings.stop == "rounds" and self.simulator.settings.test_method == "individual" and
                 self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0):
                 test_task_name = "test_%d_%d" % (self.index, round_nr)

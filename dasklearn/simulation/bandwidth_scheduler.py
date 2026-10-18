@@ -4,6 +4,7 @@ sending and receiving party.
 """
 import logging
 import random
+import math
 from typing import List, Any, OrderedDict
 
 from dasklearn.simulation.events import *
@@ -46,6 +47,19 @@ class BWScheduler:
         """
         return list(self.incoming_transfers.values()) + list(self.outgoing_transfers.values()) + \
                list(self.incoming_requests.values()) + list(self.outgoing_requests.values())
+
+    def has_free_incoming_slot(self):
+        # Bound speculative pulls, without reserving idle bandwidth for them.
+        return len(self.incoming_transfers) + len(self.incoming_requests) < 5
+
+    def has_free_outgoing_slot(self):
+        return len(self.outgoing_transfers) + len(self.outgoing_requests) < 5
+
+    def get_allocated_incoming_bw(self):
+        return self.allocated_incoming
+
+    def get_allocated_outgoing_bw(self):
+        return self.allocated_outgoing
 
 
     def register_transfer(self, transfer, is_outgoing=False):
@@ -134,7 +148,7 @@ class BWScheduler:
         request.last_time_updated = self.client.simulator.current_time
         assert estimated_transfer_duration >= 0
 
-        finish_time: int = self.client.simulator.current_time + int(estimated_transfer_duration * MICROSECONDS)
+        finish_time: int = self.client.simulator.current_time + math.ceil(estimated_transfer_duration * MICROSECONDS)
         finish_transfer_event = Event(finish_time, self.client.index, FINISH_OUTGOING_TRANSFER,
                                       {"transfer": request})
         self.client.simulator.schedule(finish_transfer_event)
@@ -176,8 +190,20 @@ class BWScheduler:
             "model": completed_transfer.model,
             "metadata": completed_transfer.metadata,
         }
-        incoming_model_event = Event(cur_time, self.client.index, INCOMING_MODEL, data)
-        self.client.on_incoming_model(incoming_model_event)
+        latency = int(getattr(self.client.simulator.settings, "network_latency_ms", 0) * 1000) if hasattr(self.client.simulator, "settings") else 0
+        incoming_model_event = Event(cur_time + latency, self.client.index, INCOMING_MODEL, data)
+        if "_control_message" in completed_transfer.metadata:
+            message = completed_transfer.metadata["_control_message"]
+            delivery = Event(cur_time + latency, self.client.index, SEND_MESSAGE, message)
+            if latency:
+                self.client.simulator.schedule(delivery)
+            else:
+                self.client.on_message(delivery)
+        else:
+            if latency:
+                self.client.simulator.schedule(incoming_model_event)
+            else:
+                self.client.on_incoming_model(incoming_model_event)
 
         # Prioritize allocating bandwidth to ongoing transfers
         for transfer in list(self.incoming_transfers.values()) + list(self.incoming_requests.values()):
@@ -235,7 +261,7 @@ class BWScheduler:
                 new_estimated_finish_time = (transfer.transfer_size - transfer.transferred) / transfer.allocated_bw
                 assert new_estimated_finish_time >= 0, "Estimated finish time in the past: %f (transfer size: %d, transferred: %d)" % (new_estimated_finish_time, transfer.transfer_size, transfer.transferred)
                 transfer.reschedules += 1
-                finish_time: int = self.client.simulator.current_time + int(new_estimated_finish_time * MICROSECONDS)
+                finish_time: int = self.client.simulator.current_time + math.ceil(new_estimated_finish_time * MICROSECONDS)
                 finish_transfer_event = Event(finish_time, self.client.index, FINISH_OUTGOING_TRANSFER,
                                               {"transfer": transfer})
                 self.client.simulator.schedule(finish_transfer_event)
@@ -250,6 +276,10 @@ class BWScheduler:
             raise RuntimeError("We do not know about request %d!" % transfer.transfer_id)
         
     def kill_transfer(self, transfer):
+        sender = transfer.sender_scheduler
+        receiver = transfer.receiver_scheduler
+        if transfer not in sender.get_all_transfers() and transfer not in receiver.get_all_transfers():
+            return
         self.logger.debug("Killing transfer %d: %s => %s", 
                             transfer.transfer_id, self.my_id, transfer.receiver_scheduler.my_id)
         
@@ -269,8 +299,12 @@ class BWScheduler:
             transfer.receiver_scheduler.unregister_transfer(transfer, is_outgoing=False)
         
         transfer.fail()
-        
-        self.schedule()
+        # Cancelled payload still consumed capacity. Count it exactly once.
+        sender.total_bytes_sent += transfer.transferred
+        receiver.total_bytes_received += transfer.transferred
+        sender.schedule()
+        for request in list(receiver.incoming_requests.values()):
+            request.sender_scheduler.schedule()
 
     def kill_all_transfers(self):
         for transfer in list(self.incoming_transfers.values()) + list(self.outgoing_transfers.values()) + list(self.incoming_requests.values()) + list(self.outgoing_requests.values()):
@@ -300,6 +334,7 @@ class Transfer:
 
     def finish(self):
         self.update()
+        self.transferred = self.transfer_size
         self.duration = self.receiver_scheduler.client.simulator.current_time - self.start_time
 
     def fail(self):
@@ -308,7 +343,7 @@ class Transfer:
     def update(self):
         cur_time: int = self.sender_scheduler.client.simulator.current_time
         transferred: int = int((cur_time - self.last_time_updated) / MICROSECONDS * self.allocated_bw)
-        self.transferred += transferred
+        self.transferred = min(self.transfer_size, self.transferred + transferred)
         self.last_time_updated = cur_time
 
     def __str__(self):

@@ -1,8 +1,12 @@
-from typing import Optional
+from __future__ import annotations
 
-from datasets import Dataset
+from typing import Optional, TYPE_CHECKING
 
-from flwr_datasets import FederatedDataset
+if TYPE_CHECKING:
+    from datasets import Dataset
+
+if TYPE_CHECKING:
+    from flwr_datasets import FederatedDataset
 
 import torch
 import torch.nn as nn
@@ -41,6 +45,8 @@ class ModelEvaluator:
             elif self.settings.dataset == "tiny_imagenet":
                 from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
                 self.partition = self.partition.with_transform(apply_transforms_tiny_imagenet_resnet)
+            elif self.settings.dataset in ["synthetic", "digits"]:
+                pass
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
@@ -71,7 +77,7 @@ class ModelEvaluator:
                 data, target = Variable(data.to(device)), Variable(target.to(device))
                 output = model(data)
                 loss = lossf(output, target)
-                total_loss += loss.item()
+                total_loss += loss.item() * len(target)
 
                 pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
@@ -87,5 +93,5 @@ class ModelEvaluator:
             torch.cuda.empty_cache()
 
         accuracy = float(correct) / float(example_number) * 100.0
-        average_loss = total_loss / num_batches
+        average_loss = total_loss / example_number
         return accuracy, average_loss

@@ -18,9 +18,12 @@ class FedAvg(GradientAggregation):
 
         with torch.no_grad():
             center_model = copy.deepcopy(models[0])
-            for p in center_model.parameters():
-                p.mul_(0)
-            for m, w in zip(models, weights):
-                for c1, p1 in zip(center_model.parameters(), m.parameters()):
-                    c1.add_(w * p1)
+            for name, target in center_model.state_dict().items():
+                values = [model.state_dict()[name] for model in models]
+                if target.is_floating_point() or target.is_complex():
+                    target.zero_()
+                    for value, weight in zip(values, weights):
+                        target.add_(value, alpha=weight)
+                else:
+                    target.copy_(torch.stack(values).max(dim=0).values)
             return center_model

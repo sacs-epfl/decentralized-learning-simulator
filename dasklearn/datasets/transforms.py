@@ -1,11 +1,6 @@
 import torch
 import torchvision.transforms as T
 
-from dasklearn.datasets.transforms_stft import ToSTFT, StretchAudioOnSTFT, TimeshiftAudioOnSTFT, FixSTFTDimension, \
-    AddBackgroundNoiseOnSTFT, ToMelSpectrogramFromSTFT, DeleteSTFT
-from dasklearn.datasets.transforms_wav import ChangeAmplitude, ChangeSpeedAndPitchAudio, FixAudioLength, ToTensor, \
-    ToMelSpectrogram, LoadAudio
-
 cifar10_normalization_vectors = (0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)
 tiny_imagenet_normalization_vectors = (0.4802, 0.4481, 0.3975), (0.2302, 0.2265, 0.2262)
 
@@ -56,6 +51,8 @@ def apply_transforms_femnist(batch):
 
 
 def preprocess_audio_train(batch):
+    from dasklearn.datasets.transforms_stft import ToSTFT, StretchAudioOnSTFT, TimeshiftAudioOnSTFT, FixSTFTDimension, ToMelSpectrogramFromSTFT, DeleteSTFT
+    from dasklearn.datasets.transforms_wav import ChangeAmplitude, ChangeSpeedAndPitchAudio, FixAudioLength, ToTensor
     data_aug_transform = T.Compose(
             [ChangeAmplitude(), ChangeSpeedAndPitchAudio(), FixAudioLength(), ToSTFT(), StretchAudioOnSTFT(),
              TimeshiftAudioOnSTFT(), FixSTFTDimension()])
@@ -75,6 +72,7 @@ def preprocess_audio_train(batch):
 
 
 def preprocess_audio_test(batch):
+    from dasklearn.datasets.transforms_wav import FixAudioLength, ToMelSpectrogram
     test_transform = T.Compose(
             [FixAudioLength(), ToMelSpectrogram(n_mels=32), ToTensor('mel_spectrogram', 'input')])
 

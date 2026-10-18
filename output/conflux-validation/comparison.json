@@ -1,0 +1,1703 @@
+{
+  "source_sha256": "e4a34cf4b84d916a3f88e2e20747756dde0367cb47edac16552267ed42d63e15",
+  "runs": 144,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "comparisons": [
+    {
+      "suite": "conflux-validation",
+      "dataset": "synthetic",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "sample_size": 8,
+      "chunks": 4,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": null,
+      "fraction_fewer_bytes": 0.4426794903025092,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 39.85731347222222,
+          "final_accuracy_sd": 3.3116503426680106,
+          "bytes_mean": 1689312.6666666667,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 84.619818875,
+          "final_accuracy_sd": 3.2662536737307524,
+          "bytes_mean": 1661771.6666666667,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              35.0,
+              40.0,
+              50.0
+            ],
+            "median_seconds": 40.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              50.0,
+              65.0,
+              70.0
+            ],
+            "median_seconds": 65.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              60.0,
+              80.0,
+              85.0
+            ],
+            "median_seconds": 80.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 64.14455834722223,
+          "final_accuracy_sd": 5.127117946347231,
+          "bytes_mean": 2981716.3333333335,
+          "tta_60": {
+            "reached": 2,
+            "per_seed_seconds": [
+              60.0,
+              70.0,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 54.13275826388888,
+          "final_accuracy_sd": 4.221065051768686,
+          "bytes_mean": 3296870.3333333335,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation",
+      "dataset": "synthetic",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "sample_size": 8,
+      "chunks": 4,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 1.0,
+      "fraction_fewer_bytes": 0.4426794903025092,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 42.72867841666667,
+          "final_accuracy_sd": 5.921623914113186,
+          "bytes_mean": 1689312.6666666667,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 89.05164916666666,
+          "final_accuracy_sd": 2.0569978870550125,
+          "bytes_mean": 1661771.6666666667,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              30.0,
+              40.0,
+              25.0
+            ],
+            "median_seconds": 30.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              45.0,
+              50.0,
+              35.0
+            ],
+            "median_seconds": 45.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              55.0,
+              70.0,
+              55.0
+            ],
+            "median_seconds": 55.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 82.06244569444443,
+          "final_accuracy_sd": 2.6607519508218034,
+          "bytes_mean": 2981716.3333333335,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              30.0,
+              45.0,
+              25.0
+            ],
+            "median_seconds": 30.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              50.0,
+              65.0,
+              45.0
+            ],
+            "median_seconds": 50.0
+          },
+          "tta_80": {
+            "reached": 2,
+            "per_seed_seconds": [
+              75.0,
+              null,
+              80.0
+            ],
+            "median_seconds": null
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 68.90869134722222,
+          "final_accuracy_sd": 5.052506807865773,
+          "bytes_mean": 3296870.3333333335,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              55.0,
+              80.0,
+              45.0
+            ],
+            "median_seconds": 55.0
+          },
+          "tta_70": {
+            "reached": 1,
+            "per_seed_seconds": [
+              null,
+              null,
+              80.0
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation",
+      "dataset": "synthetic",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "sample_size": 8,
+      "chunks": 4,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 0.8,
+      "fraction_fewer_bytes": 0.7845148632784498,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 48.14860013888889,
+          "final_accuracy_sd": 3.448704667700791,
+          "bytes_mean": 2872936.0,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 76.40109588888889,
+          "final_accuracy_sd": 5.334329233194178,
+          "bytes_mean": 1242001.6666666667,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              40.0,
+              50.0,
+              70.0
+            ],
+            "median_seconds": 50.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              65.0,
+              80.0,
+              90.0
+            ],
+            "median_seconds": 80.0
+          },
+          "tta_80": {
+            "reached": 1,
+            "per_seed_seconds": [
+              85.0,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 83.70225695833334,
+          "final_accuracy_sd": 2.651164265932941,
+          "bytes_mean": 5763746.333333333,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              40.0,
+              40.0,
+              50.0
+            ],
+            "median_seconds": 40.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              50.0,
+              55.0,
+              60.0
+            ],
+            "median_seconds": 55.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              65.0,
+              80.0,
+              90.0
+            ],
+            "median_seconds": 80.0
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 73.17369255555555,
+          "final_accuracy_sd": 6.679036248165507,
+          "bytes_mean": 6336051.666666667,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              45.0,
+              55.0,
+              75.0
+            ],
+            "median_seconds": 55.0
+          },
+          "tta_70": {
+            "reached": 2,
+            "per_seed_seconds": [
+              65.0,
+              85.0,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation",
+      "dataset": "synthetic",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "sample_size": 8,
+      "chunks": 4,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 0.42857142857142855,
+      "fraction_fewer_bytes": 0.7845148632784498,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 52.57093640277778,
+          "final_accuracy_sd": 6.45373873481159,
+          "bytes_mean": 2872936.0,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 83.41471343055555,
+          "final_accuracy_sd": 1.7196913307013706,
+          "bytes_mean": 1242001.6666666667,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              40.0,
+              45.0,
+              35.0
+            ],
+            "median_seconds": 40.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              60.0,
+              65.0,
+              50.0
+            ],
+            "median_seconds": 60.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              75.0,
+              90.0,
+              75.0
+            ],
+            "median_seconds": 75.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 92.64526369444445,
+          "final_accuracy_sd": 1.03670168420396,
+          "bytes_mean": 5763746.333333333,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              15.0,
+              25.0,
+              15.0
+            ],
+            "median_seconds": 15.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              25.0,
+              35.0,
+              25.0
+            ],
+            "median_seconds": 25.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              40.0,
+              50.0,
+              40.0
+            ],
+            "median_seconds": 40.0
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 83.538818375,
+          "final_accuracy_sd": 2.0462025819842173,
+          "bytes_mean": 6336051.666666667,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              30.0,
+              40.0,
+              25.0
+            ],
+            "median_seconds": 30.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              45.0,
+              60.0,
+              45.0
+            ],
+            "median_seconds": 45.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              70.0,
+              90.0,
+              75.0
+            ],
+            "median_seconds": 75.0
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation-s4-k8",
+      "dataset": "synthetic",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "sample_size": 4,
+      "chunks": 8,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 1.4444444444444444,
+      "fraction_fewer_bytes": 0.6607967813263043,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 38.22564030555555,
+          "final_accuracy_sd": 1.8835347385187913,
+          "bytes_mean": 869234.6666666666,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 80.33311631944446,
+          "final_accuracy_sd": 3.4446386084566694,
+          "bytes_mean": 1054253.6666666667,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              45.0,
+              50.0,
+              65.0
+            ],
+            "median_seconds": 50.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              65.0,
+              65.0,
+              75.0
+            ],
+            "median_seconds": 65.0
+          },
+          "tta_80": {
+            "reached": 2,
+            "per_seed_seconds": [
+              80.0,
+              80.0,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 65.54768883333334,
+          "final_accuracy_sd": 5.290344620114657,
+          "bytes_mean": 3108029.6666666665,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              65.0,
+              80.0,
+              85.0
+            ],
+            "median_seconds": 80.0
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 52.47328013888889,
+          "final_accuracy_sd": 5.773262786603373,
+          "bytes_mean": 3178555.3333333335,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation-s4-k8",
+      "dataset": "synthetic",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "sample_size": 4,
+      "chunks": 8,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 1.0,
+      "fraction_fewer_bytes": 0.6607967813263043,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 46.49658209722222,
+          "final_accuracy_sd": 3.885962091918681,
+          "bytes_mean": 869234.6666666666,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 87.36436630555555,
+          "final_accuracy_sd": 1.7793923045605728,
+          "bytes_mean": 1054253.6666666667,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              35.0,
+              50.0,
+              35.0
+            ],
+            "median_seconds": 35.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              55.0,
+              55.0,
+              45.0
+            ],
+            "median_seconds": 55.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              80.0,
+              70.0,
+              60.0
+            ],
+            "median_seconds": 70.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 81.28933376388888,
+          "final_accuracy_sd": 2.8698729822083737,
+          "bytes_mean": 3108029.6666666665,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              35.0,
+              50.0,
+              30.0
+            ],
+            "median_seconds": 35.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              50.0,
+              70.0,
+              45.0
+            ],
+            "median_seconds": 50.0
+          },
+          "tta_80": {
+            "reached": 2,
+            "per_seed_seconds": [
+              80.0,
+              null,
+              80.0
+            ],
+            "median_seconds": null
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 66.54527451388888,
+          "final_accuracy_sd": 4.283337651126877,
+          "bytes_mean": 3178555.3333333335,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              65.0,
+              90.0,
+              55.0
+            ],
+            "median_seconds": 65.0
+          },
+          "tta_70": {
+            "reached": 1,
+            "per_seed_seconds": [
+              null,
+              null,
+              90.0
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation-s4-k8",
+      "dataset": "synthetic",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "sample_size": 4,
+      "chunks": 8,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 1.0,
+      "fraction_fewer_bytes": 0.7788041555517666,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 48.16012916666667,
+          "final_accuracy_sd": 1.499342467686407,
+          "bytes_mean": 1496773.6666666667,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 88.14290356944446,
+          "final_accuracy_sd": 2.517516618642428,
+          "bytes_mean": 1361328.0,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              35.0,
+              40.0,
+              50.0
+            ],
+            "median_seconds": 40.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              55.0,
+              50.0,
+              55.0
+            ],
+            "median_seconds": 55.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              65.0,
+              65.0,
+              80.0
+            ],
+            "median_seconds": 65.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 84.86531577777777,
+          "final_accuracy_sd": 3.4420924604496763,
+          "bytes_mean": 6154401.333333333,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              35.0,
+              40.0,
+              45.0
+            ],
+            "median_seconds": 40.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              45.0,
+              50.0,
+              65.0
+            ],
+            "median_seconds": 50.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              65.0,
+              70.0,
+              85.0
+            ],
+            "median_seconds": 70.0
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 70.98999018055555,
+          "final_accuracy_sd": 5.50587292389117,
+          "bytes_mean": 6301750.0,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              55.0,
+              60.0,
+              75.0
+            ],
+            "median_seconds": 60.0
+          },
+          "tta_70": {
+            "reached": 2,
+            "per_seed_seconds": [
+              75.0,
+              80.0,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation-s4-k8",
+      "dataset": "synthetic",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "sample_size": 4,
+      "chunks": 8,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 0.5,
+      "fraction_fewer_bytes": 0.7788041555517666,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 58.14954975,
+          "final_accuracy_sd": 6.08925166624487,
+          "bytes_mean": 1496773.6666666667,
+          "tta_60": {
+            "reached": 1,
+            "per_seed_seconds": [
+              null,
+              null,
+              85.0
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 92.68934461111111,
+          "final_accuracy_sd": 1.2188135345809354,
+          "bytes_mean": 1361328.0,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              30.0,
+              40.0,
+              25.0
+            ],
+            "median_seconds": 30.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              45.0,
+              45.0,
+              35.0
+            ],
+            "median_seconds": 45.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              60.0,
+              55.0,
+              45.0
+            ],
+            "median_seconds": 55.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 92.6140678888889,
+          "final_accuracy_sd": 0.9463453285216421,
+          "bytes_mean": 6154401.333333333,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              15.0,
+              20.0,
+              15.0
+            ],
+            "median_seconds": 15.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              25.0,
+              30.0,
+              25.0
+            ],
+            "median_seconds": 25.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              40.0,
+              50.0,
+              40.0
+            ],
+            "median_seconds": 40.0
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 81.87798398611109,
+          "final_accuracy_sd": 1.931488452309375,
+          "bytes_mean": 6301750.0,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              35.0,
+              45.0,
+              25.0
+            ],
+            "median_seconds": 35.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              55.0,
+              65.0,
+              50.0
+            ],
+            "median_seconds": 55.0
+          },
+          "tta_80": {
+            "reached": 2,
+            "per_seed_seconds": [
+              80.0,
+              null,
+              80.0
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation-digits",
+      "dataset": "digits",
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "sample_size": 8,
+      "chunks": 4,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 2.125,
+      "fraction_fewer_bytes": 0.4225906044258778,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 39.369538125,
+          "final_accuracy_sd": 8.456639094208883,
+          "bytes_mean": 9402013.333333334,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 88.68601743055554,
+          "final_accuracy_sd": 0.6574562178436835,
+          "bytes_mean": 10002922.0,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              80.0,
+              60.0,
+              80.0
+            ],
+            "median_seconds": 80.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              80.0,
+              60.0,
+              90.0
+            ],
+            "median_seconds": 80.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              110.0,
+              80.0,
+              120.0
+            ],
+            "median_seconds": 110.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 68.90761551388889,
+          "final_accuracy_sd": 6.335114484211719,
+          "bytes_mean": 17323795.0,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              130.0,
+              130.0,
+              170.0
+            ],
+            "median_seconds": 130.0
+          },
+          "tta_70": {
+            "reached": 2,
+            "per_seed_seconds": [
+              160.0,
+              170.0,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 53.442571763888886,
+          "final_accuracy_sd": 5.6715790171450875,
+          "bytes_mean": 18354296.333333332,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation-digits",
+      "dataset": "digits",
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "sample_size": 8,
+      "chunks": 4,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 1.75,
+      "fraction_fewer_bytes": 0.4225906044258778,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 51.22659168055555,
+          "final_accuracy_sd": 5.148987106196001,
+          "bytes_mean": 9402013.333333334,
+          "tta_60": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 92.13171023611109,
+          "final_accuracy_sd": 1.9102344974016867,
+          "bytes_mean": 10002922.0,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              40.0,
+              50.0,
+              40.0
+            ],
+            "median_seconds": 40.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              50.0,
+              50.0,
+              70.0
+            ],
+            "median_seconds": 50.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              80.0,
+              70.0,
+              90.0
+            ],
+            "median_seconds": 80.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 87.88077399999999,
+          "final_accuracy_sd": 3.4721334144769505,
+          "bytes_mean": 17323795.0,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              70.0,
+              60.0,
+              70.0
+            ],
+            "median_seconds": 70.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              80.0,
+              80.0,
+              110.0
+            ],
+            "median_seconds": 80.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              110.0,
+              110.0,
+              150.0
+            ],
+            "median_seconds": 110.0
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 76.38576777777779,
+          "final_accuracy_sd": 6.339552942959851,
+          "bytes_mean": 18354296.333333332,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              110.0,
+              110.0,
+              110.0
+            ],
+            "median_seconds": 110.0
+          },
+          "tta_70": {
+            "reached": 2,
+            "per_seed_seconds": [
+              130.0,
+              130.0,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 1,
+            "per_seed_seconds": [
+              null,
+              180.0,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation-digits",
+      "dataset": "digits",
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "sample_size": 8,
+      "chunks": 4,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 0.8181818181818182,
+      "fraction_fewer_bytes": 0.7786126277470188,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 57.32209730555556,
+          "final_accuracy_sd": 6.642557348327841,
+          "bytes_mean": 15085304.666666666,
+          "tta_60": {
+            "reached": 1,
+            "per_seed_seconds": [
+              null,
+              180.0,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_70": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 87.05056158333333,
+          "final_accuracy_sd": 2.1857430172912196,
+          "bytes_mean": 7513388.333333333,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              100.0,
+              80.0,
+              110.0
+            ],
+            "median_seconds": 100.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              110.0,
+              80.0,
+              120.0
+            ],
+            "median_seconds": 110.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              130.0,
+              110.0,
+              160.0
+            ],
+            "median_seconds": 130.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 86.47940075000001,
+          "final_accuracy_sd": 2.6143723325563895,
+          "bytes_mean": 33937745.666666664,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              70.0,
+              70.0,
+              90.0
+            ],
+            "median_seconds": 70.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              80.0,
+              90.0,
+              110.0
+            ],
+            "median_seconds": 90.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              120.0,
+              110.0,
+              160.0
+            ],
+            "median_seconds": 120.0
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 79.99063675000001,
+          "final_accuracy_sd": 4.644449590550002,
+          "bytes_mean": 36444799.333333336,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              100.0,
+              90.0,
+              130.0
+            ],
+            "median_seconds": 100.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              130.0,
+              120.0,
+              170.0
+            ],
+            "median_seconds": 130.0
+          },
+          "tta_80": {
+            "reached": 2,
+            "per_seed_seconds": [
+              180.0,
+              160.0,
+              null
+            ],
+            "median_seconds": null
+          }
+        }
+      }
+    },
+    {
+      "suite": "conflux-validation-digits",
+      "dataset": "digits",
+      "profile": "uniform",
+      "partitioner": "iid",
+      "sample_size": 8,
+      "chunks": 4,
+      "baseline": "shatter-r2",
+      "median_paired_speedup_60": 0.6666666666666666,
+      "fraction_fewer_bytes": 0.7786126277470188,
+      "variants": {
+        "conflux": {
+          "final_accuracy_mean": 72.25031211111111,
+          "final_accuracy_sd": 5.123582514265042,
+          "bytes_mean": 15085304.666666666,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              130.0,
+              140.0,
+              130.0
+            ],
+            "median_seconds": 130.0
+          },
+          "tta_70": {
+            "reached": 2,
+            "per_seed_seconds": [
+              150.0,
+              160.0,
+              null
+            ],
+            "median_seconds": null
+          },
+          "tta_80": {
+            "reached": 0,
+            "per_seed_seconds": [
+              null,
+              null,
+              null
+            ],
+            "median_seconds": null
+          }
+        },
+        "conflux-v2": {
+          "final_accuracy_mean": 91.25156041666666,
+          "final_accuracy_sd": 2.1231433421876047,
+          "bytes_mean": 7513388.333333333,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              60.0,
+              60.0,
+              60.0
+            ],
+            "median_seconds": 60.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              60.0,
+              70.0,
+              90.0
+            ],
+            "median_seconds": 70.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              100.0,
+              90.0,
+              120.0
+            ],
+            "median_seconds": 100.0
+          }
+        },
+        "shatter-r2": {
+          "final_accuracy_mean": 92.68102365277777,
+          "final_accuracy_sd": 1.5323895858183885,
+          "bytes_mean": 33937745.666666664,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              40.0,
+              40.0,
+              40.0
+            ],
+            "median_seconds": 40.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              40.0,
+              40.0,
+              60.0
+            ],
+            "median_seconds": 40.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              60.0,
+              60.0,
+              80.0
+            ],
+            "median_seconds": 60.0
+          }
+        },
+        "shatter-r4": {
+          "final_accuracy_mean": 89.50686644444444,
+          "final_accuracy_sd": 2.7672354454480885,
+          "bytes_mean": 36444799.333333336,
+          "tta_60": {
+            "reached": 3,
+            "per_seed_seconds": [
+              50.0,
+              50.0,
+              60.0
+            ],
+            "median_seconds": 50.0
+          },
+          "tta_70": {
+            "reached": 3,
+            "per_seed_seconds": [
+              60.0,
+              70.0,
+              100.0
+            ],
+            "median_seconds": 70.0
+          },
+          "tta_80": {
+            "reached": 3,
+            "per_seed_seconds": [
+              80.0,
+              90.0,
+              140.0
+            ],
+            "median_seconds": 90.0
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,14 +1,23 @@
-from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner, NaturalIdPartitioner
+from __future__ import annotations
 
 from dasklearn.session_settings import SessionSettings
 
 
 def create_dataset(settings: SessionSettings) -> FederatedDataset:
+    if settings.dataset == "digits":
+        from dasklearn.datasets.digits import DigitsDataset
+        return DigitsDataset(settings)
+    if settings.dataset == "synthetic":
+        from dasklearn.datasets.synthetic import SyntheticDataset
+        return SyntheticDataset(settings)
+
+    from flwr_datasets import FederatedDataset
+    from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner, NaturalIdPartitioner
+
     # Create the partitioner
     # TODO add support for k-shards
     if settings.partitioner == "dirichlet":
-        partitioner = DirichletPartitioner(num_partitions=settings.participants, partition_by="label", alpha=settings.alpha)
+        partitioner = DirichletPartitioner(num_partitions=settings.participants, partition_by="label", alpha=settings.alpha, seed=settings.seed)
     elif settings.partitioner == "natural":
         partition_columns = {"femnist": "writer_id", "google_speech": "speaker_id"}
         if settings.dataset not in partition_columns:

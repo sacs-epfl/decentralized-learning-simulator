@@ -21,6 +21,7 @@ ALGORITHM_MAPPING = {
     "adpsgd": ("dasklearn.simulation.adpsgd.settings.ADPSGDSettings", "dasklearn.simulation.adpsgd.simulation.ADPSGDSimulation"),
     "lubor": ("dasklearn.simulation.lubor.settings.LuborSettings", "dasklearn.simulation.lubor.simulation.LuborSimulation"),
     "conflux": ("dasklearn.simulation.conflux.settings.ConfluxSettings", "dasklearn.simulation.conflux.simulation.ConfluxSimulation"),
+    "conflux-v2": ("dasklearn.simulation.conflux_v2.settings.ConfluxV2Settings", "dasklearn.simulation.conflux_v2.simulation.ConfluxV2Simulation"),
     "teleportation": ("dasklearn.simulation.teleportation.settings.TeleportationSettings", "dasklearn.simulation.teleportation.simulation.TeleportationSimulation"),
     "shatter": ("dasklearn.simulation.shatter.settings.ShatterSettings", "dasklearn.simulation.shatter.simulation.ShatterSimulation"),
     "pushsum": ("dasklearn.simulation.pushsum.settings.PushSumSettings", "dasklearn.simulation.pushsum.simulation.PushSumSimulation"),
@@ -111,6 +112,8 @@ def run():
             "profile": args.profile,
             "log_bandwidth_utilization": args.log_bandwidth_utilization,
             "dag_checkpoint_interval": args.dag_checkpoint_interval,
+            "control_message_bytes": args.control_message_bytes,
+            "network_latency_ms": args.network_latency_ms,
         }
 
     if args.algorithm not in ALGORITHM_MAPPING:
@@ -128,6 +131,7 @@ def run():
         "adpsgd": {"agg": args.agg},
         "lubor": {"k": args.k, "no_weights": args.no_weights},
         "conflux": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction},
+        "conflux-v2": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction, "relay_count": args.relay_count},
         "teleportation": {"sample_size": args.sample_size},
         "shatter": {"k": args.k, "r": args.r},
         "pushsum": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "push_sum_duration": args.push_sum_duration},

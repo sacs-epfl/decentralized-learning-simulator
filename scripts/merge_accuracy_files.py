@@ -15,7 +15,7 @@ def merge_accuracy_files(data_dir: str):
     paths = [os.path.join(data_dir, "accuracies_" + str(i) + ".csv") for i in range(settings["participants"])]
 
     with open(os.path.join(data_dir, "accuracies.csv"), "w") as output_file:
-        output_file.write("algorithm,dataset,partitioner,alpha,peer,round,time,accuracy,loss\n")
+        output_file.write("algorithm,dataset,partitioner,alpha,learning_rate,peer,round,time,accuracy,loss\n")
         for path in paths:
             if os.path.exists(path):
                 with open(path, "r") as input_file:

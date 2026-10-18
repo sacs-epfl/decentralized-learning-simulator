@@ -12,6 +12,8 @@ class ConfluxSimulation(AsynchronousSimulation):
     CLIENT_CLASS = ConfluxClient
 
     def __init__(self, settings: SessionSettings):
+        if not 0 < settings.success_fraction <= 1 or settings.sample_size < 1 or settings.chunks_in_sample < 1:
+            raise ValueError("Invalid Conflux sample size, chunk count or success fraction")
         super().__init__(settings)
         settings.sample_size = min(settings.sample_size, settings.participants)
         self.finished: Dict[int, List[Tuple[str, int]]] = {}
@@ -67,7 +69,7 @@ class ConfluxSimulation(AsynchronousSimulation):
             if (self.settings.test_method == "global" and self.settings.test_interval > 0 and prev_round_nr % self.settings.test_interval == 0):
                 # Aggregate non-None models
                 task_name = Task.generate_name("agg")
-                data = {"models": self.finished[prev_round_nr], "round": prev_round_nr, "peer": 0}
+                data = {"models": list(self.finished[prev_round_nr]), "round": prev_round_nr, "peer": 0}
                 task = Task(task_name, "aggregate", data=data)
                 self.clients[0].add_compute_task(task)
 

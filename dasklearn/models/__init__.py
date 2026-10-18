@@ -17,6 +17,10 @@ def unserialize_model(serialized_model: bytes, dataset: str, architecture: Optio
 
 
 def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
+    if dataset == "digits":
+        return torch.nn.Sequential(torch.nn.Linear(64, 32), torch.nn.ReLU(), torch.nn.Linear(32, 10))
+    if dataset == "synthetic":
+        return torch.nn.Sequential(torch.nn.Linear(16, 32), torch.nn.ReLU(), torch.nn.Linear(32, 4))
     if dataset == "cifar10":
         if not architecture or architecture == "lenet":
             from dasklearn.models.cifar10 import LeNet
