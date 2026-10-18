@@ -1,0 +1,56 @@
+{
+  "output": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.03",
+  "dataset_base_path": "/mnt/data/mdevos/conflux/datasets",
+  "variants": [
+    "shatter-r2",
+    "shatter-r4",
+    "conflux",
+    "conflux-v2"
+  ],
+  "profiles": [
+    "uniform"
+  ],
+  "partitioners": [
+    "dirichlet"
+  ],
+  "seeds": [
+    100
+  ],
+  "peers": 64,
+  "sample_size": 16,
+  "chunks": 8,
+  "duration": 300.0,
+  "test_period": 60.0,
+  "bandwidth": 100000,
+  "step_ms": 20,
+  "latency_ms": 20,
+  "learning_rate": 0.03,
+  "local_steps": 5,
+  "batch_size": 32,
+  "alpha": 0.3,
+  "momentum": 0,
+  "weight_decay": 0,
+  "torch_threads": 4,
+  "evaluation_split": "validation",
+  "device": "cuda:0",
+  "dataset": "cifar10",
+  "model": "gnlenet",
+  "success_fraction": 1,
+  "equal_capacity": true,
+  "streaming": true,
+  "python": "3.12.15",
+  "torch": "2.14.1+cu130",
+  "numpy": "2.5.4",
+  "source_sha256": "371bc9a8b14b6018e086362e23b5881b0a19a52fbfa55be693d5dc3015334abd",
+  "gpu": "NVIDIA RTX 5000 Ada Generation",
+  "cuda_visible_devices": "0",
+  "split": "45000 training / 5000 validation / 10000 test; no augmentation",
+  "capacity": "same mean bandwidth and compute step time across profiles",
+  "dataset_provenance": {
+    "source": "uoft-cs/cifar10",
+    "sha256": {
+      "train": "8428b53a88a11ac374111006708df51469e315a22ac6d66470afd9c78d2ae883",
+      "test": "841389e6f2d64f28bf17310e430aebac20ec3ba611a3c5e231dc93c645ce84de"
+    }
+  }
+}

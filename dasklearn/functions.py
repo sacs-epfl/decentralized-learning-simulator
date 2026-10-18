@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 model_trainers: Optional[List[ModelTrainer]] = None
 dataset: Optional[FederatedDataset] = None
 evaluator = None
+last_test_metrics = None
 lock = threading.Lock()
 
 
@@ -125,16 +126,20 @@ def aggregate(settings: SessionSettings, params: Dict):
 
 
 def test(settings: SessionSettings, params: Dict):
-    global dataset, evaluator
+    global dataset, evaluator, last_test_metrics
     model = params["model"]
     round_nr = params["round"]
     cur_time = params["time"]
     peer_id = params["peer"]
     logger.debug("Testing model in round %d...", round_nr)
 
+    if dataset is None:
+        dataset = create_dataset(settings)
     if not evaluator:
         evaluator = ModelEvaluator(dataset, settings)
-    accuracy, loss = evaluator.evaluate_accuracy(model, device_name=settings.torch_device_name)
+    metrics = params.get("cached_metrics")
+    accuracy, loss = metrics if metrics is not None else evaluator.evaluate_accuracy(model, device_name=settings.torch_device_name)
+    last_test_metrics = (accuracy, loss)
 
     accuracies_file_path: str = os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv")
     if not os.path.exists(accuracies_file_path):

@@ -158,3 +158,56 @@ and churn experiments are still needed.
 See [the digit curves](output/conflux-validation-digits/accuracy.png),
 [raw digit results](output/conflux-validation-digits/summary.csv), and
 [all condition summaries](output/conflux-validation/comparison.json).
+
+### Larger CIFAR-10 experiments
+
+`scripts/run_cifar.py` runs resumable, deterministic GNLeNet sweeps on one GPU.
+Run independent sweeps with `CUDA_VISIBLE_DEVICES=0` and `=1` to use two GPUs.
+Keep the Conda environment, `TMPDIR`, caches, dataset and output on a volume with
+adequate free space. The server setup uses `/mnt/data/mdevos/conflux`.
+
+```sh
+export CUBLAS_WORKSPACE_CONFIG=:4096:8
+CUDA_VISIBLE_DEVICES=0 python scripts/run_cifar.py \
+  --dataset-base-path /mnt/data/mdevos/conflux/datasets \
+  --output /mnt/data/mdevos/conflux/results/cifar128-uniform \
+  --profiles uniform --peers 128 --sample-size 32 --chunks 16
+```
+
+The native loader uses 45,000 training images, a fixed stratified 5,000-image
+validation split for tuning, and the official 10,000-image test split for final
+measurement. Normalization matches the original pipeline; no augmentation is used.
+Client partitions are disjoint, IID or Dirichlet, with at least eight examples per
+client (small partitions receive examples moved from larger ones).
+If the Toronto archive is slow, `scripts/prepare_cifar.py --data <dataset-path>`
+prepares the canonical Hugging Face mirror with verified SHA-256 checksums. This
+preparation step additionally needs `pyarrow`; its dataset provenance is recorded.
+
+The larger sweeps equalize average bandwidth and compute step time between uniform
+and heterogeneous profiles. One quarter of nodes have eight times the bandwidth of
+the rest. Compute rankings are independent. `--step-ms` is the effective simulated
+time per SGD step, including the legacy simulator augmentation factor; it is
+separate from measured GPU execution time. `scripts/calibrate_cifar.py` measures
+actual training and full-test throughput before choosing experiment budgets.
+
+The streaming local executor frees values after their last consumer and reuses
+evaluation metrics only for identical model references or reconstructions from
+exactly identical chunk references. Every node still receives its own snapshot
+measurement. Each sweep writes an immutable configuration/source manifest, run
+progress, summary, curves, plot and a `COMPLETE` marker after all requested runs.
+An incomplete run restarts; completed runs are skipped. Use a fresh output folder
+when changing settings or source. This executor avoids the broker/GPU transfer
+overhead while preserving the protocol-generated training DAG.
+
+The two-GPU dispatcher (`scripts/dispatch_cifar.py --root <server-root>`) selects
+each protocol's learning rate from three 64-node validation-only pilots, using the
+mean of their final two snapshots. It then executes 48 paired test runs on 128
+nodes: four protocols, two capacity profiles, two data partitions and three seeds.
+The current main configuration uses sample size 32, 16 chunks, 900 simulated
+seconds and snapshots every 90 seconds. All eight protocol/profile combinations
+selected learning rate 0.01 from {0.002, 0.01, 0.03}. This short single-seed tuning
+budget is shared equally; it is not an exhaustive hyperparameter search.
+On `sacs006`, independent jobs share the two 32-GB RTX 5000 Ada GPUs after initial
+throughput and memory checks; CPU-heavy V1 simulations run alongside GPU work.
+Actual execution times reflect this concurrency and are not protocol speedups.
+Protocol comparisons use simulated time with the fixed capacities in each manifest.

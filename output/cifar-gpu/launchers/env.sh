@@ -1,0 +1,11 @@
+export TMPDIR=/mnt/data/mdevos/conflux/tmp
+export XDG_CACHE_HOME=/mnt/data/mdevos/conflux/cache
+export MPLCONFIGDIR=/mnt/data/mdevos/conflux/cache/matplotlib
+export TORCH_HOME=/mnt/data/mdevos/conflux/cache/torch
+export HF_HOME=/mnt/data/mdevos/conflux/cache/huggingface
+export CUBLAS_WORKSPACE_CONFIG=:4096:8
+export OMP_NUM_THREADS=4
+export OPENBLAS_NUM_THREADS=4
+export PYTHONUNBUFFERED=1
+export PATH=/mnt/data/mdevos/conda/envs/conflux-gpu/bin:$PATH
+cd /mnt/data/mdevos/conflux/code

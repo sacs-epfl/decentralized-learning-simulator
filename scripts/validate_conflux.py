@@ -45,11 +45,15 @@ async def run_one(args, variant, profile, partitioner, seed):
         algorithm = variant
         specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": args.success_fraction}
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
-        dataset=args.dataset, model="mlp", participants=args.peers, partitioner=partitioner,
-        alpha=args.alpha, learning=LearningSettings(args.learning_rate, 0, 0, 32, args.local_steps),
+        dataset=args.dataset, model=getattr(args, "model", "mlp"), participants=args.peers, partitioner=partitioner,
+        dataset_base_path=getattr(args, "dataset_base_path", None),
+        torch_device_name=getattr(args, "device", "cpu"),
+        evaluation_split=getattr(args, "evaluation_split", "test"),
+        alpha=args.alpha, learning=LearningSettings(args.learning_rate, getattr(args, "momentum", 0),
+            getattr(args, "weight_decay", 0), getattr(args, "batch_size", 32), args.local_steps),
         rounds=0, duration=int(args.duration * MICROSECONDS), stop="duration",
         test_interval=0, test_period=int(args.test_period * MICROSECONDS), test_method="snapshot",
-        network_latency_ms=args.latency_ms, torch_threads=1, unit_testing=True, dry_run=True, **specific)
+        network_latency_ms=args.latency_ms, torch_threads=getattr(args, "torch_threads", 1), unit_testing=True, dry_run=True, **specific)
     random.seed(seed)
     sim = cls(configuration)
     # Avoid collisions for multiple degrees and profiles under the same seed.
@@ -62,7 +66,15 @@ async def run_one(args, variant, profile, partitioner, seed):
         order = list(range(args.peers))
         rng.shuffle(order)
         fast = set(order[:max(1, args.peers // 4)])
+        compute = [rng.choice([.5, 1, 2, 4]) for _ in range(args.peers)]
+        compute_mean = np.mean(compute)
+        bw_mean = (8 * len(fast) + args.peers - len(fast)) / args.peers
         for client in sim.clients:
+            if getattr(args, "equal_capacity", False):
+                client.bw_scheduler.bw_limit = args.bandwidth if profile == "uniform" else int(args.bandwidth * (8 if client.index in fast else 1) / bw_mean)
+                from dasklearn import AUGMENTATION_FACTOR_SIM
+                client.simulated_speed = args.step_ms / AUGMENTATION_FACTOR_SIM * (1 if profile == "uniform" else compute[client.index] / compute_mean)
+                continue
             client.bw_scheduler.bw_limit = args.bandwidth if profile == "uniform" else (args.bandwidth * 4 if client.index in fast else args.bandwidth // 2)
             # Independent compute and bandwidth rankings, avoiding an implicit
             # assumption that fast networking implies fast local training.
@@ -73,7 +85,10 @@ async def run_one(args, variant, profile, partitioner, seed):
     sim.simulate()
     sim.workflow_dag.build_task_indices()
     sim.workflow_dag.check_validity()
-    execute_local(sim)
+    def progress(status):
+        print(json.dumps({"run": Path(sim.data_dir).name, **status}), flush=True)
+    execute_local(sim, retain_results=not getattr(args, "streaming", False),
+                  progress=progress if getattr(args, "streaming", False) else None)
     sim.merge_accuracies_files()
     frame = pd.read_csv(Path(sim.data_dir) / "accuracies.csv")
     curve = frame.groupby("time", as_index=False).agg(accuracy=("accuracy", "mean"), loss=("loss", "mean"), nodes=("peer", "nunique"))
@@ -82,12 +97,13 @@ async def run_one(args, variant, profile, partitioner, seed):
     for name, value in [("variant", variant), ("profile", profile), ("partitioner", partitioner), ("seed", seed)]:
         curve[name] = value
     row = {"variant": variant, "profile": profile, "partitioner": partitioner, "seed": seed,
+           "learning_rate": args.learning_rate,
            "final_accuracy": float(curve.accuracy.iloc[-1]), "final_loss": float(curve.loss.iloc[-1]),
            "model_bytes": sim.model_size, "bytes_sent": sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
            "training_tasks": sum(t.func == "train" for t in sim.workflow_dag.tasks.values()),
            "simulated_compute_s": sum(c.compute_time for c in sim.clients) / MICROSECONDS,
            "actual_execution_s": time.perf_counter() - started}
-    for target in [60, 70, 80]:
+    for target in [40, 50, 60, 70, 80]:
         reached = curve.loc[curve.accuracy >= target, "time"]
         row[f"tta_{target}_s"] = float(reached.iloc[0]) if len(reached) else None
     print(json.dumps(row), flush=True)

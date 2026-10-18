@@ -66,3 +66,4 @@ class SessionSettings:
     dag_checkpoint_interval: int = 0
     control_message_bytes: int = 64  # Header, in addition to the serialized control payload.
     network_latency_ms: float = 0
+    evaluation_split: str = "test"

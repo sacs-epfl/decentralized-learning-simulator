@@ -30,6 +30,8 @@ class ModelEvaluator:
     def evaluate_accuracy(self, model, device_name: str = "cpu"):
         if not self.partition:
             partition_name = "valid" if self.settings.dataset == "tiny_imagenet" else "test"
+            if self.settings.evaluation_split != "test":
+                partition_name = self.settings.evaluation_split
             self.partition = self.dataset.load_split(partition_name)
             if self.settings.dataset == "cifar10":
                 from dasklearn.datasets.transforms import apply_transforms_cifar10, apply_transforms_cifar10_resnet
@@ -85,7 +87,6 @@ class ModelEvaluator:
                 num_batches += 1
 
                 del data, target, output, loss, pred
-                torch.cuda.empty_cache()
 
         # We move the model back to the CPU to avoid memory leaks
         model.to("cpu")

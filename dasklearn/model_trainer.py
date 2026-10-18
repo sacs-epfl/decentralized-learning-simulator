@@ -148,8 +148,6 @@ class ModelTrainer:
             optimizer.optimizer.step()
 
             del data, target, output, loss
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
 
         self.is_training = False
         model.to("cpu")

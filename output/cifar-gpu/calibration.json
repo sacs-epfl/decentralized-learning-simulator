@@ -1,0 +1,11 @@
+{
+  "gpu": "NVIDIA RTX 5000 Ada Generation",
+  "torch": "2.14.1+cu130",
+  "five_steps_s": 0.00840342037845403,
+  "full_test_s": 0.10823370900470763,
+  "model_bytes": 346251,
+  "accuracy_after_30_steps": 13.16,
+  "loss": 2.5590024074554445,
+  "peak_gpu_bytes": 126619648,
+  "train_examples": 45000
+}
