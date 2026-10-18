@@ -1,0 +1,10 @@
+{
+  "completed_runs": 36,
+  "curve_rows": 360,
+  "nodes_per_snapshot": 128,
+  "seeds_per_condition": 3,
+  "source_sha256": "d028c75f3bf3f1735b8861e8c8a5931aa549a13627ac1f60cb8ead70f2e416b1",
+  "execution_source_commit": "a7a6881",
+  "excluded": "Conflux V1 at user request",
+  "all_checks_passed": true
+}

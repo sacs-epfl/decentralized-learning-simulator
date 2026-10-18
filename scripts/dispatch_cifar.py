@@ -17,11 +17,13 @@ p.add_argument("--duration", type=int, default=900)
 p.add_argument("--test-period", type=int, default=90)
 p.add_argument("--step-ms", type=float, default=20)
 p.add_argument("--bandwidth", type=int, default=100000)
+p.add_argument("--variants", nargs="+", choices=["shatter-r2", "shatter-r4", "conflux-v2", "conflux"],
+               default=["shatter-r2", "shatter-r4", "conflux-v2"])
 args = p.parse_args()
 root = args.root.resolve()
 output = root / "results" / f"main{args.peers}"
 output.mkdir(parents=True, exist_ok=True)
-variants = ["shatter-r2", "shatter-r4", "conflux", "conflux-v2"]
+variants = args.variants
 jobs, selection = [], []
 for profile in ["uniform", "heterogeneous"]:
     candidates = []
@@ -46,6 +48,7 @@ for profile in ["uniform", "heterogeneous"]:
         jobs.append(job)
 plan = {"peers": args.peers, "duration": args.duration, "step_ms": args.step_ms,
         "test_period": args.test_period,
+        "variants": variants,
         "bandwidth": args.bandwidth, "selection_rule": "highest mean validation accuracy over final two pilot snapshots; seed 100, Dirichlet alpha=.3",
         "selection": selection}
 plan_path = output / "plan.json"
@@ -87,4 +90,4 @@ pd.concat(curves, ignore_index=True).to_csv(output / "curves.csv", index=False)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_conflux import plot
 plot(pd.concat(curves, ignore_index=True), output)
-(output / "COMPLETE").write_text("48 paired runs completed\n")
+(output / "COMPLETE").write_text(f"{len(jobs) * 6} paired runs completed\n")

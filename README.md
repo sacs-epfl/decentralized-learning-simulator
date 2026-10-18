@@ -201,13 +201,56 @@ overhead while preserving the protocol-generated training DAG.
 
 The two-GPU dispatcher (`scripts/dispatch_cifar.py --root <server-root>`) selects
 each protocol's learning rate from three 64-node validation-only pilots, using the
-mean of their final two snapshots. It then executes 48 paired test runs on 128
-nodes: four protocols, two capacity profiles, two data partitions and three seeds.
+mean of their final two snapshots. It then executes 36 paired test runs on 128
+nodes: Shatter at degrees 2 and 4 and Conflux V2, two capacity profiles, two data
+partitions and three seeds. Original Conflux V1 is excluded at the user's request.
 The current main configuration uses sample size 32, 16 chunks, 900 simulated
-seconds and snapshots every 90 seconds. All eight protocol/profile combinations
+seconds and snapshots every 90 seconds. All six protocol/profile combinations
 selected learning rate 0.01 from {0.002, 0.01, 0.03}. This short single-seed tuning
 budget is shared equally; it is not an exhaustive hyperparameter search.
 On `sacs006`, independent jobs share the two 32-GB RTX 5000 Ada GPUs after initial
 throughput and memory checks; CPU-heavy V1 simulations run alongside GPU work.
 Actual execution times reflect this concurrency and are not protocol speedups.
 Protocol comparisons use simulated time with the fixed capacities in each manifest.
+
+#### CIFAR-10 results on 128 nodes
+
+All 36 main runs completed on `sacs006` (two RTX 5000 Ada GPUs, 32 GB each).
+The execution source is commit `a7a6881`, SHA-256
+`d028c75f3bf3f1735b8861e8c8a5931aa549a13627ac1f60cb8ead70f2e416b1`.
+The dispatcher defaults subsequently exclude V1; the protocol implementations are
+unchanged. The audit verifies the common source hash, 36 distinct runs, three
+seeds per condition, and all 128 nodes at every one of ten snapshots.
+
+Mean test accuracy at 900 simulated seconds, GNLeNet (85,354 parameters), without
+augmentation. Shatter degree 2 was stronger than degree 4 in all four conditions;
+the table uses that stronger tested baseline.
+
+| Network | Data | Shatter degree 2 | Conflux V2 |
+| --- | --- | ---: | ---: |
+| heterogeneous | Dirichlet | 26.11% | 39.99% |
+| heterogeneous | IID | 38.74% | 45.43% |
+| uniform | Dirichlet | 38.08% | 42.46% |
+| uniform | IID | 50.66% | 47.83% |
+
+On heterogeneous/Dirichlet data, V2 reaches 30% at a median of 360 seconds;
+Shatter never reaches 30% within 900 seconds in any seed. This gives a median
+paired speedup lower bound greater than 2.5x at that target. On heterogeneous/IID
+data, V2 reaches 40% at 540 seconds in every seed; Shatter never reaches 40%
+within the budget. Uniform/IID favors Shatter: 40% takes 360 seconds versus V2's
+450 seconds. Targets use the 90-second observation grid; unreached targets remain
+explicitly censored rather than being assigned fabricated completion times.
+
+V2 sends about 58% fewer bytes in heterogeneous profiles and 84% fewer in uniform
+profiles over the same budget. Its lower traffic does not guarantee faster
+learning, as the uniform/IID result shows. These are communication-bound,
+stable-membership simulations at 100,000 bytes/s mean capacity, 20 ms nominal
+compute per SGD step and 20 ms one-way latency; they do not establish performance
+under compute-bound workloads or on a real distributed network.
+
+See the [curves](output/cifar-gpu/main128/accuracy.png),
+[all protocols with seed variation](output/cifar-gpu/main128/table.md),
+[per-seed time-to-accuracy results](output/cifar-gpu/main128/comparison.json),
+and [audit](output/cifar-gpu/main128/audit.json).
+Raw DAGs, individual-node CSVs, logs, dataset and Conda environment remain under
+`/mnt/data/mdevos/conflux` and `/mnt/data/mdevos/conda/envs/conflux-gpu` on the server.

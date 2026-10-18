@@ -21,7 +21,7 @@ async def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--dataset-base-path", required=True)
-    p.add_argument("--variants", nargs="+", default=["shatter-r2", "shatter-r4", "conflux", "conflux-v2"])
+    p.add_argument("--variants", nargs="+", default=["shatter-r2", "shatter-r4", "conflux-v2"])
     p.add_argument("--profiles", nargs="+", choices=["uniform", "heterogeneous"], default=["uniform", "heterogeneous"])
     p.add_argument("--partitioners", nargs="+", choices=["iid", "dirichlet"], default=["iid", "dirichlet"])
     p.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])

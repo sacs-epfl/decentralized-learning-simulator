@@ -1,0 +1,542 @@
+[
+  {
+    "profile": "heterogeneous",
+    "partitioner": "dirichlet",
+    "variant": "conflux-v2",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 39.99223958333334,
+    "accuracy_std": 0.8773428676438888,
+    "final_accuracies": [
+      39.91703125,
+      40.904765625,
+      39.154921875
+    ],
+    "bytes_mean": 1027525330.0,
+    "training_tasks_mean": 1504.0,
+    "actual_execution_s_mean": 42.928367642996214,
+    "tta_30": {
+      "0": 360.0,
+      "1": 450.0,
+      "2": 360.0
+    },
+    "tta_40": {
+      "0": null,
+      "1": 900.0,
+      "2": null
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "heterogeneous",
+    "partitioner": "dirichlet",
+    "variant": "shatter-r2",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 26.111171875,
+    "accuracy_std": 0.9507327079073093,
+    "final_accuracies": [
+      26.00703125,
+      27.1096875,
+      25.216796875
+    ],
+    "bytes_mean": 2458138522.3333335,
+    "training_tasks_mean": 3583.3333333333335,
+    "actual_execution_s_mean": 189.43124665269474,
+    "tta_30": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_40": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "heterogeneous",
+    "partitioner": "dirichlet",
+    "variant": "shatter-r4",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 24.258385416666666,
+    "accuracy_std": 0.5298522071384671,
+    "final_accuracies": [
+      24.420234375,
+      24.6884375,
+      23.666484375
+    ],
+    "bytes_mean": 2507658621.3333335,
+    "training_tasks_mean": 1850.6666666666667,
+    "actual_execution_s_mean": 156.43678096266618,
+    "tta_30": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_40": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "heterogeneous",
+    "partitioner": "iid",
+    "variant": "conflux-v2",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 45.425390625,
+    "accuracy_std": 0.2697930454135465,
+    "final_accuracies": [
+      45.38734375,
+      45.7121875,
+      45.176640625
+    ],
+    "bytes_mean": 1027525330.0,
+    "training_tasks_mean": 1504.0,
+    "actual_execution_s_mean": 43.275065503316,
+    "tta_30": {
+      "0": 270.0,
+      "1": 270.0,
+      "2": 270.0
+    },
+    "tta_40": {
+      "0": 540.0,
+      "1": 540.0,
+      "2": 540.0
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "heterogeneous",
+    "partitioner": "iid",
+    "variant": "shatter-r2",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 38.739947916666665,
+    "accuracy_std": 0.47345364255001715,
+    "final_accuracies": [
+      38.815859375,
+      39.170859375,
+      38.233125
+    ],
+    "bytes_mean": 2458138522.3333335,
+    "training_tasks_mean": 3583.3333333333335,
+    "actual_execution_s_mean": 197.64076911762822,
+    "tta_30": {
+      "0": 360.0,
+      "1": 360.0,
+      "2": 360.0
+    },
+    "tta_40": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "heterogeneous",
+    "partitioner": "iid",
+    "variant": "shatter-r4",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 34.276692708333336,
+    "accuracy_std": 0.43450306069043015,
+    "final_accuracies": [
+      34.7384375,
+      34.21578125,
+      33.875859375
+    ],
+    "bytes_mean": 2507658621.3333335,
+    "training_tasks_mean": 1850.6666666666667,
+    "actual_execution_s_mean": 157.45518831233494,
+    "tta_30": {
+      "0": 540.0,
+      "1": 630.0,
+      "2": 630.0
+    },
+    "tta_40": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "uniform",
+    "partitioner": "dirichlet",
+    "variant": "conflux-v2",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 42.464244791666665,
+    "accuracy_std": 0.4252610234546087,
+    "final_accuracies": [
+      42.86921875,
+      42.502265625,
+      42.02125
+    ],
+    "bytes_mean": 1313172818.6666667,
+    "training_tasks_mean": 1920.3333333333333,
+    "actual_execution_s_mean": 48.96534180369539,
+    "tta_30": {
+      "0": 270.0,
+      "1": 360.0,
+      "2": 270.0
+    },
+    "tta_40": {
+      "0": 720.0,
+      "1": 720.0,
+      "2": 810.0
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "uniform",
+    "partitioner": "dirichlet",
+    "variant": "shatter-r2",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 38.08341145833333,
+    "accuracy_std": 1.0927343116971693,
+    "final_accuracies": [
+      38.79671875,
+      38.628125,
+      36.825390625
+    ],
+    "bytes_mean": 7977814889.666667,
+    "training_tasks_mean": 11577.0,
+    "actual_execution_s_mean": 345.92227373834857,
+    "tta_30": {
+      "0": 450.0,
+      "1": 450.0,
+      "2": 540.0
+    },
+    "tta_40": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "uniform",
+    "partitioner": "dirichlet",
+    "variant": "shatter-r4",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 35.410312499999996,
+    "accuracy_std": 0.4851317614089347,
+    "final_accuracies": [
+      35.590546875,
+      35.77953125,
+      34.860859375
+    ],
+    "bytes_mean": 8078175969.333333,
+    "training_tasks_mean": 5910.333333333333,
+    "actual_execution_s_mean": 256.31037427236635,
+    "tta_30": {
+      "0": 540.0,
+      "1": 540.0,
+      "2": 540.0
+    },
+    "tta_40": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "uniform",
+    "partitioner": "iid",
+    "variant": "conflux-v2",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 47.833984375,
+    "accuracy_std": 0.39423547081067384,
+    "final_accuracies": [
+      48.068359375,
+      48.054765625,
+      47.378828125
+    ],
+    "bytes_mean": 1313172818.6666667,
+    "training_tasks_mean": 1920.3333333333333,
+    "actual_execution_s_mean": 49.71545996365603,
+    "tta_30": {
+      "0": 180.0,
+      "1": 180.0,
+      "2": 180.0
+    },
+    "tta_40": {
+      "0": 450.0,
+      "1": 450.0,
+      "2": 450.0
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "uniform",
+    "partitioner": "iid",
+    "variant": "shatter-r2",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 50.659453125,
+    "accuracy_std": 0.5656234299442976,
+    "final_accuracies": [
+      51.167265625,
+      50.76125,
+      50.04984375
+    ],
+    "bytes_mean": 7977814889.666667,
+    "training_tasks_mean": 11577.0,
+    "actual_execution_s_mean": 334.9051104056416,
+    "tta_30": {
+      "0": 180.0,
+      "1": 180.0,
+      "2": 180.0
+    },
+    "tta_40": {
+      "0": 360.0,
+      "1": 360.0,
+      "2": 360.0
+    },
+    "tta_50": {
+      "0": 900.0,
+      "1": 900.0,
+      "2": 900.0
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  },
+  {
+    "profile": "uniform",
+    "partitioner": "iid",
+    "variant": "shatter-r4",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "accuracy_mean": 44.96565104166667,
+    "accuracy_std": 0.40009895880793384,
+    "final_accuracies": [
+      45.150390625,
+      45.24,
+      44.5065625
+    ],
+    "bytes_mean": 8078175969.333333,
+    "training_tasks_mean": 5910.333333333333,
+    "actual_execution_s_mean": 240.31018671172205,
+    "tta_30": {
+      "0": 180.0,
+      "1": 180.0,
+      "2": 180.0
+    },
+    "tta_40": {
+      "0": 540.0,
+      "1": 540.0,
+      "2": 540.0
+    },
+    "tta_50": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_60": {
+      "0": null,
+      "1": null,
+      "2": null
+    },
+    "tta_70": {
+      "0": null,
+      "1": null,
+      "2": null
+    }
+  }
+]
