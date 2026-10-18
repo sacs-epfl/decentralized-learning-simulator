@@ -25,7 +25,7 @@ import torch
 from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.conflux.settings import ConfluxSettings
 from dasklearn.simulation.conflux.simulation import ConfluxSimulation
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
+from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments
 from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
@@ -50,6 +50,9 @@ async def run_one(args, variant, profile, partitioner, seed):
         cls, config = (ConfluxV2Simulation, ConfluxV2Settings) if variant == "conflux-v2" else (ConfluxSimulation, ConfluxSettings)
         algorithm = variant
         specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": args.success_fraction}
+        if variant == "conflux-v2":
+            specific.update(relay_count=getattr(args, "relay_count", 0),
+                            immediate_uploads=getattr(args, "immediate_uploads", False))
     else:
         raise ValueError("Unknown comparison variant: " + variant)
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
@@ -181,6 +184,8 @@ async def main():
     parser.add_argument("--sample-size", type=int, default=8)
     parser.add_argument("--chunks", type=int, default=4)
     parser.add_argument("--success-fraction", type=float, default=1)
+    parser.add_argument("--relay-count", type=int, default=0)
+    add_conflux_v2_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)
     parser.add_argument("--bandwidth", type=int, default=4000)

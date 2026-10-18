@@ -3,6 +3,8 @@
 A temporary coordinator freezes the first q ready contributors. It only handles
 control messages; independent reducers aggregate disjoint model chunks. The same
 contributor set is used for every chunk and every next-sample recipient.
+With immediate uploads and full participation, that set is known beforehand;
+uploads overlap other contributors' training without coordinator messages.
 """
 from collections import defaultdict
 from math import ceil
@@ -54,6 +56,24 @@ class ConfluxV2Client(BaseClient):
         state["started"] = True
         self.simulator.schedule(Event(self.simulator.current_time, self.index, START_TRAIN, event.data))
 
+    def install_known_plan(self, round_nr):
+        """Install the same public full sample at senders and reducers.
+
+        Partial-contribution rounds must freeze one common ready set, and keep
+        the original coordinated path. Merely uploading first must never pick
+        different contributors for different chunks.
+        """
+        if not (self.simulator.settings.immediate_uploads and
+                self.simulator.settings.success_fraction == 1):
+            return False
+        state = self.rounds[round_nr]
+        if not state.get("plan_received"):
+            contributors = self.sample(round_nr)
+            state["plan"] = contributors
+            state["plan_received"] = True
+            self.simulator.contributor_sets[round_nr] = contributors
+        return True
+
     def finish_train(self, event):
         round_nr = event.data["round"]
         state = self.rounds[round_nr]
@@ -66,6 +86,11 @@ class ConfluxV2Client(BaseClient):
             "round": round_nr, "peer": self.index, "time": self.simulator.current_time})
         self.add_compute_task(task)
         state["chunked"] = task.name
+        if self.install_known_plan(round_nr):
+            _, owners = self.layout(round_nr)
+            for chunk_idx, owner in enumerate(owners):
+                self.send_chunk(owner, (state["chunked"], chunk_idx), round_nr, chunk_idx, "upload")
+            return
         leader, _ = self.layout(round_nr)
         self.send_message_to_client(leader, "ready", {"round": round_nr})
 
@@ -118,6 +143,7 @@ class ConfluxV2Client(BaseClient):
         round_nr, chunk_idx = meta["round"], meta["chunk"]
         state = self.rounds[round_nr]
         if meta["phase"] == "upload":
+            self.install_known_plan(round_nr)
             state["uploads"][chunk_idx][event.data["from"]] = event.data["model"]
             self.try_reduce(round_nr)
         else:

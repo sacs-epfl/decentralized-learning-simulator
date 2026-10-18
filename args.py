@@ -38,6 +38,8 @@ def get_args():
     parser.add_argument('--chunks-in-sample', type=int, default=10)
     parser.add_argument('--success-fraction', type=float, default=1)
     parser.add_argument('--relay-count', type=int, default=0)
+    from dasklearn.simulation.conflux_v2.settings import add_conflux_v2_arguments
+    add_conflux_v2_arguments(parser)
     parser.add_argument('--control-message-bytes', type=int, default=64)
     parser.add_argument('--network-latency-ms', type=float, default=0)
     parser.add_argument('--duration', type=int, default=100)

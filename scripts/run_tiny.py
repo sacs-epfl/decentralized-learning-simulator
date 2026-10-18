@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import torch
 from dasklearn.session_settings import LearningSettings
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
+from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments
 from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
@@ -37,6 +37,8 @@ async def main():
     p.add_argument("--peers", type=int, default=128)
     p.add_argument("--sample-size", type=int, default=32)
     p.add_argument("--chunks", type=int, default=16)
+    p.add_argument("--relay-count", type=int, default=0)
+    add_conflux_v2_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--duration", type=int, default=1800)
@@ -71,6 +73,8 @@ async def main():
     if args.variant in BASELINE_VARIANTS:
         cls, config, specific = baseline_spec(args.variant, args.peers, args.sample_size,
                                              args.group_size, args.averaging_steps)
+    if args.variant == "conflux-v2":
+        specific.update(relay_count=args.relay_count, immediate_uploads=args.immediate_uploads)
     settings = config(algorithm="shatter" if args.variant == "shatter-r2" else args.variant, seed=args.seed,
         work_dir=str(args.output), dataset="tiny_imagenet", model="resnet18", participants=args.peers,
         dataset_base_path=args.data, partitioner="dirichlet", alpha=.1,

@@ -132,7 +132,7 @@ def run():
         "adpsgd": {"agg": args.agg},
         "lubor": {"k": args.k, "no_weights": args.no_weights},
         "conflux": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction},
-        "conflux-v2": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction, "relay_count": args.relay_count},
+        "conflux-v2": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction, "relay_count": args.relay_count, "immediate_uploads": args.immediate_uploads},
         "teleportation": {"sample_size": args.sample_size, "topology": args.teleportation_topology},
         "moshpit": {"group_size": args.group_size, "averaging_steps": args.averaging_steps},
         "shatter": {"k": args.k, "r": args.r},
