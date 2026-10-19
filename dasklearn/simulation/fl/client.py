@@ -23,5 +23,7 @@ class FLClient(BaseClient):
         """
         We're done training - send the model back to the server.
         """
-        model: str = event.data["model"]
+        self.compute_time += event.data["train_time"]
+        model = event.data["model"]
+        self.publish_model(event.data["round"], model)
         self.send_model(self.server.index, model, metadata={"round": event.data["round"]})

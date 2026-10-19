@@ -16,7 +16,7 @@ class DPSGDClient(BaseClient):
     def init_client(self, event: Event):
         self.schedule_next_round({"round": 1, "model": (None, 0)})
         # Schedule time based testing if we use time based stopping
-        if self.simulator.settings.stop == "duration" and self.simulator.settings.test_period > 0:
+        if self.simulator.settings.test_method != "snapshot" and self.simulator.settings.stop == "duration" and self.simulator.settings.test_period > 0:
             test_event = Event(event.time + self.simulator.settings.test_period, self.index, TEST)
             self.simulator.schedule(test_event)
 
@@ -84,6 +84,7 @@ class DPSGDClient(BaseClient):
         round_info.model = event.data["model"]
         round_info.is_training = False
         round_info.train_done = True
+        self.publish_model(cur_round, round_info.model)
         
         self.send_model_to_nbs(round_info)
 
@@ -146,9 +147,10 @@ class DPSGDClient(BaseClient):
         self.client_log("Client %d will aggregate in round %d (%s)" % (self.index, round_nr, model_names))
         if not round_info.should_ignore:
             other = [(sender_id, model_name, round_nr)
-                    for sender_id, model_name in round_info.incoming_models.items()]
+                    for sender_id, model_name in round_info.incoming_models.items() if model_name]
             self.aggregations.append(other + [(self.index, round_info.model, round_nr)])
             round_info.model = self.aggregate_models(model_names, round_nr)
+            self.publish_model(round_nr, round_info.model)
 
             # Should we test?
             if self.simulator.settings.stop == "rounds" and self.simulator.settings.test_interval > 0 \

@@ -119,7 +119,7 @@ def run():
     algorithm_params = {
         "demo": demo_options(args),
         "dspodfl": dspodfl_options(args),
-        "fl": {"sample_size": args.sample_size},
+        "fl": {"sample_size": args.sample_size, "aggregation_weighting": args.fl_weighting},
         "dpsgd": {"el": args.el, "topology": args.topology, "k": args.k},
         "epidemic": {"el": args.el, "topology": args.topology, "k": args.k},
         "gossip": {"gl_period": args.gl_period, "agg": args.agg},

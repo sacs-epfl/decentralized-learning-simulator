@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import pickle
-import subprocess
+import socket
+from urllib.parse import urlparse
 from typing import Callable, Dict
 
 import zmq
@@ -49,13 +50,20 @@ class Communication:
     def start(self):
         self.setup_server()
 
-    def connect_to_coordinator(self, coordinator_address: str):
+    def connect_to_coordinator(self, coordinator_address: str, advertise_host=None):
         # Connect to the coordinator
         self.coordinator_connection = ctx.socket(zmq.DEALER)
         self.coordinator_connection.setsockopt(zmq.IDENTITY, self.identity.encode())
         self.coordinator_connection.connect(coordinator_address)
 
-        ip = subprocess.check_output("ifconfig | grep 'inet ' | grep -v 127.0.0.1 | awk '{print $2}'", shell=True).decode('utf-8').strip().split()[0]
+        if advertise_host is None:
+            address = urlparse(coordinator_address)
+            # Ask the OS which IPv4 interface routes to the coordinator. UDP
+            # connect sends no payload and needs no platform-specific CLI.
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as route:
+                route.connect((address.hostname, address.port))
+                advertise_host = route.getsockname()[0]
+        ip = advertise_host
         msg = pickle.dumps({"type": "hello", "address": "tcp://%s:%d" % (ip, self.listen_port)})
         self.send_message_to_coordinator(msg)
 

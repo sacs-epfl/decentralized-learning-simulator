@@ -18,8 +18,14 @@ class DPSGDSimulation(Simulation):
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
         self.topologies = []
+        if settings.participants < 2 or settings.learning.local_steps < 1:
+            raise ValueError("D-PSGD/Epidemic requires at least two participants and positive local_steps")
         if self.settings.k == 0:
-                    self.settings.k = math.floor(math.log2(self.settings.participants))
+            self.settings.k = math.floor(math.log2(self.settings.participants))
+        if not 0 < settings.k < settings.participants:
+            raise ValueError("k must be between 1 and participants - 1")
+        if settings.algorithm == "epidemic" and settings.el not in {"oracle", "local"}:
+            raise ValueError("el must be oracle or local")
         self.clients_ready_for_round: Dict[int, List[Tuple[int, Dict]]] = defaultdict(lambda: [])
 
         self.register_event_callback(START_ROUND, "start_round")
@@ -28,6 +34,7 @@ class DPSGDSimulation(Simulation):
 
     def add_topology(self) -> None:
         # Generate a new topology
+        r = random.Random(self.settings.seed + len(self.topologies))
         if self.settings.algorithm == "dpsgd" or (self.settings.algorithm == "epidemic" and self.settings.el == "oracle"):
             seed = self.settings.seed if self.settings.algorithm == "dpsgd" else self.settings.seed + len(self.topologies)
             r = random.Random(seed)
@@ -45,10 +52,11 @@ class DPSGDSimulation(Simulation):
         else:
             g = nx.DiGraph()
             if self.settings.algorithm == "epidemic" and self.settings.el == "local":
-                for node in self.participants:
-                    nodes = self.participants[:]
+                g.add_nodes_from(range(self.settings.participants))
+                for node in range(self.settings.participants):
+                    nodes = list(range(self.settings.participants))
                     nodes.remove(node)
-                    connections = r.sample(nodes, self.k)
+                    connections = r.sample(nodes, self.settings.k)
                     for other_node in connections:
                         g.add_edge(node, other_node)
 

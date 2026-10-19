@@ -13,6 +13,10 @@ class ADPSGDSimulation(AsynchronousSimulation):
 
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
+        if settings.participants < 2 or settings.learning.local_steps < 1:
+            raise ValueError("AD-PSGD requires at least two participants and positive local_steps")
+        if settings.churn != "none":
+            raise ValueError("AD-PSGD currently supports stable membership only")
         if settings.agg == "default":
             settings.agg = "average"
 
@@ -22,6 +26,10 @@ class ADPSGDSimulation(AsynchronousSimulation):
         self.passive_peers = list(filter(lambda x: x not in self.active_peers, peers))
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
+        if settings.from_dir:
+            self.data_dir = settings.data_dir or settings.from_dir
+            settings.data_dir = self.data_dir
+            return
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_%s_n%d_b%d_s%d_%s" %
                                      (settings.algorithm, settings.agg, settings.dataset, settings.participants,
                                       settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))

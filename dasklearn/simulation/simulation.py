@@ -91,7 +91,8 @@ class Simulation:
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
         if settings.from_dir:
-            self.data_dir = settings.from_dir
+            self.data_dir = settings.data_dir or settings.from_dir
+            settings.data_dir = self.data_dir
             return  # Everything is setup
 
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
@@ -111,7 +112,11 @@ class Simulation:
         self.brokers_to_clients = {}
         self.clients_to_brokers = {}
 
-        for client in range(self.settings.participants):
+        # FL also has a server peer; saved-DAG replay has no live clients.
+        peers = set(range(self.settings.participants))
+        peers.update(task.data["peer"] for task in self.workflow_dag.tasks.values()
+                     if task.data.get("peer") is not None)
+        for client in sorted(peers):
             self.clients_to_brokers[client] = list(self.broker_addresses.keys())[client % len(self.broker_addresses)]
 
         # Build the reverse map

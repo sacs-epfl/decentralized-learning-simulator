@@ -8,3 +8,4 @@ from dasklearn.session_settings import SessionSettings
 @dataclass
 class FLSettings(SessionSettings):
     sample_size: int = 0
+    aggregation_weighting: str = "uniform"  # uniform (historical), examples
