@@ -1,9 +1,11 @@
+from typing import Dict
 from typing import Optional, Tuple, List
 
 from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.dpsgd.round import Round
 from dasklearn.simulation.events import *
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 from dasklearn.util import MICROSECONDS
 
 
@@ -74,7 +76,6 @@ class DPSGDClient(BaseClient):
         We finished training. Select a neighbour node and send it the model.
         """
         cur_round: int = event.data["round"]
-        self.compute_time += event.data["train_time"]
         self.client_log("Client %d finished model training in round %d (online? %s)" % (self.index, cur_round, self.online))
         if cur_round not in self.round_info:
             raise RuntimeError("Client %d does not know about round %d after training finished!" %
@@ -99,10 +100,10 @@ class DPSGDClient(BaseClient):
         if len(self.simulator.topologies) < cur_round:
             self.simulator.add_topology()
         for neighbour in self.simulator.topologies[round_info.round_nr - 1].successors(self.index):
-            if not round_info.should_ignore and self.simulator.clients[neighbour].online:
-                self.send_model(neighbour, round_info.model, metadata={"round": cur_round})
+            if not round_info.should_ignore and self.context.oracle('availability')[neighbour]:
+                self.send(neighbour, round_info.model, size_bytes=self.simulator.model_size, metadata={"round": cur_round}, overhead_bytes=0)
             else:
-                self.simulator.clients[neighbour].on_offline_sentinel(self.index, cur_round)
+                self.context.oracle('offline_sentinel')(neighbour, cur_round)
 
     def on_offline_sentinel(self, from_client: int, round_nr: int):
         event = {
@@ -156,9 +157,8 @@ class DPSGDClient(BaseClient):
             if self.simulator.settings.stop == "rounds" and self.simulator.settings.test_interval > 0 \
                     and round_nr % self.simulator.settings.test_interval == 0:
                 test_task_name = "test_%d_%d" % (self.index, round_nr)
-                task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index})
-                self.add_compute_task(task)
-                round_info.model = (test_task_name, 0)
+                task = self.create_compute_task("test", {"model": round_info.model, "round": round_nr, "time": self.simulator.current_time, "peer": self.index}, name=test_task_name)
+                round_info.model = TaskRef(test_task_name, 0)
 
         self.logger.debug("Client %d finished round %d (t=%d)" % (self.index, round_nr, self.simulator.current_time // MICROSECONDS))
         self.last_round_completed = round_nr
@@ -186,10 +186,9 @@ class DPSGDClient(BaseClient):
         if latest_model_round > -1:
             self.client_log("Client %d will test its model %s" % (self.index, self.round_info[latest_model_round].model))
             test_task_name = "test_%d_%d" % (self.index, event.time // MICROSECONDS)
-            task = Task(test_task_name, "test", data={
+            task = self.create_compute_task("test", {
                 "model": self.round_info[latest_model_round].model, "time": self.simulator.current_time,
-                "peer": self.index, "round": latest_model_round})
-            self.add_compute_task(task)
+                "peer": self.index, "round": latest_model_round}, name=test_task_name)
 
         # Schedule next test action
         test_event = Event(event.time + self.simulator.settings.test_period, self.index, TEST)

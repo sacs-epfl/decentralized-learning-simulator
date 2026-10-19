@@ -4,6 +4,7 @@ from typing import List
 from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.events import Event, START_ROUND
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 class FLServer(BaseClient):
@@ -21,10 +22,9 @@ class FLServer(BaseClient):
     def init_client(self, _: Event):
         self.logger.info("Initializing FL server")
         self.bw_scheduler.bw_limit = 10000000000000000
-        initial = Task(Task.generate_name("initialize"), "initialize",
+        initial = self.create_compute_task("initialize",
                        {"peer": 0, "round": 0, "time": self.simulator.current_time})
-        self.add_compute_task(initial)
-        self.global_model = (initial.name, 0)
+        self.global_model = TaskRef(initial.name, 0)
         start_next_round_event = Event(self.simulator.current_time, self.index, START_ROUND)
         self.simulator.schedule(start_next_round_event)
 
@@ -44,7 +44,7 @@ class FLServer(BaseClient):
         sampled = self.sample_clients()
         self.selected_clients = set(sampled)
         for client_index in sampled:
-            self.send_model(client_index, self.global_model, metadata={"round": self.round})
+            self.send(client_index, self.global_model, size_bytes=self.simulator.model_size, metadata={"round": self.round}, overhead_bytes=0)
 
     def on_incoming_model(self, event: Event):
         peer = event.data["from"]
@@ -68,9 +68,9 @@ class FLServer(BaseClient):
         if self.simulator.settings.test_interval > 0 and self.round % self.simulator.settings.test_interval == 0:
             self.client_log("Server testing model in round %d" % self.round)
             test_task_name = "test_%d" % self.round
-            task = Task(test_task_name, "test", data={"model": self.global_model, "round": self.round, "time": self.simulator.current_time, "peer": self.index})
-            self.add_compute_task(task)
-            self.global_model = (test_task_name, 0)
+            task = self.create_compute_task("test", {"model": self.global_model, "round": self.round,
+                "time": self.simulator.current_time, "peer": self.index}, name=test_task_name)
+            self.global_model = TaskRef(test_task_name, 0)
 
         if self.round < self.simulator.settings.rounds:
             start_next_round_event = Event(self.simulator.current_time, self.index, START_ROUND)

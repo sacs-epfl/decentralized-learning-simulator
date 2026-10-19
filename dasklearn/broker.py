@@ -18,6 +18,7 @@ from dasklearn.functions import *
 from dasklearn.algorithms import settings_classes
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 from dasklearn.util.logging import setup_logging
 from dasklearn.worker import Worker
 
@@ -53,6 +54,7 @@ class Broker:
         self.worker_queue = None
         self.items_in_worker_queue: int = 0
         self.workers_ready: bool = False
+        self.incremental = False
         self.pending_tasks: List[Task] = []
         self.identity: str = "broker_%s" % ''.join(random.choice('0123456789abcdef') for _ in range(6))
 
@@ -163,6 +165,13 @@ class Broker:
             try:
                 task_name, res, info = await self.worker_result_queue.get()
                 if task_name == "error":
+                    if self.incremental:
+                        self.communication.send_message_to_coordinator(pickle.dumps({
+                            "type": "execution_result", "task": res,
+                            "error": "Worker failed while executing task " + str(res),
+                        }))
+                        self.items_in_worker_queue -= 1
+                        continue
                     # One of the workers encountered an exception - stop everything
                     task_name = res
                     task = self.dag.tasks[task_name]
@@ -175,6 +184,7 @@ class Broker:
                     break
 
                 task = self.dag.tasks[task_name]
+                task.done = True
                 self.items_in_worker_queue -= 1
                 self.completed_tasks += 1
                 if self.completed_tasks % 1000 == 0:
@@ -192,6 +202,13 @@ class Broker:
                 self.task_statistics.append(task_stats)
 
                 self.logger.info("Task %s completed", task.name)
+
+                if self.incremental:
+                    self.communication.send_message_to_coordinator(pickle.dumps({
+                        "type": "execution_result", "task": task.name, "result": res,
+                    }))
+                    task.clear_data()
+                    continue
 
                 # If this is a sink task, inform the coordinator about the result
                 if not task.outputs:
@@ -258,12 +275,15 @@ class Broker:
     def put_in_worker_queue(self, task: Task):
         self.logger.info("Putting task %s in worker queue", task.name)
         self.items_in_worker_queue += 1
-        self.worker_queue.put((task.name, task.func, task.data))
+        self.worker_queue.put((task.name, task.func, task.data, task.operation))
 
     def schedule_task(self, task: Task):
         """
         Schedule the task on one of the available workers.
         """
+        if task.scheduled:
+            return
+        task.scheduled = True
         self.task_start_times[task.name] = time.time()
         if not self.workers_ready:
             self.logger.info("Broker enqueueing task %s since workers are not ready yet", task.name)
@@ -282,8 +302,9 @@ class Broker:
 
         for idx, res_at_idx in enumerate(res):
             for next_task, next_task_idx in task.outputs:
-                if next_task.data["peer"] in self.brokers_to_clients[self.identity] and idx == next_task_idx:
-                    next_task.set_data((task.name, next_task_idx), res_at_idx)
+                if (not next_task.scheduled and next_task.data["peer"] in self.brokers_to_clients[self.identity]
+                        and idx == next_task_idx):
+                    next_task.set_data(TaskRef(task.name, next_task_idx), res_at_idx)
                     if next_task.has_all_inputs():
                         self.schedule_task(next_task)
 
@@ -291,6 +312,7 @@ class Broker:
         if identity == "coordinator" and msg["type"] == "config":  # Configuration received from the coordinator
             self.logger.info("Received configuration from the coordinator")
             self.start_time = time.time()
+            self.incremental = msg.get("incremental", False)
             self.broker_addresses = msg["brokers"]
             self.brokers_to_clients = msg["brokers_to_clients"]
 
@@ -308,6 +330,14 @@ class Broker:
             self.dag.build_task_indices()
             self.connect_to_brokers()
             ensure_future(self.start_workers())
+        elif identity == "coordinator" and msg["type"] == "execute":
+            if not self.incremental:
+                raise RuntimeError("Incremental execution requires incremental configuration")
+            task = Task(msg["task"], msg["func"], msg["data"], operation=msg.get("operation"))
+            if task.name in self.dag.tasks:
+                raise ValueError(f"Duplicate execution request: {task.name}")
+            self.dag.tasks[task.name] = task
+            self.schedule_task(task)
         elif identity == "coordinator" and msg["type"] == "tasks":
             for task_name in msg["tasks"]:
                 # Enqueue tasks

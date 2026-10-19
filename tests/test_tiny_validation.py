@@ -6,6 +6,7 @@ from dasklearn.datasets.tiny_imagenet import TinyPartition
 from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.tasks.local import execute_local
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 def test_tensor_chunk_consumers_copy_only_the_slice(monkeypatch):
@@ -17,7 +18,7 @@ def test_tensor_chunk_consumers_copy_only_the_slice(monkeypatch):
         return [piece.sum()]
     monkeypatch.setattr(functions, "memory_probe", inspect, raising=False)
     a = Task("source", "memory_source", {})
-    b = Task("probe", "memory_probe", {"piece": ("source", 3)})
+    b = Task("probe", "memory_probe", {"piece": TaskRef("source", 3)})
     a.outputs.append((b, 3)); b.inputs.append((a, 3))
     sim = SimpleNamespace(settings=SimpleNamespace(torch_threads=1), workflow_dag=SimpleNamespace(tasks={a.name:a,b.name:b}))
     result = execute_local(sim)

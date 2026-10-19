@@ -9,3 +9,4 @@ from dasklearn.session_settings import SessionSettings
 class LuborSettings(SessionSettings):
     k: int = 0
     no_weights: bool = False
+    agg: str = "default"

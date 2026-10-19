@@ -28,6 +28,7 @@ class SyntheticDataset:
         pools = [rng.permutation(pool) for pool in pools]
         offsets = np.zeros(4, dtype=int)
         self.partitions = []
+        used_indices = []
         for _ in range(settings.participants):
             probabilities = rng.dirichlet(np.full(4, settings.alpha)) if settings.partitioner == "dirichlet" else np.full(4, 0.25)
             classes = rng.choice(4, 256, p=probabilities)
@@ -38,10 +39,15 @@ class SyntheticDataset:
                 indices.append(pools[c][offsets[c]])
                 offsets[c] += 1
             indices = np.asarray(indices)
+            used_indices.extend(indices.tolist())
             self.partitions.append(TensorPartition(features[indices], labels[indices]))
+        # Reuse previously unassigned examples without changing any client or
+        # test data. Adaptive decisions must not consume the final test split.
+        unused = np.setdiff1d(np.arange(total - 2048), used_indices)[:512]
+        self.validation = TensorPartition(features[unused], labels[unused])
 
     def load_partition(self, peer, split="train"):
         return self.partitions[peer]
 
     def load_split(self, split):
-        return self.test
+        return self.validation if split == "validation" else self.test

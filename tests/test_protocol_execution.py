@@ -93,9 +93,9 @@ async def test_payloads_are_snapshots_and_training_does_not_mutate_predecessor(t
     from dasklearn import functions
     sim = simulate(ShatterSimulation, settings(ShatterSettings, tmp_path, k=2, r=2))
     message = {"peers": [1]}
-    sim.clients[0].send_message_to_client(1, "ready", message)
+    sim.clients[0].send_control(1, "ready", message)
     message["peers"].append(2)
-    assert sim.events[-1][2].data["message"] == {"peers": [1]}
+    assert sim.events[-1][2].data["payload"]["message"] == {"peers": [1]}
     functions.dataset = None
     functions.model_trainers = None
     model = functions.initialize(sim.settings, {})[0]

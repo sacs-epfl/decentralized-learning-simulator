@@ -74,3 +74,5 @@ class SessionSettings:
     training_batching: bool = True
     training_batch_size: int = 2
     gpu_state_cache_mb: int = 256
+    feedback_execution: str = "local"  # Local or persistent broker RPCs for adaptive runs.
+    feedback_replay: Optional[str] = None  # Trusted feedback.pkl from the same source/settings.

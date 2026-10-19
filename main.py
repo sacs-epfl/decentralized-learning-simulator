@@ -13,6 +13,7 @@ from dasklearn.util import MICROSECONDS
 
 from dasklearn.algorithms import ALGORITHMS, class_paths
 
+simulation_task = None
 
 def get_torch_device() -> str:
     if torch.cuda.is_available():
@@ -47,7 +48,16 @@ def instantiate_class(class_path: str, **kwargs):
     cls = getattr(module, class_name)
     return cls(**kwargs)
 
+
+async def run_simulation(simulation):
+    try:
+        await simulation.run()
+    except Exception:
+        asyncio.get_running_loop().stop()
+        raise
+
 def run():
+    global simulation_task
     args = get_args()
 
     if args.from_dir:
@@ -99,6 +109,8 @@ def run():
             "profile": args.profile,
             "log_bandwidth_utilization": args.log_bandwidth_utilization,
             "dag_checkpoint_interval": args.dag_checkpoint_interval,
+            "feedback_execution": args.feedback_execution,
+            "feedback_replay": args.feedback_replay,
             "control_message_bytes": args.control_message_bytes,
             "network_latency_ms": args.network_latency_ms,
             "gpu_residency": args.gpu_residency,
@@ -142,7 +154,7 @@ def run():
     settings = instantiate_class(settings_class_path, **settings_dict)
     simulation = instantiate_class(simulation_class_path, settings=settings)
 
-    ensure_future(simulation.run())
+    simulation_task = ensure_future(run_simulation(simulation))
 
 if __name__ == "__main__":
     freeze_support()
@@ -153,6 +165,8 @@ if __name__ == "__main__":
 
     try:
         loop.run_forever()
+        if simulation_task is not None and simulation_task.done():
+            simulation_task.result()
     except KeyboardInterrupt:
         print("Received exit signal, shutting down...")
     finally:

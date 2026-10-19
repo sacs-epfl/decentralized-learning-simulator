@@ -144,9 +144,9 @@ async def main():
         snapshot(event)
         if event.time==settings.duration and not args.no_final_full:
             for peer,(round_nr,model) in sorted(sim.latest_models.items()):
-                sim.clients[peer].add_compute_task(Task(Task.generate_name("test_final"),"test",{
+                sim.clients[peer].create_compute_task("test",{
                     "model":model,"round":round_nr,"time":event.time,"peer":peer,
-                    "evaluation_examples":0,"output_prefix":"final_accuracies"}))
+                    "evaluation_examples":0,"output_prefix":"final_accuracies"}, name=Task.generate_name("test_final"))
     sim.test_snapshot=final_snapshot
     started=time.perf_counter();sim.simulate();sim.workflow_dag.build_task_indices();sim.workflow_dag.check_validity()
     print(json.dumps({"event_simulation_s":time.perf_counter()-started,"tasks":len(sim.workflow_dag.tasks),

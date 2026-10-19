@@ -9,7 +9,7 @@ from dasklearn import functions
 from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.teleportation.settings import TeleportationSettings
 from dasklearn.simulation.teleportation.simulation import TeleportationSimulation
-from dasklearn.simulation.events import START_CONTROL_TRANSFER, START_TRANSFER
+from dasklearn.simulation.events import INCOMING_PAYLOAD
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
 from dasklearn.simulation.shatter.client import ShatterClient
 from dasklearn.simulation.shatter.round import Round
@@ -41,13 +41,19 @@ async def test_sampled_clients_cannot_train_two_rounds_simultaneously(tmp_path):
     assert len(starts) > 1
 
 
-def test_shatter_same_host_chunks_are_local():
-    sim = SimpleNamespace(current_time=0, events=[])
-    sim.schedule = sim.events.append
+@pytest.mark.asyncio
+async def test_shatter_same_host_chunks_are_local(tmp_path):
+    from dasklearn.simulation.shatter.settings import ShatterSettings
+    from dasklearn.simulation.simulation import Simulation
+    from helpers import settings
+    sim = Simulation(settings(ShatterSettings, tmp_path, participants=1, k=1))
+    sim.model_size = 100
     client = ShatterClient(sim, 0)
+    sim.clients = [client]
+    client.create_compute_task('chunk', {'model': None, 'n': 1}, name='chunked_model')
     round_info = Round(1)
     client.send_chunk(round_info, "chunked_model", 0, 0)
-    assert sim.events[0].action != START_TRANSFER
+    assert sim.events[0][2].action == INCOMING_PAYLOAD
     assert client.bw_scheduler.total_bytes_sent == 0
 
 

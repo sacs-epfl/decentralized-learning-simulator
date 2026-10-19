@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import Tuple
 
 from dasklearn.simulation.asynchronous_client import AsynchronousClient
@@ -19,7 +20,7 @@ class SuperGossipClient(AsynchronousClient):
         super().finish_train(event)
         # Special case - send the model in the first iteration
         if self.age == 1:
-            self.send()
+            self.disseminate_model()
 
         if len(self.queue) == 0 and self.simulator.settings.wait:
             # Wait to receive a model if queue is empty
@@ -44,7 +45,7 @@ class SuperGossipClient(AsynchronousClient):
         """
         self.aggregate(list(self.queue.values()))
         self.queue = {}
-        self.send()
+        self.disseminate_model()
 
         # Schedule a train action
         start_train_event = Event(self.simulator.current_time, self.index, START_TRAIN,

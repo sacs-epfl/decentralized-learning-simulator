@@ -2,9 +2,10 @@
 from collections import defaultdict
 
 from dasklearn.simulation.client import BaseClient
-from dasklearn.simulation.events import Event, START_ROUND, START_TRAIN, START_TRANSFER, INCOMING_MODEL
+from dasklearn.simulation.events import Event, START_ROUND, START_TRAIN
 from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 class MoshpitClient(BaseClient):
@@ -25,7 +26,6 @@ class MoshpitClient(BaseClient):
         self.simulator.schedule(Event(self.simulator.current_time, self.index, START_TRAIN, event.data))
 
     def finish_train(self, event):
-        self.compute_time += event.data["train_time"]
         self.begin_phase(event.data["round"], 0, event.data["model"])
 
     def begin_phase(self, round_nr, phase, model):
@@ -33,12 +33,11 @@ class MoshpitClient(BaseClient):
         if "chunked" in state:
             return
         members, weights = self.simulator.layout(self.index, round_nr, phase)
-        task = Task(Task.generate_name("chunk"), "chunk", {"model": model, "n": len(members),
+        task = self.create_compute_task("chunk", {"model": model, "n": len(members),
             "weights": weights, "round": round_nr, "phase": phase, "peer": self.index,
-            "time": self.simulator.current_time})
-        self.add_compute_task(task)
+            "time": self.simulator.current_time}, name=Task.generate_name("chunk"))
         state["chunked"] = task.name
-        self.send_message_to_client(members[0], "ready", {"round": round_nr, "phase": phase})
+        self.send_control(members[0], "ready", {"round": round_nr, "phase": phase})
 
     def on_message(self, event):
         message = event.data["message"]
@@ -52,30 +51,21 @@ class MoshpitClient(BaseClient):
             if len(state["ready"]) == len(members) and not state["planned"]:
                 state["planned"] = True
                 for peer in members:
-                    self.send_message_to_client(peer, "plan", message)
+                    self.send_control(peer, "plan", message)
         elif event.data["type"] == "plan":
             if event.data["from"] != members[0] or state.get("uploaded"):
                 return
             state["uploaded"] = True
             for chunk, owner in enumerate(members):
-                self.send_part(owner, (state["chunked"], chunk), round_nr, phase, chunk, "upload")
+                self.send_part(owner, TaskRef(state["chunked"], chunk), round_nr, phase, chunk, "upload")
         else:
             raise ValueError("Unknown Moshpit control message")
 
     def send_part(self, peer, model, round_nr, phase, chunk, kind):
-        data = {"from": self.index, "to": peer, "model": model,
-                "metadata": {"round": round_nr, "phase": phase, "chunk": chunk, "kind": kind}}
-        if peer == self.index:
-            self.simulator.schedule(Event(self.simulator.current_time, peer, INCOMING_MODEL, data))
-        else:
-            self.simulator.schedule(Event(self.simulator.current_time, self.index, START_TRANSFER, data))
-
-    def start_transfer(self, event):
-        meta = event.data["metadata"]
+        meta = {"round": round_nr, "phase": phase, "chunk": chunk, "kind": kind}
         _, weights = self.simulator.layout(self.index, meta["round"], meta["phase"])
         size = ChunkManager.partition_sizes(self.simulator.model_size, weights)[meta["chunk"]]
-        self.bw_scheduler.add_transfer(self.simulator.clients[event.data["to"]].bw_scheduler,
-            self.data_transfer_size(size, meta), event.data["model"], meta)
+        self.send(peer, model, size_bytes=size, metadata=meta)
 
     def on_incoming_model(self, event):
         meta = event.data["metadata"]
@@ -86,30 +76,28 @@ class MoshpitClient(BaseClient):
             state["uploads"][event.data["from"]] = event.data["model"]
             if not state["reduced"] and len(state["uploads"]) == len(members):
                 state["reduced"] = True
-                task = Task(Task.generate_name("aggregate_chunk"), "aggregate_chunk", {
+                task = self.create_compute_task("aggregate_chunk", {
                     "chunks": [state["uploads"][peer] for peer in members], "round": round_nr,
-                    "phase": phase, "peer": self.index, "time": self.simulator.current_time})
-                self.add_compute_task(task)
+                    "phase": phase, "peer": self.index, "time": self.simulator.current_time}, name=Task.generate_name("aggregate_chunk"))
                 for peer in members:
-                    self.send_part(peer, (task.name, 0), round_nr, phase, chunk, "gather")
+                    self.send_part(peer, TaskRef(task.name, 0), round_nr, phase, chunk, "gather")
         else:
             state["received"][chunk] = event.data["model"]
             if len(state["received"]) == len(members) and not state["done"]:
                 state["done"] = True
-                task = Task(Task.generate_name("reconstruct_from_chunks"), "reconstruct_from_chunks", {
+                task = self.create_compute_task("reconstruct_from_chunks", {
                     "chunks": [[state["received"][i]] for i in range(len(members))],
                     "round": round_nr, "phase": phase, "peer": self.index,
-                    "time": self.simulator.current_time})
-                self.add_compute_task(task)
-                model = (task.name, 0)
+                    "time": self.simulator.current_time}, name=Task.generate_name("reconstruct_from_chunks"))
+                model = TaskRef(task.name, 0)
                 # Only publish the configured averaging block's completed output.
                 if phase + 1 < self.simulator.settings.averaging_steps:
                     self.begin_phase(round_nr, phase + 1, model)
                     return
                 self.publish_model(round_nr, model)
                 if self.simulator.settings.test_method == "individual" and self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0:
-                    self.add_compute_task(Task(Task.generate_name("test"), "test", {
-                        "model": model, "round": round_nr, "peer": self.index, "time": self.simulator.current_time}))
+                    self.create_compute_task("test", {
+                        "model": model, "round": round_nr, "peer": self.index, "time": self.simulator.current_time}, name=Task.generate_name("test"))
                 if self.simulator.settings.rounds <= 0 or round_nr < self.simulator.settings.rounds:
                     self.simulator.schedule(Event(self.simulator.current_time, self.index, START_ROUND,
                         {"round": round_nr + 1, "model": model}))

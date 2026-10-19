@@ -5,6 +5,7 @@ from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.events import *
 from dasklearn.simulation.shatter.round import Round
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 from dasklearn.util import MICROSECONDS
 
 class ShatterClient(BaseClient):
@@ -106,7 +107,6 @@ class ShatterClient(BaseClient):
 
     def finish_train(self, event: Event):
         cur_round = event.data["round"]
-        self.compute_time += event.data["train_time"]
         self.client_log("Client %d finished model training in round %d (online? %s)" %
                          (self.index, cur_round, self.online))
         if cur_round not in self.round_info:
@@ -118,12 +118,11 @@ class ShatterClient(BaseClient):
         # Chunk the model
         if not round_info.should_ignore:
             task_name = Task.generate_name("chunk")
-            task = Task(task_name, "chunk", data={
+            task = self.create_compute_task("chunk", {
                 "model": round_info.model, "round": cur_round,
                 "time": self.simulator.current_time, "peer": self.index,
                 "n": self.simulator.settings.k,
-            })
-            self.add_compute_task(task)
+            }, name=task_name)
             round_info.my_chunked_model = task_name
 
         self.progress_round(round_info)
@@ -142,31 +141,18 @@ class ShatterClient(BaseClient):
             for neighbour in topology.successors(vn):
                 rn = neighbour // self.simulator.settings.k
                 self.client_log("Client %d sending chunk %d to %d in round %d" % (self.index, chunk_idx, rn, cur_round))
-                if not round_info.should_ignore and self.simulator.clients[rn].online:
+                if not round_info.should_ignore and self.context.oracle('availability')[rn]:
                     self.send_chunk(round_info, round_info.my_chunked_model, chunk_idx, rn)
                 else:
-                    self.send_message_to_client(rn, "offline_chunk", {"round": cur_round, "chunk": chunk_idx})
+                    self.send_control(rn, "offline_chunk", {"round": cur_round, "chunk": chunk_idx})
 
         round_info.chunks_sent = True
         self.progress_round(round_info)
 
     def send_chunk(self, round_info: Round, model_name: str, chunk_idx: int, recipient_idx: int):
-        event_data = {
-            "from": self.index,
-            "to": recipient_idx,
-            "model": model_name,
-            "metadata": {"chunk": chunk_idx, "round": round_info.round_nr}
-        }
-        action = INCOMING_MODEL if recipient_idx == self.index else START_TRANSFER
-        start_transfer_event = Event(self.simulator.current_time, self.index, action, data=event_data)
-        self.simulator.schedule(start_transfer_event)
-
-    def start_transfer(self, event: Event):
-        to = event.data["to"]
-        transfer_size = self.chunk_transfer_size(event.data["metadata"]["chunk"], self.simulator.settings.k)
-        transfer_size = self.data_transfer_size(transfer_size, event.data["metadata"])
-        receiver_scheduler: BWScheduler = self.simulator.clients[to].bw_scheduler
-        self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
+        self.send(recipient_idx, TaskRef(model_name, chunk_idx),
+                  size_bytes=self.chunk_transfer_size(chunk_idx, self.simulator.settings.k),
+                  metadata={"chunk": chunk_idx, "round": round_info.round_nr})
 
     def on_message(self, event: Event):
         if event.data["type"] == "offline_chunk":
@@ -182,7 +168,9 @@ class ShatterClient(BaseClient):
 
     def on_incoming_model(self, event: Event):
         metadata = event.data["metadata"]
-        self.received_model_chunk(event.data["from"], metadata["round"], event.data["model"], metadata["chunk"])
+        model = event.data["model"]
+        self.received_model_chunk(event.data["from"], metadata["round"],
+                                  model.task if model is not None else None, metadata["chunk"])
 
     def received_model_chunk(self, from_client: int, round_nr: int, model_name: str, chunk_idx: int):
         self.client_log("Client %d received from %d model chunk %s/%d in round %d" %
@@ -194,7 +182,7 @@ class ShatterClient(BaseClient):
             round_info.init_received_chunks(self.simulator.settings)
         round_info.num_received_chunks += 1
         if model_name:
-            round_info.received_chunks[chunk_idx].append((model_name, chunk_idx))
+            round_info.received_chunks[chunk_idx].append(TaskRef(model_name, chunk_idx))
         self.progress_round(round_info)
 
     def _aggregate(self, round_info: Round):
@@ -202,22 +190,20 @@ class ShatterClient(BaseClient):
         self.client_log("Client %d will aggregate in round %d" % (self.index, round_nr))
         if not round_info.should_ignore:
             for chunk_idx in range(self.simulator.settings.k):
-                round_info.received_chunks[chunk_idx].append((round_info.my_chunked_model, chunk_idx))
+                round_info.received_chunks[chunk_idx].append(TaskRef(round_info.my_chunked_model, chunk_idx))
 
             task_name = Task.generate_name("reconstruct_from_chunks")
-            task = Task(task_name, "reconstruct_from_chunks", data={
+            task = self.create_compute_task("reconstruct_from_chunks", {
                 "chunks": round_info.received_chunks, "round": round_nr,
                 "time": self.simulator.current_time, "peer": self.index
-            })
-            self.add_compute_task(task)
-            round_info.model = (task_name, 0)
+            }, name=task_name)
+            round_info.model = TaskRef(task_name, 0)
             self.publish_model(round_nr, round_info.model)
             if (self.simulator.settings.stop == "rounds" and self.simulator.settings.test_method == "individual" and
                 self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0):
                 test_task_name = "test_%d_%d" % (self.index, round_nr)
-                task = Task(test_task_name, "test", data={
+                task = self.create_compute_task("test", {
                     "model": round_info.model, "round": round_nr,
                     "time": self.simulator.current_time, "peer": self.index
-                })
-                self.add_compute_task(task)
-                round_info.model = (test_task_name, 0)
+                }, name=test_task_name)
+                round_info.model = TaskRef(test_task_name, 0)

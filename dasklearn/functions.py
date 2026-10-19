@@ -178,6 +178,26 @@ def test(settings: SessionSettings, params: Dict):
     return [detached_model]
 
 
+def evaluate(settings, params):
+    """Return a validation report for protocol decisions, without CSV side effects."""
+    global dataset
+    split = params.get("evaluation_split", "validation")
+    if split == "test":
+        raise ValueError("Adaptive decisions require a validation split; use test for final reporting")
+    if dataset is None:
+        dataset = create_dataset(settings)
+    if dataset.load_split(split) is dataset.load_split("test"):
+        raise ValueError("Dataset must provide a validation split separate from its test split")
+    evaluation_settings = copy.copy(settings)
+    evaluation_settings.evaluation_split = split
+    accuracy, loss = ModelEvaluator(dataset, evaluation_settings).evaluate_accuracy(
+        params["model"], device_name=settings.torch_device_name,
+        evaluation_examples=params.get("evaluation_examples"))
+    return [{"accuracy": accuracy, "loss": loss, "evaluation_split": split,
+             "peer": params["peer"], "round": params.get("round", 0),
+             "evaluated_at": params["time"]}]
+
+
 def qgm_train(settings, params):
     from dasklearn.optimizer.qgm import prepare
     gradient_model = compute_gradient(settings, dict(params))[0]

@@ -12,6 +12,7 @@ from dasklearn.simulation.qgm.settings import QGMSettings
 from dasklearn.simulation.qgm.simulation import QGMSimulation
 from dasklearn.tasks.local import execute_local
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 from dasklearn.util import MICROSECONDS
 from helpers import settings
 from test_classic_baselines import logistic,run,assert_model
@@ -149,10 +150,10 @@ async def test_validation_curves_and_final_test_never_share_cached_metrics(tmp_p
     monkeypatch.setattr(functions,'initialize',lambda *a:[copy.deepcopy(model)])
     sim=Simulation(config(tmp_path,participants=1,evaluation_split='validation'))
     sim.setup_directories();client=BaseClient(sim,0);sim.clients=[client]
-    initial=Task('initial','initialize',{'peer':0,'round':0,'time':0});client.add_compute_task(initial)
+    initial=client.create_compute_task('initialize',{'peer':0,'round':0,'time':0},name='initial')
     for i,split in enumerate(['validation','test','validation']):
-        client.add_compute_task(Task(f'test-{i}','test',{'model':('initial',0),'peer':0,
-            'round':1,'time':(i+1)*MICROSECONDS,'evaluation_split':split,'output_prefix':f'metric{i}'}))
+        client.create_compute_task('test',{'model':TaskRef('initial',0),'peer':0,
+            'round':1,'time':(i+1)*MICROSECONDS,'evaluation_split':split,'output_prefix':f'metric{i}'},name=f'test-{i}')
     execute_local(sim,retain_results=False)
     rows=[pd.read_csv(sim.data_dir+f'/metric{i}_0.csv').iloc[0] for i in range(3)]
     assert [r.accuracy for r in rows]==[100,0,100]

@@ -1,3 +1,4 @@
+from typing import Dict
 import asyncio
 import bisect
 import os
@@ -7,6 +8,7 @@ import resource
 import psutil
 import random
 import time
+import hashlib
 from asyncio import Future
 from random import Random
 from typing import List, Optional, Callable, Set, Tuple
@@ -33,6 +35,7 @@ from dasklearn.simulation.events import *
 from dasklearn.simulation.client import BaseClient
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 from dasklearn.util import MICROSECONDS, time_to_sec
 from dasklearn.util.logging import setup_logging
 
@@ -50,6 +53,8 @@ class Simulation:
         self.setup_data_dir(settings)
 
         self.settings = settings
+        if settings.feedback_execution not in {"local", "distributed"}:
+            raise ValueError("feedback_execution must be local or distributed")
         self.events: List[Tuple[int, int, Event]] = []
         self.event_callbacks: Dict[str, str] = {}
         self.pending_tasks: Set[asyncio.Task] = set()
@@ -57,6 +62,12 @@ class Simulation:
         self.model_size: int = 0
         self.current_time: int = 0
         self.latest_models = {}
+        self.oracle_services = {}
+        self.execution_session = None
+        self.feedback_journal = None
+        self.event_trace_hash = hashlib.sha256()
+        self.protocol_rng = Random(settings.seed)
+        self.monitor_rng = Random(settings.seed ^ 0x6D6F6E69746F72)
         self.brokers_available_future: Future = Future()
         self.simulation_start_time: float = 0
         self.churn_manager: ChurnManager = ChurnManager(settings)
@@ -78,9 +89,7 @@ class Simulation:
 
         self.register_event_callback(INIT_CLIENT, "init_client")
         self.register_event_callback(START_TRAIN, "start_train")
-        self.register_event_callback(START_TRANSFER, "start_transfer")
         self.register_event_callback(INCOMING_MODEL, "on_incoming_model")
-        self.register_event_callback(START_CONTROL_TRANSFER, "start_control_transfer")
         self.register_event_callback(TEST_SNAPSHOT, "test_snapshot")
         self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
         self.register_event_callback(SEND_MESSAGE, "on_message")
@@ -88,6 +97,10 @@ class Simulation:
         self.register_event_callback(OFFLINE, "go_offline")
         self.register_event_callback(MONITOR_BANDWIDTH_UTILIZATION, "monitor_bandwidth_utilization")
         self.register_event_callback(CHECKPOINT_DAG, "checkpoint_dag")
+        self.register_event_callback(COMPUTE_DONE, "on_compute_complete")
+        self.register_event_callback(START_PAYLOAD_TRANSFER, "start_payload_transfer")
+        self.register_event_callback(INCOMING_PAYLOAD, "on_payload")
+        self.register_event_callback(PROTOCOL_TIMER, "on_protocol_timer")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
         if settings.from_dir:
@@ -126,11 +139,15 @@ class Simulation:
             self.brokers_to_clients[broker].append(client)
 
     def on_message(self, identity: str, msg: Dict):
+        if msg["type"] == "execution_result":
+            if self.execution_session is not None:
+                self.execution_session.on_result(msg)
+            return
         if msg["type"] == "hello":  # Register a new broker
             self.logger.info("Registering new broker %s", msg["address"])
             self.communication.connect_to(identity, msg["address"])
             self.broker_addresses[identity] = msg["address"]
-            if len(self.broker_addresses) >= self.settings.brokers:
+            if len(self.broker_addresses) >= self.settings.brokers and not self.brokers_available_future.done():
                 self.brokers_available_future.set_result(True)
         elif msg["type"] == "result":  # Received a sink task result
             self.logger.info("Received result for sink task %s" % msg["task"])
@@ -152,6 +169,9 @@ class Simulation:
                 self.logger.info("Simulation took %.2f s.", time.time() - self.simulation_start_time)
                 asyncio.get_event_loop().call_later(2, asyncio.get_event_loop().stop)
         elif msg["type"] == "shutdown":
+            if self.execution_session is not None and hasattr(self.execution_session, "fail"):
+                self.execution_session.fail("Broker shut down during feedback execution")
+                return
             self.logger.info("Received shutdown signal - stopping")
             asyncio.get_event_loop().stop()
 
@@ -159,6 +179,10 @@ class Simulation:
         for client_id in range(self.settings.participants):
             init_client_event = Event(0, client_id, INIT_CLIENT)
             self.schedule(init_client_event)
+
+    def availability_snapshot(self, requester):
+        """Oracle service; protocols must explicitly install it before using it."""
+        return {client.index: client.online for client in self.clients}
 
     def apply_fedscale_traces(self):
         self.logger.info("Applying FedScale capability trace file")
@@ -327,9 +351,8 @@ class Simulation:
         # sampled and all-node algorithms. No free global parameter averaging.
         for peer, (round_nr, model) in sorted(self.latest_models.items()):
             if self.clients[peer].online:
-                task = Task(Task.generate_name("test_snapshot"), "test", data={
-                    "model": model, "round": round_nr, "time": self.current_time, "peer": peer})
-                self.clients[peer].add_compute_task(task)
+                task = self.clients[peer].create_compute_task("test", {
+                    "model": model, "round": round_nr, "time": self.current_time, "peer": peer}, name=Task.generate_name("test_snapshot"))
         self.schedule(Event(self.current_time + self.settings.test_period, 0, TEST_SNAPSHOT, is_global=True))
 
     def checkpoint_dag(self, _: Event) -> None:
@@ -351,17 +374,41 @@ class Simulation:
 
         try:
             if not self.settings.from_dir:
-                self.simulate()
+                if self.settings.feedback_execution == "distributed" and not self.settings.dry_run:
+                    from dasklearn.tasks.incremental import RemoteExecutionSession
+                    await self.simulate_async(RemoteExecutionSession(self), replay=self.settings.feedback_replay)
+                else:
+                    self.simulate(replay=self.settings.feedback_replay,
+                                  allow_feedback=not self.settings.dry_run)
             else:
                 self.logger.info("Loading workflow DAG from %s", self.settings.from_dir)
                 self.workflow_dag = WorkflowDAG.load_from_file(os.path.join(self.settings.from_dir, "workflow_dag"))
         except KeyboardInterrupt:
             self.logger.info("Received keyboard interrupt - stopping simulation and proceeding with the workflow DAG as is")
+        except Exception:
+            if self.execution_session is not None and getattr(self.execution_session, "configured", False):
+                self.communication.send_message_to_all_brokers(pickle.dumps({"type": "shutdown"}))
+            raise
 
         # Sanity check the DAG
         self.workflow_dag.build_task_indices()
         self.workflow_dag.check_validity()
         self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())
+
+        if not self.settings.dry_run and self.execution_session is not None:
+            from dasklearn.tasks.incremental import RemoteExecutionSession
+            if isinstance(self.execution_session, RemoteExecutionSession):
+                try:
+                    await self.execution_session.execute_all()
+                finally:
+                    if self.execution_session.configured:
+                        self.communication.send_message_to_all_brokers(pickle.dumps({"type": "shutdown"}))
+            else:
+                self.execution_session.execute_all()
+            self.merge_accuracies_files()
+            self.plot_loss()
+            asyncio.get_event_loop().call_later(0, asyncio.get_event_loop().stop)
+            return
 
         if not self.settings.dry_run:
             await self.solve_workflow_graph()
@@ -370,7 +417,48 @@ class Simulation:
             self.logger.info("Dry run - shutdown")
             asyncio.get_event_loop().stop()
 
-    def simulate(self):
+    def _is_feedback(self, event):
+        return event.action == COMPUTE_DONE and event.data["feedback"]
+
+    def _journal(self, replay=None):
+        from dasklearn.simulation.feedback import FeedbackJournal
+        if self.feedback_journal is None:
+            self.feedback_journal = FeedbackJournal(self, replay)
+        return self.feedback_journal
+
+    def simulate(self, executor=None, replay=None, allow_feedback=True):
+        """Build a static DAG, resolving numerical feedback locally when needed."""
+        self.execution_session = executor
+        if replay is not None:
+            self._journal(replay)
+        for event in self._simulation_events():
+            if self._is_feedback(event):
+                journal = self._journal()
+                values = None
+                if not journal.replay:
+                    if not allow_feedback:
+                        raise ValueError("A dry run with numerical feedback requires --feedback-replay")
+                    if self.execution_session is None:
+                        from dasklearn.tasks.incremental import LocalExecutionSession
+                        self.execution_session = LocalExecutionSession(self)
+                    values = self.execution_session.resolve(event.data["outputs"], tasks=[event.data["task"]])
+                event.data["values"] = journal.observation(event, values)
+            self.process_event(event)
+
+    async def simulate_async(self, executor, replay=None):
+        """Conservative feedback simulation with an asynchronous executor."""
+        self.execution_session = executor
+        if replay is not None:
+            self._journal(replay)
+        for event in self._simulation_events():
+            if self._is_feedback(event):
+                journal = self._journal()
+                values = None if journal.replay else await executor.resolve(
+                    event.data["outputs"], tasks=[event.data["task"]])
+                event.data["values"] = journal.observation(event, values)
+            self.process_event(event)
+
+    def _simulation_events(self):
         if self.settings.profile:
             start_profile()
 
@@ -398,9 +486,8 @@ class Simulation:
         # Initialize the clients
         self.initialize_clients()
         if self.settings.test_method == "snapshot" and self.settings.test_period > 0:
-            initial = Task(Task.generate_name("initialize"), "initialize", {"peer": 0, "round": 0, "time": 0})
-            self.clients[0].add_compute_task(initial)
-            self.latest_models = {peer: (0, (initial.name, 0)) for peer in range(self.settings.participants)}
+            initial = self.clients[0].create_compute_task("initialize", {"peer": 0, "round": 0, "time": 0}, name=Task.generate_name("initialize"))
+            self.latest_models = {peer: (0, TaskRef(initial.name, 0)) for peer in range(self.settings.participants)}
             self.schedule(Event(self.settings.test_period, 0, TEST_SNAPSHOT, is_global=True))
 
         # Initialize the bandwidth utilization monitor if needed
@@ -434,9 +521,9 @@ class Simulation:
             _, _, event = self.events.pop(0)
             assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
             self.current_time = event.time
-            self.process_event(event)
+            yield event
             # No need to track memory at every event
-            if random.random() < 0.1 / self.settings.participants:
+            if self.monitor_rng.random() < 0.1 / self.settings.participants:
                 self.memory_log.append((self.current_time, process.memory_info()))
 
         # The common time budget may end mid-transfer. These bytes consumed
@@ -461,6 +548,10 @@ class Simulation:
         with open(os.path.join(self.data_dir, "settings.json"), "w") as out_file:
             out_file.write(self.settings.to_json())
 
+        if self.feedback_journal is not None:
+            self.feedback_journal.save(os.path.join(self.data_dir, "feedback.pkl"),
+                                       self.event_trace_hash.hexdigest())
+
         self.save_measurements()
 
         if self.settings.profile:
@@ -473,6 +564,7 @@ class Simulation:
         self.event_callbacks[name] = callback
 
     def process_event(self, event: Event):
+        self.event_trace_hash.update(repr((event.time, event.client_id, event.action)).encode())
         if event.action not in self.event_callbacks:
                 raise RuntimeError("Action %s has no callback!" % event.action)
 
@@ -531,6 +623,9 @@ class Simulation:
             return
         # Read the data
         data = pd.read_csv(path)
+        if data.empty:
+            self.logger.info("No accuracy observations - skipping plot")
+            return
         # Create all combinations of time and peer and fill the missing values from previous measurements
         # This ensures the plot correctly shows std for algorithms which test at not exactly the same time for all peers
         all_combinations = data['peer'].drop_duplicates().to_frame().merge(data['time'].drop_duplicates(), how='cross')

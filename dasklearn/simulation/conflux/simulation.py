@@ -1,3 +1,4 @@
+from typing import Dict
 import os
 from typing import List, Tuple
 from dasklearn.session_settings import SessionSettings
@@ -6,6 +7,7 @@ from dasklearn.simulation.conflux.client import ConfluxClient
 from dasklearn.simulation.events import *
 from dasklearn.simulation.asynchronous_simulation import AsynchronousSimulation
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 class ConfluxSimulation(AsynchronousSimulation):
@@ -15,6 +17,8 @@ class ConfluxSimulation(AsynchronousSimulation):
         if not 0 < settings.success_fraction <= 1 or settings.sample_size < 1 or settings.chunks_in_sample < 1:
             raise ValueError("Invalid Conflux sample size, chunk count or success fraction")
         super().__init__(settings)
+        self.oracle_services['bootstrap_peers'] = lambda requester: [
+            client.index for client in self.clients if client.index != requester and client.online]
         settings.sample_size = min(settings.sample_size, settings.participants)
         self.finished: Dict[int, List[Tuple[str, int]]] = {}
         self.register_event_callback(START_ROUND, "start_round")
@@ -70,15 +74,13 @@ class ConfluxSimulation(AsynchronousSimulation):
                 # Aggregate non-None models
                 task_name = Task.generate_name("agg")
                 data = {"models": list(self.finished[prev_round_nr]), "round": prev_round_nr, "peer": 0}
-                task = Task(task_name, "aggregate", data=data)
-                self.clients[0].add_compute_task(task)
+                task = self.clients[0].create_compute_task("aggregate", data, name=task_name)
 
                 # Test the aggregated model
                 test_task_name = "test_%d" % prev_round_nr
-                task = Task(test_task_name, "test", data={
-                    "model": (task_name, 0), "round": prev_round_nr,
+                task = self.clients[0].create_compute_task("test", {
+                    "model": TaskRef(task_name, 0), "round": prev_round_nr,
                     "time": self.current_time, "peer": 0
-                })
-                self.clients[0].add_compute_task(task)
+                }, name=test_task_name)
 
             self.finished.pop(prev_round_nr)

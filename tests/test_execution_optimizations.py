@@ -13,6 +13,7 @@ from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.tasks.local import execute_local
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 from dasklearn.session_settings import SessionSettings, LearningSettings
 from helpers import settings, simulate
 
@@ -184,10 +185,10 @@ def test_reconstruction_cache_eviction_and_release(monkeypatch, models_in_budget
         learning=LearningSettings(.1,0,0,16,1), torch_threads=1)
     tasks = [Task("init", "initialize", {})]
     for label in ("a", "b"):
-        tasks.append(Task(label, "chunk", {"model":("init",0), "n":2}))
+        tasks.append(Task(label, "chunk", {"model":TaskRef("init",0), "n":2}))
     for i,label in enumerate(("a","b","a","b")):
         tasks.append(Task("recon"+str(i), "reconstruct_from_chunks",
-            {"chunks":[[(label,0)],[(label,1)]], "time":i+1}))
+            {"chunks":[[TaskRef(label,0)],[TaskRef(label,1)]], "time":i+1}))
     by_name = {task.name:task for task in tasks}
     def connect(task, value):
         if isinstance(value, tuple) and value[0] in by_name:

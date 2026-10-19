@@ -53,13 +53,13 @@ class LuborSimulation(AsynchronousSimulation):
         """
         if self.settings.no_weights:
             self.weights[index] = 0
-            peers: List[int] = random.choices(self.participants, weights=self.weights, k=self.settings.k)
+            peers: List[int] = self.protocol_rng.choices(self.participants, weights=self.weights, k=self.settings.k)
             self.weights[index] = 1 / (self.settings.participants - 1)
         else:
             my_speed: float = self.speeds[index]
             self.speeds[index] = 0
             total_speed: float = sum(self.speeds)
             weights = [speed / total_speed for speed in self.speeds]
-            peers: List[int] = random.choices(self.participants, weights=weights, k=self.settings.k)
+            peers: List[int] = self.protocol_rng.choices(self.participants, weights=weights, k=self.settings.k)
             self.speeds[index] = my_speed
         return set(peers)

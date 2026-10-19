@@ -6,6 +6,15 @@ and message traffic. A local executor or distributed brokers/workers then perfor
 the actual training and evaluation. **Simulated protocol time and execution wall
 time are separate measurements.**
 
+Protocols use explicit task references and shared compute and payload APIs.
+Accuracy-dependent decisions can pause simulation for numerical feedback and
+extend the DAG. See the [programming model](docs/simulator-design-improvements.md)
+and run `python scripts/run_feedback.py --output output/feedback-example` for a
+working example. Existing algorithms and runners use the new API; regenerate
+saved workflows created before task format version 2.
+For implementation steps and a minimal ring protocol, see
+[adding a protocol](docs/adding-protocols.md).
+
 ## Branches
 
 - **`main`**: shared simulator, datasets, performance improvements and algorithm implementations.

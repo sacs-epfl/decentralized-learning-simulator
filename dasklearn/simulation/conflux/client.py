@@ -1,3 +1,4 @@
+from typing import Dict
 from collections import defaultdict
 import copy
 from random import Random
@@ -11,6 +12,7 @@ from dasklearn.simulation.conflux.sample_manager import SampleManager
 from dasklearn.simulation.events import *
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 from dasklearn.util import time_to_sec
 
 
@@ -75,11 +77,11 @@ class ConfluxClient(AsynchronousClient):
         else:
             # When coming online we probably don't have a fresh view on the network so we need to determine online nodes
             # We could use a bootstrap server for this in practical settings
-            random_clients = [client.index for client in self.simulator.clients if client.index != self.index and client.online]
+            random_clients = self.context.oracle('bootstrap_peers')
             random_clients = self.random.sample(random_clients, min(self.simulator.settings.sample_size * 10, len(random_clients)))
 
         for client_index in random_clients:
-            self.send_message_to_client(client_index, "status", {"round": self.get_round_estimate(), "index": advertise_index, "change": change.value})
+            self.send_control(client_index, "status", {"round": self.get_round_estimate(), "index": advertise_index, "change": change.value})
 
         # Update your own population view
         info = self.client_manager.last_active[self.index]
@@ -101,9 +103,8 @@ class ConfluxClient(AsynchronousClient):
                 and self.simulator.settings.test_interval > 0
                 and (round_nr - 1) % self.simulator.settings.test_interval == 0):
             test_task_name = "test_%d_%d" % (self.index, round_nr)
-            task = Task(test_task_name, "test", data={"model": round_info.model, "round": round_nr - 1, "time": self.simulator.current_time, "peer": self.index})
-            self.add_compute_task(task)
-            round_info.model = (test_task_name, 0)
+            task = self.create_compute_task("test", {"model": round_info.model, "round": round_nr - 1, "time": self.simulator.current_time, "peer": self.index}, name=test_task_name)
+            round_info.model = TaskRef(test_task_name, 0)
 
         self.logger.info(f"[t=%.3f] Client %d starts training in round %d", time_to_sec(self.simulator.current_time), self.index, round_nr)
 
@@ -114,7 +115,6 @@ class ConfluxClient(AsynchronousClient):
         """
         We finished training.
         """
-        self.compute_time += event.data["train_time"]
         round_nr: int = event.data["round"]
         round_info: Round = self.round_info[round_nr]
         round_info.is_training = False
@@ -130,10 +130,10 @@ class ConfluxClient(AsynchronousClient):
 
     def advertise_new_inventory(self, participants: List[int], round_nr: int, chunks: List[Tuple[int, Set[str]]]):
         for participant in participants:
-            self.send_message_to_client(participant, "has_chunks", {"round": round_nr, "chunks": chunks})
+            self.send_control(participant, "has_chunks", {"round": round_nr, "chunks": chunks})
 
     def send_population_view(self, receiver: int) -> None:
-        self.send_message_to_client(receiver, "population_view", self.client_manager.last_active)
+        self.send_control(receiver, "population_view", self.client_manager.last_active)
 
     def chunk_model(self, round_info: Round):
         """
@@ -142,12 +142,11 @@ class ConfluxClient(AsynchronousClient):
 
         # Add compute tasks for the chunks
         task_name = Task.generate_name("chunk")
-        task = Task(task_name, "chunk", data={
+        task = self.create_compute_task("chunk", {
             "model": round_info.model, "round": round_info.round_nr,
             "time": self.simulator.current_time, "peer": self.index,
             "n": self.simulator.settings.chunks_in_sample,
-        })
-        self.add_compute_task(task)
+        }, name=task_name)
 
         all_chunks: List[Tuple[int, Set[str]]] = [(i, frozenset({task_name})) for i in range(self.simulator.settings.chunks_in_sample)]
         next_round_nr: int = round_info.round_nr + 1
@@ -185,9 +184,15 @@ class ConfluxClient(AsynchronousClient):
         self.simulator.set_finished(round_info.round_nr, round_info.model)
 
     def start_outgoing_chunk_transfer(self, round_nr: int, to: int, chunk: Tuple[int, Set[str]]) -> None:
-        event_data = {"from": self.index, "to": to, "model": None, "metadata": {"chunk": chunk, "round": round_nr}}
-        start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
-        self.start_transfer(start_transfer_event)
+        metadata = {"chunk": chunk, "round": round_nr}
+        if round_nr in self.round_info and self.simulator.settings.churn != "none":
+            round_info = self.round_info[round_nr]
+            if to not in round_info.has_sent_view:
+                metadata["population_view"] = copy.deepcopy(self.client_manager.last_active)
+                round_info.has_sent_view.add(to)
+        self.send(to, None,
+                  size_bytes=self.chunk_transfer_size(chunk[0], self.simulator.settings.chunks_in_sample),
+                  metadata=metadata, immediate=True)
 
     def has_free_pull_slot(self):
         return sum(len(info.is_pulling) for info in self.round_info.values()
@@ -273,8 +278,6 @@ class ConfluxClient(AsynchronousClient):
             # Get the owners with the most chunks we don't have yet
             sorted_owners = sorted(count_per_owner.items(), key=lambda x: x[1], reverse=True)
             for owner, _ in sorted_owners:
-                other = self.simulator.clients[owner]
-
                 # Coalesce all the chunks from this owner into a single one
                 model_names = self.coalesce_disjoint_chunks(owners[owner])
 
@@ -284,7 +287,7 @@ class ConfluxClient(AsynchronousClient):
 
                 if chunk_to_pull not in round_info.is_pulling:
                     round_info.is_pulling.add(chunk_to_pull)
-                    self.send_message_to_client(owner, "pull_chunk", {"round": round_info.round_nr, "chunk": chunk_to_pull})
+                    self.send_control(owner, "pull_chunk", {"round": round_info.round_nr, "chunk": chunk_to_pull})
                     break  # move to the next chunk index
 
             if not self.has_free_pull_slot():
@@ -316,34 +319,13 @@ class ConfluxClient(AsynchronousClient):
                 continue
 
             for owner in round_info.inventories[chunk_to_pull]:
-                other = self.simulator.clients[owner]
                 if chunk_to_pull not in round_info.is_pulling:
                     round_info.is_pulling.add(chunk_to_pull)
-                    self.send_message_to_client(owner, "pull_chunk", {"round": round_info.round_nr, "chunk": chunk_to_pull})
+                    self.send_control(owner, "pull_chunk", {"round": round_info.round_nr, "chunk": chunk_to_pull})
                     break  # move to the next chunk
 
             if not self.has_free_pull_slot():
                 break
-
-    def start_transfer(self, event: Event):
-        """
-        Override the start_transfer because we are sending chunks instead of models.
-        """
-        to: int = event.data["to"]
-
-        round_nr: int = event.data["metadata"]["round"]
-        if round_nr in self.round_info and self.simulator.settings.churn != "none":
-            round_info: Round = self.round_info[round_nr]
-            if to not in round_info.has_sent_view:
-                population_view = copy.deepcopy(self.client_manager.last_active)
-                event.data["metadata"]["population_view"] = population_view
-                round_info.has_sent_view.add(to)
-
-        transfer_size = self.chunk_transfer_size(event.data["metadata"]["chunk"][0], self.simulator.settings.chunks_in_sample)
-        transfer_size = self.data_transfer_size(transfer_size, event.data["metadata"])
-        receiver_scheduler: BWScheduler = self.simulator.clients[to].bw_scheduler
-        self.client_log(f"Client {self.index} starts sending chunk {event.data['metadata']['chunk']} to {to} for round {event.data['metadata']['round']}")
-        self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
 
     def on_incoming_model(self, event: Event):
         """
@@ -402,7 +384,7 @@ class ConfluxClient(AsynchronousClient):
             for chunk_idx, chunk_models in enumerate(round_info.received_chunks):
                 for model_name in chunk_models:
                     count_per_model_name[model_name] += 1
-                    received_chunks[chunk_idx].append((model_name, chunk_idx))
+                    received_chunks[chunk_idx].append(TaskRef(model_name, chunk_idx))
 
             self.contributions_per_model[round_nr] = len(count_per_model_name)
 
@@ -418,12 +400,11 @@ class ConfluxClient(AsynchronousClient):
 
             # Reconstruct new model
             task_name = Task.generate_name("reconstruct_from_chunks")
-            task = Task(task_name, "reconstruct_from_chunks", data={
+            task = self.create_compute_task("reconstruct_from_chunks", {
                 "chunks": received_chunks, "round": round_nr,
                 "time": self.simulator.current_time, "peer": self.index
-            })
-            self.add_compute_task(task)
-            round_info.model = (task_name, 0)
+            }, name=task_name)
+            round_info.model = TaskRef(task_name, 0)
             self.publish_model(round_nr - 1, round_info.model)
 
             start_round_event = Event(self.simulator.current_time, self.index, START_ROUND, data=round_info)

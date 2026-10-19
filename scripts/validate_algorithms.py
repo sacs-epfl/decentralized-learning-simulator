@@ -121,9 +121,9 @@ async def run_one(args, variant, profile, partitioner, seed):
     if getattr(args,"final_test",False):
         if configuration.evaluation_split=="test":raise ValueError("Use validation curves with a separate final test")
         for peer,(round_nr,model) in sorted(sim.latest_models.items()):
-            sim.clients[peer].add_compute_task(Task(Task.generate_name("final_test"),"test",{
+            sim.clients[peer].create_compute_task("test",{
                 "model":model,"round":round_nr,"peer":peer,"time":int(args.duration*MICROSECONDS),
-                "evaluation_split":"test","evaluation_examples":0,"output_prefix":"heldout"}))
+                "evaluation_split":"test","evaluation_examples":0,"output_prefix":"heldout"}, name=Task.generate_name("final_test"))
         # Persist the actual executed graph, including final held-out tasks.
         sim.workflow_dag.save_to_file(str(Path(sim.data_dir)/"workflow_dag"))
     sim.workflow_dag.build_task_indices()

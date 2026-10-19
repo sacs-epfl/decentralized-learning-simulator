@@ -35,7 +35,7 @@ class DummyClient:
         self.simulator = DummySimulator()
         self.incoming_model_events = []
 
-    def on_incoming_model(self, event):
+    def on_payload(self, event):
         self.incoming_model_events.append(event)
 
 # It is assumed that BWScheduler and Transfer are defined in the same module or imported accordingly.

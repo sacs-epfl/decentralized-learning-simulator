@@ -8,12 +8,31 @@ from torch import nn
 from networkx import DiGraph
 
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import references, TaskRef
 
 
 class WorkflowDAG:
 
     def __init__(self):
         self.tasks: Dict[str, Task] = {}  # Workflow DAG
+
+    def add(self, task):
+        """Add a task and derive unique edges from explicit input references."""
+        if task.name in self.tasks:
+            raise ValueError(f"Duplicate task name: {task.name}")
+        dependencies = list(dict.fromkeys(references(task.data)))
+        for ref in dependencies:
+            if ref.task not in self.tasks:
+                raise ValueError(f"Unknown dependency {ref.task!r}")
+            source = self.tasks[ref.task]
+            if source.operation and not 0 <= ref.output < source.operation['outputs']:
+                raise ValueError(f"Invalid output reference: {ref}")
+        self.tasks[task.name] = task
+        for ref in dependencies:
+            source = self.tasks[ref.task]
+            source.outputs.append((task, ref.output))
+            task.inputs.append((source, ref.output))
+        return task
 
     def get_source_tasks(self) -> List[Task]:
         """
@@ -93,14 +112,40 @@ class WorkflowDAG:
         return len(model_hashes)
 
     def check_validity(self):
-        # Check 1 - make sure that the data dependencies are sane, e.g., the data in each task should actually be
-        # dependent on its previous (input) tasks.
-        for task_name, task in self.tasks.items():
-            for output_task, output_index in task.outputs:
-                replaced: int = output_task.set_data((task.name, output_index), "dummy", do_replace=False)
-                if replaced == 0:
-                    raise RuntimeError("Data of output task %s does not contain dependency on task %s!" %
-                                       (output_task.name, task_name))
+        pending = {}
+        reverse_counts = Counter((source.name, id(target), index)
+                                 for source in self.tasks.values() for target, index in source.outputs)
+        for name, task in self.tasks.items():
+            expected = set(references(task.data))
+            actual = [TaskRef(source.name, index) for source, index in task.inputs]
+            if set(actual) != expected or len(actual) != len(set(actual)):
+                raise RuntimeError(f"Task {name} has inconsistent input dependencies")
+            for ref in expected:
+                if ref.task not in self.tasks:
+                    raise RuntimeError(f"Task {name} has an unknown dependency {ref.task}")
+                source = self.tasks[ref.task]
+                if source.operation and not 0 <= ref.output < source.operation['outputs']:
+                    raise RuntimeError(f"Task {name} references an invalid output")
+                if reverse_counts[source.name, id(task), ref.output] != 1:
+                    raise RuntimeError(f"Task {name} has an inconsistent reverse dependency")
+            for successor, index in task.outputs:
+                if (successor.name not in self.tasks or self.tasks[successor.name] is not successor
+                        or (task, index) not in successor.inputs):
+                    raise RuntimeError(f"Task {name} has an inconsistent output dependency")
+            if any(self.tasks.get(source.name) is not source for source, _ in task.inputs):
+                raise RuntimeError(f"Task {name} has an inconsistent source task")
+            pending[name] = len(actual)
+        ready = [name for name, count in pending.items() if count == 0]
+        completed = 0
+        while ready:
+            task = self.tasks[ready.pop()]
+            completed += 1
+            for successor, _ in task.outputs:
+                pending[successor.name] -= 1
+                if pending[successor.name] == 0:
+                    ready.append(successor.name)
+        if completed != len(self.tasks):
+            raise RuntimeError("DAG contains a cycle")
 
     def to_nx(self, max_size: int) -> tuple[DiGraph, dict[str, tuple[float, float]], list[str], dict[str, str]]:
         """
@@ -146,6 +191,7 @@ class WorkflowDAG:
             else:
                 position[task.name] = x_coordinate[task.name], task.data["peer"]
             # Color according to the key
+            color_key.setdefault(task.func, "gray")
             colors.append(color_key[task.func])
             task_types.add(task.func)
 

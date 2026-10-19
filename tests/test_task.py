@@ -1,11 +1,12 @@
 import pytest
 
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 @pytest.fixture
 def task():
-    task = Task("dummy_task", "func", {"a": ("input_1", 0), "b": ("input_2", 0), "c": [{"d": ("input_1", 0)}, {"e": ("input_2", 0)}]})
+    task = Task("dummy_task", "func", {"a": TaskRef("input_1", 0), "b": TaskRef("input_2", 0), "c": [{"d": TaskRef("input_1", 0)}, {"e": TaskRef("input_2", 0)}]})
     t1 = Task("input_1", "func", {})
     t1.outputs = [(task, 0)]
     t2 = Task("input_2", "func", {})
@@ -18,12 +19,12 @@ def task():
 def test_task_resolve_input(task):
     assert task.inputs_resolve == 0
 
-    task.set_data(("input_1", 0), 42)
+    task.set_data(TaskRef("input_1", 0), 42)
     assert task.inputs_resolve == 1
     assert task.data["a"] == 42
     assert task.data["c"][0]["d"] == 42
 
-    task.set_data(("input_2", 0), 43)
+    task.set_data(TaskRef("input_2", 0), 43)
     assert task.inputs_resolve == 2
     assert task.data["b"] == 43
     assert task.data["c"][1]["e"] == 43

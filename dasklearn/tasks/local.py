@@ -6,10 +6,16 @@ import heapq
 import time
 import torch
 from dasklearn import functions
+from dasklearn.tasks.references import map_references
+from dasklearn.tasks.operations import execute_operation
 
 
 def execute_local(simulation, retain_results=True, progress=None, share_readonly_inputs=True,
                   reconstruction_cache_bytes=64 * 1024 * 1024, training_backend=None):
+    if getattr(simulation, "execution_session", None) is not None:
+        session = simulation.execution_session
+        session.execute_all()
+        return dict(session.results) if retain_results else {}
     with ExitStack() as resources:
         return _execute_local(simulation,retain_results,progress,share_readonly_inputs,
                               reconstruction_cache_bytes,training_backend,resources)
@@ -67,20 +73,16 @@ def _execute_local(simulation,retain_results,progress,share_readonly_inputs,
                 "aggregate_chunk", "reconstruct_from_chunks", "weighted_reconstruct_from_chunks"}
 
     def resolve(value, share=False):
-        if isinstance(value, tuple) and len(value) == 2 and value[0] in tasks:
+        def output(ref):
             # Training may mutate its input model. Each DAG edge has value
             # semantics, independent of execution order or number of workers.
-            item = results[value[0]][value[1]]
+            item = results[ref.task][ref.output]
             if share:
                 return item
             # deepcopy(view) copies the whole backing storage, potentially a
             # full ResNet for every individual chunk. Clone only the slice.
             return item.clone() if isinstance(item, torch.Tensor) else copy.deepcopy(item)
-        if isinstance(value, dict):
-            return {key: resolve(item, share) for key, item in value.items()}
-        if isinstance(value, list):
-            return [resolve(item, share) for item in value]
-        return value
+        return map_references(value, output)
 
     settings = simulation.settings
     if training_backend is None and torch.device(getattr(settings,"torch_device_name","cpu")).type == "cuda" and (
@@ -143,7 +145,10 @@ def _execute_local(simulation,retain_results,progress,share_readonly_inputs,
             if evaluation_key is not None:
                 data["cached_metrics"] = metrics
                 data["return_model"] = not discard_test_output
-            results[name] = getattr(functions, task.func)(simulation.settings, data)
+            contract = task.operation
+            if discard_test_output and contract:
+                contract = dict(contract, outputs=0)
+            results[name] = execute_operation(task.func, simulation.settings, data, contract)
             if evaluation_key is not None:
                 evaluation_cache[evaluation_key] = functions.last_test_metrics
             del data

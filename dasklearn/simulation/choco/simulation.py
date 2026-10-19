@@ -16,6 +16,7 @@ from dasklearn.simulation.choco.client import ChocoClient
 from dasklearn.simulation.events import Event, START_ROUND, FINISH_TRAIN
 from dasklearn.simulation.simulation import Simulation
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 class ChocoSimulation(Simulation):
@@ -79,9 +80,8 @@ class ChocoSimulation(Simulation):
     def initialize_clients(self):
         if any(c.get_train_time() <= 0 or c.bw_scheduler.bw_limit <= 0 for c in self.clients):
             raise ValueError('CHOCO requires positive training durations and bandwidths')
-        task = Task(Task.generate_name('initialize'), 'initialize', {'peer': 0, 'round': 0, 'time': 0})
-        self.clients[0].add_compute_task(task)
-        self.initial_model = (task.name, 0)
+        task = self.clients[0].create_compute_task('initialize', {'peer': 0, 'round': 0, 'time': 0}, name=Task.generate_name('initialize'))
+        self.initial_model = TaskRef(task.name, 0)
         super().initialize_clients()
 
     def schedule_round(self, peer, r, model, state):

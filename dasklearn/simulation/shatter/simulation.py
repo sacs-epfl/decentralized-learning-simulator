@@ -1,3 +1,4 @@
+from typing import Dict
 import math
 from typing import List, Tuple
 from dasklearn.session_settings import SessionSettings
@@ -8,6 +9,7 @@ from dasklearn.simulation.simulation import Simulation
 import networkx as nx
 
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 class ShatterSimulation(Simulation):
@@ -17,6 +19,7 @@ class ShatterSimulation(Simulation):
         if settings.k < 1 or settings.participants < 1:
             raise ValueError("Shatter requires positive participant and chunk counts (--k)")
         super().__init__(settings)
+        self.oracle_services['availability'] = self.availability_snapshot
         self.topologies = []
         self.finished: Dict[int, List[Tuple[str, int]]] = {}
         if self.settings.r == 0:
@@ -43,16 +46,14 @@ class ShatterSimulation(Simulation):
                 models = [m for m in self.finished[round_nr] if m is not None]
                 task_name = Task.generate_name("agg")
                 data = {"models": models, "round": round_nr, "peer": 0}
-                task = Task(task_name, "aggregate", data=data)
-                self.clients[0].add_compute_task(task)
+                task = self.clients[0].create_compute_task("aggregate", data, name=task_name)
 
                 # Test the aggregated model
                 test_task_name = "test_%d" % round_nr
-                task = Task(test_task_name, "test", data={
-                    "model": (task_name, 0), "round": round_nr,
+                task = self.clients[0].create_compute_task("test", {
+                    "model": TaskRef(task_name, 0), "round": round_nr,
                     "time": self.current_time, "peer": 0
-                })
-                self.clients[0].add_compute_task(task)
+                }, name=test_task_name)
 
             self.finished.pop(round_nr)
             self.topologies[round_nr - 1] = None

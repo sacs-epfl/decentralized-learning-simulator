@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import Optional, Tuple
 
 from dasklearn.simulation.asynchronous_client import AsynchronousClient
@@ -45,7 +46,7 @@ class LuborClient(AsynchronousClient):
         """
         # Check if the model is initialized
         if self.own_model is not None:
-            self.send()
+            self.disseminate_model()
 
         # Schedule next disseminate action
         disseminate_event = Event(event.time + self.send_period, self.index, DISSEMINATE)

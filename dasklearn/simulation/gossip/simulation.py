@@ -35,5 +35,5 @@ class GossipSimulation(AsynchronousSimulation):
         """
         candidate = index
         while candidate == index:
-            candidate = random.randint(0, self.settings.participants - 1)
+            candidate = self.protocol_rng.randint(0, self.settings.participants - 1)
         return {candidate}

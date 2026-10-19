@@ -3,6 +3,7 @@ from collections import defaultdict
 from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.events import Event, START_ROUND, START_TRAIN
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 from dasklearn.util import MICROSECONDS
 
 
@@ -22,23 +23,18 @@ class DSpodFLClient(BaseClient):
         s['sgd']=self.simulator.performs_sgd(self.index,r)
         # Old-model exchange is independent of whether this node trains.
         for peer in s['neighbors']:
-            self.send_model(peer,s['base'],{'round':r,'phase':'dspod-old-model'})
+            self.send(peer, s['base'], size_bytes=self.simulator.model_size, metadata={'round':r,'phase':'dspod-old-model'})
         if s['sgd']:
             self.simulator.schedule(Event(self.simulator.current_time,self.index,START_TRAIN,event.data))
         else:
             s.update(trained=True,local=s['base'])
             self.try_update(r)
 
-    def start_transfer(self,event):
-        self.bw_scheduler.add_transfer(self.simulator.clients[event.data['to']].bw_scheduler,
-            self.data_transfer_size(self.simulator.model_size,event.data['metadata']),
-            event.data['model'],event.data['metadata'])
 
     def finish_train(self,event):
         r=event.data['round'];s=self.iterations[r]
         if s['trained']:return
         s.update(trained=True,local=event.data['model'])
-        self.compute_time+=event.data['train_time']
         self.try_update(r)
 
     def on_incoming_model(self,event):
@@ -61,15 +57,14 @@ class DSpodFLClient(BaseClient):
             coefficients=([1.,-sum(weights)] if s['sgd'] else [1-sum(weights)])
             models += [s['incoming'][p] for p in s['neighbors']]
             coefficients += weights
-            task=Task(Task.generate_name('dspod_update'),'aggregate',{'models':models,'weights':coefficients,
-                'round':r,'peer':self.index,'time':self.simulator.current_time})
-            self.add_compute_task(task)
-            model=(task.name,0)
+            task=self.create_compute_task('aggregate', {'models':models,'weights':coefficients,
+                'round':r,'peer':self.index,'time':self.simulator.current_time}, name=Task.generate_name('dspod_update'))
+            model=TaskRef(task.name, 0)
         self.publish_model(r,model)
         self.simulator.completed_iterations.append((r,self.index,self.simulator.current_time,int(s['sgd']),len(weights)))
         if self.simulator.settings.test_method=='individual' and self.simulator.settings.test_interval>0 and r%self.simulator.settings.test_interval==0:
-            self.add_compute_task(Task(Task.generate_name('test'),'test',{
-                'model':model,'round':r,'peer':self.index,'time':self.simulator.current_time}))
+            self.create_compute_task('test', {
+                'model':model,'round':r,'peer':self.index,'time':self.simulator.current_time}, name=Task.generate_name('test'))
         if self.simulator.settings.rounds<=0 or r<self.simulator.settings.rounds:
             time=max(self.simulator.current_time,s['start']+max(1,int(self.simulator.settings.minimum_round_ms*MICROSECONDS/1000)))
             self.simulator.schedule(Event(time,self.index,START_ROUND,{'round':r+1,'model':model}))

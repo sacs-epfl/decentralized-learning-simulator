@@ -1,67 +1,69 @@
 from collections import defaultdict
+
 from dasklearn.simulation.client import BaseClient
-from dasklearn.simulation.events import Event, FINISH_TRAIN
+from dasklearn.simulation.protocol import RoundInbox
+from dasklearn.tasks.references import TaskRef, as_ref
 from dasklearn.tasks.task import Task
 
 
 class QGMClient(BaseClient):
-    def __init__(self,simulator,index):
-        super().__init__(simulator,index)
-        self.rounds=defaultdict(lambda:{'started':False,'done':False,'incoming':{}})
+    def __init__(self, simulator, index):
+        super().__init__(simulator, index)
+        self.rounds = defaultdict(self.new_round)
 
-    def task(self,function,data,refs):
-        task=Task(Task.generate_name(function),function,data)
-        self.add_compute_task(task,inputs=list(dict.fromkeys(r for r in refs if r is not None)))
-        return task
+    def new_round(self):
+        inbox = RoundInbox(self.simulator.neighbors(self.index))
+        return {'started': False, 'done': False, 'incoming': inbox.messages, 'inbox': inbox}
 
-    def init_client(self,event):
-        self.simulator.schedule_round(self.index,1,self.simulator.initial_model,None)
+    def init_client(self, event):
+        self.simulator.schedule_round(self.index, 1, self.simulator.initial_model, None)
 
-    def start_round(self,event):
-        r=event.data['round'];s=self.rounds[r]
-        if s['started']:return
-        s.update(started=True,base=event.data['model'],previous=event.data['state'])
-        task=self.task('qgm_train',{'model':s['base'],'momentum':s['previous'],
-            'round':r,'peer':self.index,'time':event.time},[s['base'],s['previous']])
-        duration=self.get_train_time();self.training_until=event.time+duration
-        self.simulator.schedule(Event(self.training_until,self.index,FINISH_TRAIN,
-            {'round':r,'task':task.name,'train_time':duration}))
+    def start_round(self, event):
+        r = event.data['round']
+        state = self.rounds[r]
+        if state['started']:
+            return
+        state.update(started=True, base=as_ref(event.data['model']), previous=as_ref(event.data['state']))
+        self.compute('qgm_train', {'model': state['base'], 'momentum': state['previous']},
+                     duration=self.get_train_time(), params={'round': r}, on_complete='finish_train')
 
-    def finish_train(self,event):
-        r=event.data['round'];s=self.rounds[r]
-        if s.get('packet'):return
-        self.compute_time+=event.data['train_time']
-        s.update(local=(event.data['task'],0),local_momentum=(event.data['task'],1),packet=(event.data['task'],2))
+    def finish_train(self, event):
+        r = event.data['params']['round']
+        state = self.rounds[r]
+        if state.get('packet'):
+            return
+        local, local_momentum, packet = event.data['outputs']
+        state.update(local=local, local_momentum=local_momentum, packet=packet)
         for peer in self.simulator.neighbors(self.index):
-            self.send_model(peer,s['packet'],{'round':r,'phase':'momentum-model'})
+            self.send(peer, packet, size_bytes=self.simulator.packet_size,
+                      metadata={'round': r, 'phase': 'momentum-model'})
         self.try_finish(r)
 
-    def start_transfer(self,event):
-        self.bw_scheduler.add_transfer(self.simulator.clients[event.data['to']].bw_scheduler,
-            self.data_transfer_size(self.simulator.packet_size,event.data['metadata']),
-            event.data['model'],event.data['metadata'])
+    def on_incoming_model(self, event):
+        r = event.data['metadata']['round']
+        state = self.rounds[r]
+        state['inbox'].add(event.data['from'], as_ref(event.data['model']))
+        self.try_finish(r)
 
-    def on_incoming_model(self,event):
-        r=event.data['metadata']['round'];sender=event.data['from'];s=self.rounds[r]
-        if sender not in self.simulator.neighbors(self.index):raise ValueError('Non-neighbor QGM packet')
-        if s['done']:return
-        s['incoming'].setdefault(sender,event.data['model']);self.try_finish(r)
-
-    def try_finish(self,r):
-        s=self.rounds[r];neighbors=self.simulator.neighbors(self.index)
-        if s['done'] or not s.get('packet') or not set(neighbors).issubset(s['incoming']):return
-        s['done']=True
-        packets=[s['packet']]+[s['incoming'][p] for p in neighbors]
-        task=self.task('qgm_finish',{'base':s['base'],'local_model':s['local'],
-            'momentum':s['previous'],'local_momentum':s['local_momentum'],'packets':packets,
-            'weights':[self.simulator.weight(self.index,p) for p in [self.index]+neighbors],
-            'round':r,'peer':self.index,'time':self.simulator.current_time},
-            [s['base'],s['local'],s['previous'],s['local_momentum']]+packets)
-        s.update(model=(task.name,0),state=(task.name,1),completed_time=self.simulator.current_time)
-        self.publish_model(r,s['model'])
-        cfg=self.simulator.settings
-        if cfg.test_method=='individual' and cfg.test_interval>0 and r%cfg.test_interval==0:
-            self.add_compute_task(Task(Task.generate_name('test'),'test',{'model':s['model'],'round':r,
-                'peer':self.index,'time':self.simulator.current_time}))
-        if cfg.rounds<=0 or r<cfg.rounds:
-            self.simulator.schedule_round(self.index,r+1,s['model'],s['state'])
+    def try_finish(self, r):
+        state = self.rounds[r]
+        neighbors = self.simulator.neighbors(self.index)
+        if not state['inbox'].finish(local_ready=state.get('packet') is not None):
+            return
+        state['done'] = True
+        packets = [state['packet']] + [state['incoming'][peer] for peer in neighbors]
+        task = self.create_compute_task('qgm_finish', {
+            'base': state['base'], 'local_model': state['local'],
+            'momentum': state['previous'], 'local_momentum': state['local_momentum'],
+            'packets': packets,
+            'weights': [self.simulator.weight(self.index, peer) for peer in [self.index] + neighbors],
+            'round': r, 'peer': self.index, 'time': self.context.now})
+        state.update(model=TaskRef(task.name, 0), state=TaskRef(task.name, 1),
+                     completed_time=self.context.now)
+        self.publish_model(r, state['model'])
+        settings = self.simulator.settings
+        if settings.test_method == 'individual' and settings.test_interval > 0 and r % settings.test_interval == 0:
+            self.create_compute_task('test', {
+                'model': state['model'], 'round': r, 'peer': self.index, 'time': self.context.now}, name=Task.generate_name('test'))
+        if settings.rounds <= 0 or r < settings.rounds:
+            self.simulator.schedule_round(self.index, r + 1, state['model'], state['state'])

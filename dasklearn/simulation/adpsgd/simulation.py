@@ -22,7 +22,7 @@ class ADPSGDSimulation(AsynchronousSimulation):
 
         # Randomly choose active and passive peers
         peers = list(range(settings.participants))
-        self.active_peers = random.sample(peers, len(peers) // 2)
+        self.active_peers = self.protocol_rng.sample(peers, len(peers) // 2)
         self.passive_peers = list(filter(lambda x: x not in self.active_peers, peers))
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
@@ -46,7 +46,7 @@ class ADPSGDSimulation(AsynchronousSimulation):
         """
         Returns a random passive client
         """
-        return {random.choice(self.passive_peers)}
+        return {self.protocol_rng.choice(self.passive_peers)}
 
     def save_measurements(self) -> None:
         super().save_measurements()

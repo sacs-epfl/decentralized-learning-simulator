@@ -5,7 +5,8 @@ sending and receiving party.
 import logging
 import random
 import math
-from typing import List, Any, OrderedDict
+from itertools import count
+from typing import List, Any, OrderedDict, Dict
 
 from dasklearn.simulation.events import *
 from dasklearn.util import MICROSECONDS
@@ -87,12 +88,15 @@ class BWScheduler:
             self.total_time_transmitting += (self.client.simulator.current_time - self.became_active)
 
     def add_transfer(self, receiver_scheduler: "BWScheduler", transfer_size: int, model: str,
-                     metadata: Dict[Any, Any]) -> "Transfer":
+                     metadata: Dict[Any, Any], *, delivery_action=INCOMING_PAYLOAD,
+                     delivery_callback="on_incoming_model") -> "Transfer":
         """
         A new transfer request arrived.
         :param transfer_size: Size of the transfer, in bytes
         """
         transfer: Transfer = Transfer(self, receiver_scheduler, transfer_size, model, metadata)
+        transfer.delivery_action = delivery_action
+        transfer.delivery_callback = delivery_callback
         self.outgoing_requests[transfer.transfer_id] = transfer
         # self.logger.debug("Adding transfer request %d: %s => %s to the queue", transfer.transfer_id, self.my_id,
         #                   transfer.receiver_scheduler.my_id)
@@ -191,19 +195,12 @@ class BWScheduler:
             "metadata": completed_transfer.metadata,
         }
         latency = int(getattr(self.client.simulator.settings, "network_latency_ms", 0) * 1000) if hasattr(self.client.simulator, "settings") else 0
-        incoming_model_event = Event(cur_time + latency, self.client.index, INCOMING_MODEL, data)
-        if "_control_message" in completed_transfer.metadata:
-            message = completed_transfer.metadata["_control_message"]
-            delivery = Event(cur_time + latency, self.client.index, SEND_MESSAGE, message)
-            if latency:
-                self.client.simulator.schedule(delivery)
-            else:
-                self.client.on_message(delivery)
+        data.update(payload=completed_transfer.model, callback=completed_transfer.delivery_callback)
+        delivery = Event(cur_time + latency, self.client.index, completed_transfer.delivery_action, data)
+        if latency:
+            self.client.simulator.schedule(delivery)
         else:
-            if latency:
-                self.client.simulator.schedule(incoming_model_event)
-            else:
-                self.client.on_incoming_model(incoming_model_event)
+            self.client.on_payload(delivery)
 
         # Prioritize allocating bandwidth to ongoing transfers
         for transfer in list(self.incoming_transfers.values()) + list(self.incoming_requests.values()):
@@ -316,15 +313,18 @@ class Transfer:
     """
     Represents a bandwidth transfer.
     """
+    COUNTER = count()
 
     def __init__(self, sender_scheduler: BWScheduler, receiver_scheduler: BWScheduler, transfer_size: int, model: str,
                  metadata: Dict[Any, Any]):
-        self.transfer_id = random.randint(0, 100000000000)
+        self.transfer_id = next(self.COUNTER)
         self.sender_scheduler: BWScheduler = sender_scheduler
         self.receiver_scheduler: BWScheduler = receiver_scheduler
         self.transfer_size: int = transfer_size
         self.model: str = model
         self.metadata: Dict[Any, Any] = metadata
+        self.delivery_action = INCOMING_PAYLOAD
+        self.delivery_callback = "on_incoming_model"
         self.transferred: int = 0
         self.allocated_bw: int = 0
         self.start_time: int = -1

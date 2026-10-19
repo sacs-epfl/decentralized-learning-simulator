@@ -3,6 +3,7 @@ from collections import defaultdict
 from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.events import Event, START_ROUND, START_TRAIN, INCOMING_MODEL
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 class TeleportationClient(BaseClient):
@@ -25,16 +26,7 @@ class TeleportationClient(BaseClient):
 
     def transmit(self, peer, model, round_nr, phase):
         metadata = {"round": round_nr, "phase": phase}
-        if peer == self.index:
-            self.simulator.schedule(Event(self.simulator.current_time, peer, INCOMING_MODEL,
-                {"from": self.index, "to": peer, "model": model, "metadata": metadata}))
-        else:
-            self.send_model(peer, model, metadata)
-
-    def start_transfer(self, event):
-        self.bw_scheduler.add_transfer(self.simulator.clients[event.data["to"]].bw_scheduler,
-            self.data_transfer_size(self.simulator.model_size, event.data["metadata"]),
-            event.data["model"], event.data["metadata"])
+        self.send(peer, model, size_bytes=self.simulator.model_size, metadata=metadata)
 
     def finish_train(self, event):
         round_nr = event.data["round"]
@@ -43,7 +35,6 @@ class TeleportationClient(BaseClient):
             return
         state["trained"] = True
         state["model"] = event.data["model"]
-        self.compute_time += event.data["train_time"]
         sample = self.simulator.sample(round_nr)
         for token in self.simulator.neighbors(sample.index(self.index)):
             self.transmit(sample[token], state["model"], round_nr, "mix")
@@ -68,14 +59,13 @@ class TeleportationClient(BaseClient):
         state["mixed"] = True
         models = [state["model"]] + [state["incoming"][peer] for peer in neighbors]
         # Symmetric regular graph plus self-loop: W is doubly stochastic.
-        task = Task(Task.generate_name("teleport_mix"), "aggregate", {
+        task = self.create_compute_task("aggregate", {
             "models": models, "round": round_nr, "peer": self.index,
-            "time": self.simulator.current_time})
-        self.add_compute_task(task)
-        model = (task.name, 0)
+            "time": self.simulator.current_time}, name=Task.generate_name("teleport_mix"))
+        model = TaskRef(task.name, 0)
         self.publish_model(round_nr, model)
         if self.simulator.settings.test_method == "individual" and self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0:
-            self.add_compute_task(Task(Task.generate_name("test"), "test", {
-                "model": model, "round": round_nr, "peer": self.index, "time": self.simulator.current_time}))
+            self.create_compute_task("test", {
+                "model": model, "round": round_nr, "peer": self.index, "time": self.simulator.current_time}, name=Task.generate_name("test"))
         if self.simulator.settings.rounds <= 0 or round_nr < self.simulator.settings.rounds:
             self.transmit(self.simulator.sample(round_nr + 1)[token], model, round_nr + 1, "handoff")

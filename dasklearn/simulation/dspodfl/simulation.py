@@ -16,6 +16,7 @@ from dasklearn.simulation.simulation import Simulation
 from dasklearn.simulation.events import START_ROUND, FINISH_TRAIN
 from dasklearn.simulation.dspodfl.client import DSpodFLClient
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 class DSpodFLSimulation(Simulation):
@@ -50,9 +51,8 @@ class DSpodFLSimulation(Simulation):
         self.register_event_callback(FINISH_TRAIN,'finish_train')
 
     def initialize_clients(self):
-        initial=Task(Task.generate_name('initialize'),'initialize',{'peer':0,'round':0,'time':0})
-        self.clients[0].add_compute_task(initial)
-        self.initial_model=(initial.name,0)
+        initial=self.clients[0].create_compute_task('initialize', {'peer':0,'round':0,'time':0}, name=Task.generate_name('initialize'))
+        self.initial_model=TaskRef(initial.name, 0)
         bws=[c.bw_scheduler.bw_limit for c in self.clients]
         durations=[c.get_train_time() for c in self.clients]
         if min(bws)<=0 or min(durations)<=0:

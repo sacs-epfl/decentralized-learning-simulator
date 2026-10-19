@@ -1,3 +1,4 @@
+from typing import Dict
 from abc import ABC
 from typing import List, Optional, Tuple, Set
 
@@ -73,14 +74,14 @@ class AsynchronousClient(BaseClient, ABC):
             weights = None
         self.own_model = self.aggregate_models(model_names, self.age, weights)
 
-    def send(self):
+    def disseminate_model(self):
         """
         Send own model to a set of receiver clients
         """
         clients: Set[int] = self.simulator.get_send_set(self.index)
         for client in clients:
             self.client_log("Client %d will send model %s to %d" % (self.index, self.own_model, client))
-            self.send_model(client, self.own_model, metadata=dict(age=self.age))
+            self.send(client, self.own_model, size_bytes=self.simulator.model_size, metadata=dict(age=self.age), overhead_bytes=0)
 
     def test(self, event: Event):
         """
@@ -91,10 +92,9 @@ class AsynchronousClient(BaseClient, ABC):
             self.client_log("Client %d will test its model %s" % (self.index, self.own_model))
 
             test_task_name = "test_%d_%d" % (self.index, event.time // MICROSECONDS)
-            task = Task(test_task_name, "test", data={
+            task = self.create_compute_task("test", {
                 "model": self.own_model, "time": self.simulator.current_time,
-                "peer": self.index, "round": self.age})
-            self.add_compute_task(task)
+                "peer": self.index, "round": self.age}, name=test_task_name)
 
         # Schedule next test action
         test_event = Event(event.time + self.simulator.settings.test_period, self.index, TEST)

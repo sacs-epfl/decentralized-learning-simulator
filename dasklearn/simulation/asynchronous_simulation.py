@@ -20,8 +20,6 @@ class AsynchronousSimulation(Simulation, ABC):
         self.register_event_callback(FINISH_TRAIN, "finish_train")
         self.register_event_callback(TEST, "test")
 
-        random.seed(settings.seed)
-
     def get_send_set(self, index: int) -> Set[int]:
         """
         Returns a set of indices of clients, who will receive a model

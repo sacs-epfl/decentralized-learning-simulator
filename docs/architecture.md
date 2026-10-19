@@ -23,14 +23,25 @@ or experiment records are deleted by the separation.
 
 ## Adding an algorithm
 
+Start with the [protocol integration guide](adding-protocols.md).
+
 Implement its settings, simulation/client events and any required compute
-functions. Register settings and simulation class names in `ALGORITHMS` so both
+functions. Use explicit `TaskRef` inputs with `compute` or `create_compute_task`
+and use `send` / `send_control` for transport. Register numerical contracts with
+`register_operation`. Register settings and simulation class names in `ALGORITHMS` so both
 the coordinator and brokers agree on serialization. Add CLI-specific options in
 `args.py`; comparison aliases belong in `simulation/peer_baselines.py` and the
 comparison runner. Include mathematical/causal tests, optimizer-state ownership,
 wire-byte accounting and unsupported-setting checks. Document deviations from
 the source algorithm, especially optimizer changes, membership assumptions and
 simulated compute costs.
+
+## Simulator programming model
+
+See [simulator programming model](simulator-design-improvements.md)
+for the implemented compute, payload, protocol helper and runtime feedback APIs.
+Static protocols build the full DAG before execution; adaptive protocols extend
+it at feedback decisions. Workflow task format version 2 replaces older DAGs.
 
 ## Branch workflow
 

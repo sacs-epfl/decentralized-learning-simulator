@@ -33,6 +33,6 @@ class SuperGossipSimulation(AsynchronousSimulation):
         @index - index of the sender
         """
         self.weights[index] = 0
-        peers: List[int] = random.choices(self.participants, weights=self.weights, k=self.settings.k)
+        peers: List[int] = self.protocol_rng.choices(self.participants, weights=self.weights, k=self.settings.k)
         self.weights[index] = 1 / (self.settings.participants - 1)
         return set(peers)

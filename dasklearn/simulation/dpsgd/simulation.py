@@ -1,3 +1,4 @@
+from typing import Dict
 from copy import deepcopy
 import math
 from collections import defaultdict
@@ -17,6 +18,10 @@ class DPSGDSimulation(Simulation):
 
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
+        # Preserve this protocol's instantaneous failure-awareness assumption.
+        self.oracle_services['availability'] = self.availability_snapshot
+        self.oracle_services['offline_sentinel'] = lambda sender: (
+            lambda recipient, round_nr: self.clients[recipient].on_offline_sentinel(sender, round_nr))
         self.topologies = []
         if settings.participants < 2 or settings.learning.local_steps < 1:
             raise ValueError("D-PSGD/Epidemic requires at least two participants and positive local_steps")

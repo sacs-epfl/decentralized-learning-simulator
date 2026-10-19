@@ -1,3 +1,4 @@
+from typing import Dict
 import random
 from typing import Optional, Tuple
 
@@ -9,7 +10,6 @@ class GossipClient(AsynchronousClient):
 
     def __init__(self, simulator, index: int):
         super().__init__(simulator, index)
-        random.seed(index)
 
         # Not available by default
         self.available: bool = False
@@ -21,7 +21,7 @@ class GossipClient(AsynchronousClient):
         """
         super().init_client(event)
         # Randomly select shift
-        start_time: int = random.randint(0, self.simulator.settings.gl_period)
+        start_time: int = self.context.rng('dissemination-phase').randint(0, self.simulator.settings.gl_period)
         disseminate_event = Event(event.time + start_time + self.simulator.settings.gl_period, self.index, DISSEMINATE)
         self.simulator.schedule(disseminate_event)
 
@@ -60,7 +60,7 @@ class GossipClient(AsynchronousClient):
         """
         # Check if the model is initialized
         if self.own_model is not None:
-            self.send()
+            self.disseminate_model()
 
         # Schedule next disseminate action
         disseminate_event = Event(event.time + self.simulator.settings.gl_period, self.index, DISSEMINATE)
