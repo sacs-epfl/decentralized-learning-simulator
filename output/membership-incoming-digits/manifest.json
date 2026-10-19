@@ -1,0 +1,56 @@
+{
+  "output": "/Users/martijndevos/Documents/decentralized-learning-simulator/output/membership-incoming-digits",
+  "view": "incoming",
+  "variants": [
+    "dpsgd",
+    "shatter-k1",
+    "shatter-k4",
+    "shatter-k16"
+  ],
+  "dataset": "digits",
+  "dataset_base_path": null,
+  "model": "mlp",
+  "partitioners": [
+    "iid",
+    "dirichlet"
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "peers": 8,
+  "attackers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "degree": 2,
+  "rounds": 100,
+  "checkpoint_interval": 25,
+  "local_steps": 5,
+  "batch_size": 32,
+  "learning_rate": 0.1,
+  "alpha": 0.3,
+  "examples": 128,
+  "target_fpr": 0.1,
+  "bandwidth": 1000000,
+  "latency_ms": 2,
+  "max_duration": 3600,
+  "python": "3.12.15",
+  "torch": "2.14.1",
+  "numpy": "2.5.4",
+  "source_sha256": "d3707d9b8cefbe1880e67de91e702c1ab1db3a4d290d46c5fae572cb555f5841",
+  "attacker_view": "actual received full models; received same-sender/same-round chunks completed with receiver model frozen at first delivery; known sender IDs",
+  "membership": "assigned to target training partition (not a sampled-example trace)",
+  "threshold": "loss < independent class-matched nonmember calibration quantile",
+  "aggregation": "equal-weight observed attacker/target pairs within seeds; mean and sample SD across seeds; unobserved pairs excluded",
+  "heldout_use": "test split is divided into calibration and evaluation pools; no attack/utility tuning"
+}

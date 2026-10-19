@@ -95,6 +95,20 @@ global parameter average is constructed. Unreached accuracy targets are censored
 Controlled heterogeneous profiles vary compute and bandwidth independently;
 these profiles are distinct from FedScale traces (`data/fedscale_traces`).
 
+Optional [loss-based membership inference audits](docs/membership-inference.md)
+measure leakage through a participant's own local model, using independent
+nonmember calibration and class-matched evaluation cohorts. Run
+`python scripts/compare_membership.py --output output/membership-comparison`
+for a matched-training-budget D-PSGD/Shatter comparison on offline digits data.
+Attack results include balanced accuracy, ROC-AUC, TPR and observed FPR; empirical
+attack resistance is not a formal privacy guarantee.
+Add `--view incoming` and use a fresh output directory to attack actual delivered
+D-PSGD models and Shatter chunks. Missing chunks are filled from receiver-known
+state; outputs report observation coverage and the fraction of state received.
+`--cohort-policy global_nonmembers` retains the global nonmember label distribution;
+the default `class_matched` policy controls for label-distribution leakage. Report
+the policy when comparing results, especially under non-IID partitions.
+
 ## Coordinator and brokers
 
 Generate a DAG without executing it:

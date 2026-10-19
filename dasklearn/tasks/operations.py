@@ -27,6 +27,11 @@ OPERATIONS = {name: Operation(f"dasklearn.functions:{name}", outputs, name in RE
     "reconstruct_from_chunks": 1, "weighted_reconstruct_from_chunks": 1,
 }.items()}
 
+OPERATIONS["membership_inference"] = Operation(
+    "dasklearn.privacy.membership:evaluate_membership", 1, True)
+OPERATIONS["complete_incoming"] = Operation(
+    "dasklearn.privacy.incoming:complete_incoming_operation", 1, True)
+
 
 def register_operation(name, function, outputs, *, readonly_inputs=False):
     """Register an importable implementation; its contract travels with each task."""

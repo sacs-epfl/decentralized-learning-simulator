@@ -62,6 +62,7 @@ class Simulation:
         self.model_size: int = 0
         self.current_time: int = 0
         self.latest_models = {}
+        self.observers = []  # Optional passive observers of participant-visible events.
         self.oracle_services = {}
         self.execution_session = None
         self.feedback_journal = None

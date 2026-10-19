@@ -5,6 +5,7 @@ data/**
 __pycache__/
 *.py[cod]
 output/**/runs/
+output/**/replays/
 
 output/classic-validation/
 output/choco-validation/

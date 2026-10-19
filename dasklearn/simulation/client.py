@@ -102,6 +102,7 @@ class BaseClient:
 
     def on_compute_complete(self, event: Event[ComputeCompletion]):
         self.compute_time += event.data["duration"]
+        self._observe("on_compute_complete", event)
         callback = event.data["callback"]
         if callback:
             getattr(self, callback)(event)
@@ -160,9 +161,16 @@ class BaseClient:
             delivery_callback=data["callback"])
 
     def on_payload(self, event: Event[PayloadDelivery]):
+        self._observe("on_payload", event)
         # Model protocols use the same delivery path as arbitrary payloads.
         event.data["model"] = event.data["payload"]
         getattr(self, event.data["callback"])(event)
+
+    def _observe(self, method, *args):
+        for observer in getattr(self.simulator, "observers", ()):
+            callback = getattr(observer, method, None)
+            if callback is not None:
+                callback(self, *args)
 
     def come_online(self, event: Event):
         if not self.online:
@@ -239,3 +247,4 @@ class BaseClient:
         previous = self.simulator.latest_models.get(self.index)
         if previous is None or round_nr >= previous[0]:
             self.simulator.latest_models[self.index] = (round_nr, model)
+            self._observe("on_model_published", round_nr, model)
