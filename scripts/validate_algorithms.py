@@ -131,6 +131,8 @@ async def run_one(args, variant, profile, partitioner, seed):
             sim.clients[peer].add_compute_task(Task(Task.generate_name("final_test"),"test",{
                 "model":model,"round":round_nr,"peer":peer,"time":int(args.duration*MICROSECONDS),
                 "evaluation_split":"test","evaluation_examples":0,"output_prefix":"heldout"}))
+        # Persist the actual executed graph, including final held-out tasks.
+        sim.workflow_dag.save_to_file(str(Path(sim.data_dir)/"workflow_dag"))
     sim.workflow_dag.build_task_indices()
     sim.workflow_dag.check_validity()
     def progress(status):
