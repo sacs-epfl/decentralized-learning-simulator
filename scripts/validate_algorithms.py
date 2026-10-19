@@ -34,6 +34,7 @@ from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments, dspodfl
 from dasklearn.simulation.demo.settings import add_demo_arguments, demo_options
 from dasklearn.tasks.task import Task
 from dasklearn.simulation.choco.settings import add_choco_arguments, choco_options
+from dasklearn.simulation.qgm.settings import add_qgm_arguments, qgm_options
 from dasklearn.util import MICROSECONDS
 
 
@@ -53,6 +54,10 @@ async def run_one(args, variant, profile, partitioner, seed):
         specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": args.success_fraction}
     else:
         raise ValueError("Unknown comparison variant: " + variant)
+    if variant in {'qgm','dsgdm','dsgd'}:
+        mode=specific['mode'];specific.update(qgm_options(args))
+        if variant!='qgm':specific['mode']=mode
+        algorithm='qgm'
     if variant=='choco':specific.update(choco_options(args))
     if variant=='demo':specific.update(demo_options(args))
     if variant=='dspodfl':specific.update(dspodfl_options(args))
@@ -61,6 +66,7 @@ async def run_one(args, variant, profile, partitioner, seed):
         dataset_base_path=getattr(args, "dataset_base_path", None),
         torch_device_name=getattr(args, "device", "cpu"),
         evaluation_split=getattr(args, "evaluation_split", "test"),
+        evaluation_examples=getattr(args, "evaluation_examples", 0),
         gpu_residency=getattr(args,"gpu_residency",True), training_batching=getattr(args,"training_batching",True),
         training_batch_size=getattr(args,"training_batch_size",2), gpu_state_cache_mb=getattr(args,"gpu_state_cache_mb",256),
         alpha=args.alpha, learning=LearningSettings(args.learning_rate, getattr(args, "momentum", 0),
@@ -112,6 +118,12 @@ async def run_one(args, variant, profile, partitioner, seed):
     sim.test_snapshot = recorded_snapshot
     started = time.perf_counter()
     sim.simulate()
+    if getattr(args,"final_test",False):
+        if configuration.evaluation_split=="test":raise ValueError("Use validation curves with a separate final test")
+        for peer,(round_nr,model) in sorted(sim.latest_models.items()):
+            sim.clients[peer].add_compute_task(Task(Task.generate_name("final_test"),"test",{
+                "model":model,"round":round_nr,"peer":peer,"time":int(args.duration*MICROSECONDS),
+                "evaluation_split":"test","evaluation_examples":0,"output_prefix":"heldout"}))
     sim.workflow_dag.build_task_indices()
     sim.workflow_dag.check_validity()
     def progress(status):
@@ -135,9 +147,14 @@ async def run_one(args, variant, profile, partitioner, seed):
            "learning_rate": args.learning_rate,
            "final_accuracy": float(curve.accuracy.iloc[-1]), "final_loss": float(curve.loss.iloc[-1]),
            "model_bytes": sim.model_size, "bytes_sent": sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
-           "training_tasks": sum(t.func in {"train", "demo_prepare"} for t in sim.workflow_dag.tasks.values()),
+           "training_tasks": sum(t.func in {"train", "demo_prepare", "qgm_train"} for t in sim.workflow_dag.tasks.values()),
            "simulated_compute_s": sum(c.compute_time for c in sim.clients) / MICROSECONDS,
            "actual_execution_s": time.perf_counter() - started}
+    if getattr(args,"final_test",False):
+        heldout=pd.concat([pd.read_csv(Path(sim.data_dir)/f"heldout_{peer}.csv") for peer in range(args.peers)],ignore_index=True)
+        if len(heldout)!=args.peers or heldout.peer.nunique()!=args.peers:raise ValueError("Missing heldout node metrics")
+        heldout.to_csv(Path(sim.data_dir)/"heldout.csv",index=False)
+        row.update(final_test_accuracy=float(heldout.accuracy.mean()),final_test_loss=float(heldout.loss.mean()))
     for target in [40, 50, 60, 70, 80]:
         reached = curve.loc[curve.accuracy >= target, "time"]
         row[f"tta_{target}_s"] = float(reached.iloc[0]) if len(reached) else None
@@ -180,6 +197,7 @@ async def main():
     add_dspodfl_arguments(parser)
     add_demo_arguments(parser)
     add_choco_arguments(parser)
+    add_qgm_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)
     parser.add_argument("--bandwidth", type=int, default=4000)

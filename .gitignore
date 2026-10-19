@@ -8,3 +8,4 @@ output/**/runs/
 
 output/classic-validation/
 output/choco-validation/
+output/qgm-validation/

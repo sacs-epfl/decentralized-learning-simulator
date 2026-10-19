@@ -47,6 +47,7 @@ supports an existing environment. Hugging Face-backed datasets require
 | Moshpit SGD | `moshpit` | [Moshpit SGD: Communication-Efficient Decentralized Training on Heterogeneous Unreliable Devices — NeurIPS 2021](https://papers.neurips.cc/paper_files/paper/2021/hash/97275a23ca44226c9964043c8462be96-Abstract.html) | Stable-membership group collectives. | Equation checks |
 | Teleportation | `teleportation`; `teleportation-ring`, `teleportation-hypercube` in runners | [Scalable Decentralized Learning with Teleportation — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/b3732a13897c4cea145c3bdece80de64-Abstract-Conference.html) | Algorithm 1 specialization; hypercube is not the paper's Base-2 graph. | Equation checks |
 | D-Local-SGD | `d-local-sgd-ring` in runners | [A Unified Theory of Decentralized SGD with Changing Topology and Local Updates — ICML 2020](https://proceedings.mlr.press/v119/koloskova20a.html) | Fixed full-participation ring with configurable local updates. | Shared Teleportation checks |
+| Quasi-Global Momentum / DSGDm controls | `qgm`; `dsgdm`, `dsgd` in runners | [Quasi-global Momentum: Accelerating Decentralized Deep Learning on Heterogeneous Data — ICML 2021](https://proceedings.mlr.press/v139/lin21c.html) | One-step QG-DSGDm, optional Nesterov, persistent local-momentum and plain controls. | Multi-round equation + reference-step checks |
 | CHOCO-SGD | `choco` | [Decentralized Stochastic Optimization and Gossip Algorithms with Compressed Communication — ICML 2019](https://proceedings.mlr.press/v97/koloskova19a.html); [deep-learning extension — ICLR 2020](https://arxiv.org/abs/1907.09356) | Persistent public estimates; Top-k/random-k compression; explicit local-SGD block extension. | Equation + compressor reference checks |
 | DSpodFL | `dspodfl` | [Decentralized Sporadic Federated Learning: A Unified Algorithmic Framework with Convergence Guarantees — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/9521b6e7f33e039e7d92e23f5e37bbf4-Abstract-Conference.html) | One-step rule and explicit local-SGD block extension. | Equation checks |
 | DeMo | `demo` | [DeMo: Decoupled Momentum Optimization — ICLR 2026](https://proceedings.iclr.cc/paper_files/paper/2026/hash/17790fc9b4828206f99a0dea35da3657-Abstract-Conference.html) | Reference Signum optimizer; ring all-gather and CNN adaptation. | Optimizer reference check |
@@ -54,7 +55,8 @@ supports an existing environment. Hugging Face-backed datasets require
 
 [Baseline contracts and sources](docs/peer-baselines.md),
 [DSpodFL semantics](docs/dspodfl.md), [DeMo semantics](docs/demo.md),
-[CHOCO-SGD semantics and usage](docs/choco.md).
+[CHOCO-SGD semantics and usage](docs/choco.md),
+[Quasi-Global Momentum](docs/qgm.md).
 Paper links identify the source algorithms, not a claim of exact paper reproduction.
 Validation labels describe specific checks, not a certification of every option.
 [Validation contracts, evidence and remaining gaps](docs/baseline-validation.md).

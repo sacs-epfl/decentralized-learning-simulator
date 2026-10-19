@@ -13,6 +13,7 @@ class CifarPartition(Dataset):
     def __init__(self, features, labels, indices):
         self.features, self.labels = features, labels
         self.indices = np.asarray(indices, dtype=np.int64)
+        self.subsets = {}
 
     def __len__(self):
         return len(self.indices)
@@ -25,6 +26,21 @@ class CifarPartition(Dataset):
         # Already normalized tensors; the legacy loader's PIL transforms would
         # normalize twice. Only the native 32x32 GNLeNet/LeNet path uses this.
         return self
+
+    def evaluation_subset(self, count):
+        if count >= len(self):
+            return self
+        if count < 10 or count % 10:
+            raise ValueError('CIFAR evaluation subset must have an equal positive count per class')
+        if count not in self.subsets:
+            rng = np.random.default_rng(2026)
+            labels = self.labels.numpy()
+            chunks = [rng.permutation(self.indices[labels[self.indices] == label])[:count // 10]
+                      for label in range(10)]
+            if any(len(chunk) != count // 10 for chunk in chunks):
+                raise ValueError('Not enough examples per CIFAR evaluation class')
+            self.subsets[count] = CifarPartition(self.features, self.labels, np.concatenate(chunks))
+        return self.subsets[count]
 
 
 def partition_indices(labels, participants, partitioner, alpha, seed):

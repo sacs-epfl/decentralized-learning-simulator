@@ -63,7 +63,7 @@ def _execute_local(simulation,retain_results,progress,share_readonly_inputs,
     # These built-ins read their inputs or make their own private model copy.
     # Unknown functions retain defensive edge copies. Test/evaluation moves the
     # input model between devices and changes its mode, so it also needs a copy.
-    readonly = {"train", "compute_gradient", "gradient_update", "aggregate", "chunk", "choco_prepare", "choco_receive",
+    readonly = {"train", "compute_gradient", "gradient_update", "aggregate", "chunk", "choco_prepare", "choco_receive", "qgm_train", "qgm_finish",
                 "aggregate_chunk", "reconstruct_from_chunks", "weighted_reconstruct_from_chunks"}
 
     def resolve(value, share=False):
@@ -132,7 +132,8 @@ def _execute_local(simulation,retain_results,progress,share_readonly_inputs,
             evaluation_key = None
             metrics = None
             if task.func == "test" and not retain_results:
-                evaluation_key = (model_key(task.data["model"]), task.data.get("evaluation_examples", simulation.settings.evaluation_examples))
+                evaluation_key = (model_key(task.data["model"]), task.data.get("evaluation_examples", simulation.settings.evaluation_examples),
+                                  task.data.get("evaluation_split", simulation.settings.evaluation_split))
                 metrics = evaluation_cache.get(evaluation_key)
             discard_test_output = task.func == "test" and not retain_results and not task.outputs
             # Cached sink tests only write metrics; they never touch the model.

@@ -149,8 +149,13 @@ def test(settings: SessionSettings, params: Dict):
         dataset = create_dataset(settings)
     if not evaluator:
         evaluator = ModelEvaluator(dataset, settings)
+    current_evaluator = evaluator
+    if params.get('evaluation_split', settings.evaluation_split) != settings.evaluation_split:
+        evaluation_settings = copy.copy(settings)
+        evaluation_settings.evaluation_split = params['evaluation_split']
+        current_evaluator = ModelEvaluator(dataset, evaluation_settings)
     metrics = params.get("cached_metrics")
-    accuracy, loss = metrics if metrics is not None else evaluator.evaluate_accuracy(
+    accuracy, loss = metrics if metrics is not None else current_evaluator.evaluate_accuracy(
         model, device_name=settings.torch_device_name, evaluation_examples=params.get("evaluation_examples"))
     last_test_metrics = (accuracy, loss)
 
@@ -171,6 +176,20 @@ def test(settings: SessionSettings, params: Dict):
         return []
     detached_model = copy_model_state(model, settings.dataset, architecture=settings.model)
     return [detached_model]
+
+
+def qgm_train(settings, params):
+    from dasklearn.optimizer.qgm import prepare
+    gradient_model = compute_gradient(settings, dict(params))[0]
+    return list(prepare(gradient_model, params['momentum'], settings.learning.learning_rate,
+                        settings.beta, settings.learning.weight_decay, settings.nesterov, settings.mode))
+
+
+def qgm_finish(settings, params):
+    from dasklearn.optimizer.qgm import finish
+    return list(finish(params['base'], params['local_model'], params['momentum'],
+                       params['local_momentum'], params['packets'], params['weights'],
+                       settings.learning.learning_rate, settings.mu, settings.mode))
 
 
 def choco_prepare(settings, params):
