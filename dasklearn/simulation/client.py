@@ -100,7 +100,7 @@ class BaseClient:
         task = Task(task_name, "aggregate", data=data)
         self.add_compute_task(task)
         return (task_name, 0)
-    
+
     def send_message_to_client(self, to: int, type: str, message: Dict, send_time: int = 0) -> None:
         # Freeze the payload: later mutations of a local population view must not
         # change an already sent advertisement or an evaluation snapshot.

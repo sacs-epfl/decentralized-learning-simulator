@@ -32,7 +32,7 @@ class WorkflowDAG:
         Serialize the DAG.
         """
         return [task.to_json_dict() for task in self.tasks.values()]
-    
+
     def build_task_indices(self):
         for task in self.tasks.values():
             task.build_index(task.data)

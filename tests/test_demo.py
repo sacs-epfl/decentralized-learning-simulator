@@ -11,7 +11,7 @@ from dasklearn.simulation.demo.settings import DeMoSettings
 from dasklearn.simulation.demo.simulation import DeMoSimulation
 from dasklearn.tasks.local import execute_local
 from dasklearn import functions
-from test_conflux_comparison import settings, simulate
+from helpers import settings, simulate
 
 
 @pytest.mark.parametrize('shape',[(37,), (12,20), (8,3,5,5), ()])

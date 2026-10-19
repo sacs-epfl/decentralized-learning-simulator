@@ -6,7 +6,7 @@ from dasklearn.simulation.dspodfl.settings import DSpodFLSettings
 from dasklearn.simulation.dspodfl.simulation import DSpodFLSimulation
 from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.tasks.local import execute_local
-from test_conflux_comparison import settings,simulate
+from helpers import settings,simulate
 
 
 @pytest.mark.asyncio

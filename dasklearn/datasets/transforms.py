@@ -65,7 +65,7 @@ def preprocess_audio_train(batch):
     audio = [data_aug_transform(a) for a in audio]
     audio = [train_feature_transform(a) for a in audio]
     batch['img'] = [torch.from_numpy(x["samples"]).unsqueeze(0).float() for x in audio]
-    
+
     del batch['audio']
 
     return batch

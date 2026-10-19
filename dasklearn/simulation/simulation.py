@@ -213,7 +213,7 @@ class Simulation:
             self.apply_diablo_traces()
         else:
             raise RuntimeError("Unknown traces %s" % self.settings.traces)
-        
+
     def apply_churn(self):
         if self.settings.churn == "none":
             return
@@ -250,7 +250,7 @@ class Simulation:
                 self.set_fedscale_trace_for_client(ind, data[device_ids[ind]])
         else:
             raise RuntimeError("Unknown churn model %s" % self.settings.churn)
-        
+
         self.num_active_clients = sum([1 for client in self.clients if client.online])
         self.logger.info("Number of active clients at the start of the simulation: %d", self.num_active_clients)
         self.active_counts.append((int(self.cur_time_in_sec()), self.num_active_clients))
@@ -433,7 +433,7 @@ class Simulation:
             # No need to track memory at every event
             if random.random() < 0.1 / self.settings.participants:
                 self.memory_log.append((self.current_time, process.memory_info()))
-        
+
         # The common time budget may end mid-transfer. These bytes consumed
         # bandwidth even though the payload cannot yet be used for learning.
         for client in self.clients:
@@ -475,7 +475,7 @@ class Simulation:
             callback: Callable = getattr(self, self.event_callbacks[event.action])
         else:
             callback: Callable = getattr(self.clients[event.client_id], self.event_callbacks[event.action])
-        
+
         callback(event)
 
     def schedule(self, event: Event):

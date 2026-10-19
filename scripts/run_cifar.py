@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import numpy as np
 import pandas as pd
 import torch
-from validate_conflux import run_one, plot
+from validate_algorithms import run_one, plot
 from dasklearn.tasks.training import add_training_arguments
 from dasklearn.simulation.conflux_v2.settings import add_conflux_v2_arguments
 from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments
@@ -25,15 +25,15 @@ async def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--dataset-base-path", required=True)
-    p.add_argument("--variants", nargs="+", default=["shatter-r2", "shatter-r4", "conflux-v2"])
+    p.add_argument("--variants", nargs="+", default=["shatter-r2", "shatter-r4", "moshpit", "conflux-v2"])
     p.add_argument("--profiles", nargs="+", choices=["uniform", "heterogeneous"], default=["uniform", "heterogeneous"])
     p.add_argument("--partitioners", nargs="+", choices=["iid", "dirichlet"], default=["iid", "dirichlet"])
     p.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
     p.add_argument("--peers", type=int, default=128)
     p.add_argument("--sample-size", type=int, default=32)
     p.add_argument("--chunks", type=int, default=16)
-    p.add_argument("--relay-count", type=int, default=0)
     add_conflux_v2_arguments(p)
+    p.add_argument("--relay-count", type=int, default=0)
     add_dspodfl_arguments(p)
     add_demo_arguments(p)
     p.add_argument("--group-size", type=int, default=8)

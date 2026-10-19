@@ -31,6 +31,6 @@ class Round:
 
     def has_received_enough_chunks(self):
         return all([(len(chunks) / self.sample_size) >= self.success_fraction for chunks in self.received_chunks])
-    
+
     def has_received_chunk(self, chunk_idx: int, model_name: str) -> bool:
         return model_name in self.received_chunks[chunk_idx]

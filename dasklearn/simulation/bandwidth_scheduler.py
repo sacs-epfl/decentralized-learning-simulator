@@ -125,7 +125,7 @@ class BWScheduler:
 
                 # Do we have outgoing bandwidth left to allocate more requests?
                 if sender_bw_left == 0:
-                    break  # Cannot accept more pending requests                
+                    break  # Cannot accept more pending requests
 
         for request in requests_scheduled:
             self.outgoing_requests.pop(request.transfer_id)
@@ -274,30 +274,30 @@ class BWScheduler:
                 self.outgoing_requests.pop(transfer.transfer_id)
         else:
             raise RuntimeError("We do not know about request %d!" % transfer.transfer_id)
-        
+
     def kill_transfer(self, transfer):
         sender = transfer.sender_scheduler
         receiver = transfer.receiver_scheduler
         if transfer not in sender.get_all_transfers() and transfer not in receiver.get_all_transfers():
             return
-        self.logger.debug("Killing transfer %d: %s => %s", 
+        self.logger.debug("Killing transfer %d: %s => %s",
                             transfer.transfer_id, self.my_id, transfer.receiver_scheduler.my_id)
-        
+
         # Remove from pending lists on both sender and receiver
         if transfer.transfer_id in transfer.sender_scheduler.outgoing_requests:
             transfer.sender_scheduler.outgoing_requests.pop(transfer.transfer_id)
         if transfer.transfer_id in transfer.receiver_scheduler.incoming_requests:
             transfer.receiver_scheduler.incoming_requests.pop(transfer.transfer_id)
-        
+
         # Remove from active lists on the sender side
         if transfer.transfer_id in transfer.sender_scheduler.outgoing_transfers:
             transfer.sender_scheduler.remove_transfer_finish_from_event_queue(transfer)
             transfer.sender_scheduler.unregister_transfer(transfer, is_outgoing=True)
-        
+
         # Remove from active lists on the receiver side
         if transfer.transfer_id in transfer.receiver_scheduler.incoming_transfers:
             transfer.receiver_scheduler.unregister_transfer(transfer, is_outgoing=False)
-        
+
         transfer.fail()
         # Cancelled payload still consumed capacity. Count it exactly once.
         sender.total_bytes_sent += transfer.transferred

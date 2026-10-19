@@ -98,7 +98,7 @@ def test_add_transfer(setup_schedulers):
     scheduler1, scheduler2, _, _ = setup_schedulers
     scheduler1.bw_limit = 200000
     scheduler2.bw_limit = 300000
-    
+
     # Add a transfer
     transfer = scheduler1.add_transfer(scheduler2, 100000, "test_model", {})
     assert transfer.allocated_bw == scheduler1.bw_limit
@@ -192,9 +192,9 @@ def test_kill_transfer_pending(setup_schedulers):
     transfer = Transfer(scheduler1, scheduler2, 1000, "test_model", {})
     scheduler1.outgoing_requests[transfer.transfer_id] = transfer
     scheduler2.incoming_requests[transfer.transfer_id] = transfer
-    
+
     scheduler1.kill_transfer(transfer)
-    
+
     # Verify that the transfer is removed from the pending lists.
     assert transfer.transfer_id not in scheduler1.outgoing_requests
     assert transfer.transfer_id not in scheduler2.incoming_requests
@@ -211,14 +211,14 @@ def test_kill_all_transfers(setup_schedulers):
     pending_transfer1 = Transfer(scheduler1, scheduler2, 1000, "test_model", {})
     scheduler1.outgoing_requests[pending_transfer1.transfer_id] = pending_transfer1
     scheduler2.incoming_requests[pending_transfer1.transfer_id] = pending_transfer1
-    
+
     pending_transfer2 = Transfer(scheduler2, scheduler1, 1000, "test_model", {})
     scheduler2.outgoing_requests[pending_transfer2.transfer_id] = pending_transfer2
     scheduler1.incoming_requests[pending_transfer2.transfer_id] = pending_transfer2
-    
+
     # Kill all transfers on scheduler1.
     scheduler1.kill_all_transfers()
-    
+
     # Verify that scheduler1's active and pending lists are empty.
     for scheduler in [scheduler1, scheduler2]:
         assert not scheduler.outgoing_transfers

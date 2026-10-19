@@ -1,12 +1,12 @@
+from dasklearn.simulation.moshpit.simulation import MoshpitSimulation
+from dasklearn.simulation.moshpit.settings import MoshpitSettings
 import numpy as np
 import pandas as pd
 import pytest
 
 from dasklearn.datasets.cifar10 import partition_indices
 from dasklearn.tasks.local import execute_local
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
-from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
-from test_conflux_comparison import settings, simulate
+from helpers import settings, simulate
 
 
 @pytest.mark.parametrize("partitioner", ["iid", "dirichlet"])
@@ -22,8 +22,8 @@ def test_cifar_partition_is_complete_disjoint_and_reproducible(partitioner):
 async def test_streaming_executor_preserves_every_snapshot(tmp_path):
     frames = []
     for retain in [True, False]:
-        sim = simulate(ConfluxV2Simulation, settings(ConfluxV2Settings, tmp_path / str(retain),
-            sample_size=3, chunks_in_sample=3))
+        sim = simulate(MoshpitSimulation, settings(MoshpitSettings, tmp_path / str(retain),
+            group_size=3))
         status = []
         result = execute_local(sim, retain_results=retain, progress=status.append)
         if not retain:

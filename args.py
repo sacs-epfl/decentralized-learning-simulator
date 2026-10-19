@@ -1,4 +1,6 @@
 import argparse
+from dasklearn.algorithms import ALGORITHMS
+from dasklearn.tasks.training import add_training_arguments
 
 
 def get_args():
@@ -27,9 +29,13 @@ def get_args():
     parser.add_argument('--from-dir', type=str, default=None)  # Load a workflow DAG/settings from a previous run
     parser.add_argument('--dag-checkpoint-interval', type=int, default=0)  # Save the workflow DAG every N seconds
 
+    from dasklearn.simulation.conflux_v2.settings import add_conflux_v2_arguments
+    add_conflux_v2_arguments(parser)
+    parser.add_argument('--relay-count', type=int, default=0)
+
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
-    parser.add_argument('--algorithm', type=str, default="dpsgd", choices=["fl", "dpsgd", "gossip", "super-gossip", "adpsgd", "epidemic", "lubor", "conflux", "conflux-v2", "teleportation", "moshpit", "shatter", "pushsum", "dspodfl", "demo"])
+    parser.add_argument('--algorithm', default='dpsgd', choices=list(ALGORITHMS))
     from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments
     add_dspodfl_arguments(parser)
     from dasklearn.simulation.demo.settings import add_demo_arguments
@@ -41,9 +47,6 @@ def get_args():
     parser.add_argument('--sample-size', type=int, default=10)
     parser.add_argument('--chunks-in-sample', type=int, default=10)
     parser.add_argument('--success-fraction', type=float, default=1)
-    parser.add_argument('--relay-count', type=int, default=0)
-    from dasklearn.simulation.conflux_v2.settings import add_conflux_v2_arguments
-    add_conflux_v2_arguments(parser)
     parser.add_argument('--control-message-bytes', type=int, default=64)
     parser.add_argument('--network-latency-ms', type=float, default=0)
     parser.add_argument('--duration', type=int, default=100)
@@ -55,7 +58,6 @@ def get_args():
     parser.add_argument('--k', type=int, default=0)
     parser.add_argument('--r', type=int, default=0)
     parser.add_argument('--no_weights', action=argparse.BooleanOptionalAction, default=False)
-    parser.add_argument('--push-sum-duration', type=float, default=50)
 
     # Traces
     parser.add_argument('--min-bandwidth', type=int, default=0)  # The minimum bandwidth a node must have to participate, in bytes/s.
@@ -82,6 +84,7 @@ def get_args():
     parser.add_argument('--brokers', type=int, default=1)
     parser.add_argument('--port', type=int, default=5555)
 
+    add_training_arguments(parser)
     args = parser.parse_args()
     if args.dataset == "femnist":
         args.learning_rate = 0.004

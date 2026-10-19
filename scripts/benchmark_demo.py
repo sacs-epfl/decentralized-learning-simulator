@@ -15,7 +15,7 @@ def command(output,dataset,profile,steps,seed,rate,split,device,variants=('demo'
     return [sys.executable,str(Path(__file__).with_name('run_cifar.py')),
         '--output',str(output),'--dataset-base-path',dataset,'--variants',*variants,
         '--profiles',profile,'--partitioners','iid','dirichlet','--seeds',str(seed),
-        '--peers','64','--sample-size','16','--chunks','16','--relay-count','16','--immediate-uploads',
+        '--peers','64','--sample-size','16','--chunks','16',
         '--duration','900','--test-period','150','--bandwidth','100000','--step-ms','20','--latency-ms','20',
         '--learning-rate',str(rate),'--local-steps',str(steps),'--batch-size','32','--alpha','.1',
         '--momentum','0','--weight-decay','0','--model-bytes','346251','--evaluation-split',split,
@@ -52,12 +52,10 @@ def main():
             'candidates':[.0003,.001,.003,.01],'split':'5000 heldout tuning images; no test-set selection'},indent=2)+'\n')
     else:
         selected=json.loads((root/'selection.json').read_text())['selected']
-        # First verify the optimized V2 cache under the new execution source.
-        run(command(root/args.profile/'v2-replay',args.dataset_base_path,args.profile,5,0,.01,'test',args.device,('conflux-v2',)))
         for seed in [0,1,2]:
             for steps in [5,1]:
                 run(command(root/args.profile/f'h{steps}-s{seed}',args.dataset_base_path,args.profile,steps,seed,selected[str(steps)],'test',args.device))
-        (root/args.profile/'COMPLETE').write_text('All DeMo test runs and V2 cache replay completed\n')
+        (root/args.profile/'COMPLETE').write_text('All DeMo test runs completed\n')
 
 
 if __name__=='__main__':main()

@@ -52,7 +52,7 @@ class ShatterClient(BaseClient):
                 round_info.state = "TRAINING"
                 self._start_training(round_info)
             return
-        
+
         # In TRAINING state, if training has finished and we haven't sent chunks yet, do so.
         if round_info.state == "TRAINING":
             if round_info.train_done:
@@ -62,7 +62,7 @@ class ShatterClient(BaseClient):
                 self.simulator.schedule(event)
                 round_info.state = "SENDING_CHUNKS"
             return
-        
+
         if round_info.state == "SENDING_CHUNKS":
             if round_info.chunks_sent:
                 self.client_log("Client %d: Round %d transitioning from SENDING to WAIT_FOR_CHUNKS" % (self.index, cur_round))
@@ -91,7 +91,7 @@ class ShatterClient(BaseClient):
                     next_round: Round = self.round_info[next_round_nr]
                     next_round.model = round_info.model
                     self.progress_round(next_round)
-    
+
     def _start_training(self, round_info: Round):
         cur_round = round_info.round_nr
         self.client_log("Client %d starting training for round %d" % (self.index, cur_round))

@@ -8,7 +8,7 @@ def merge_accuracy_files(data_dir: str):
     settings_path = os.path.join(data_dir, "settings.json")
     if not os.path.exists(settings_path):
         raise FileNotFoundError(f"Settings file {settings_path} does not exist.")
-    
+
     with open(settings_path, "r") as settings_file:
         settings = json.load(settings_file)
 

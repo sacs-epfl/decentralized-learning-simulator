@@ -1,4 +1,4 @@
-"""Fixed CIFAR matrix, prioritizing a seed-0 preview and reusing audited V2 runs."""
+"""Fixed CIFAR matrix for one-step and block-update DSpodFL."""
 import argparse
 import json
 from pathlib import Path
@@ -21,7 +21,7 @@ def main():
             command=[sys.executable,str(Path(__file__).with_name('run_cifar.py')),
                 '--output',str(folder/case),'--dataset-base-path',args.dataset_base_path,
                 '--variants','dspodfl','--profiles',args.profile,'--partitioners','iid','dirichlet',
-                '--seeds',str(seed),'--peers','64','--sample-size','16','--chunks','16','--relay-count','16',
+                '--seeds',str(seed),'--peers','64','--sample-size','16','--chunks','16',
                 '--duration','900','--test-period','150','--bandwidth','100000','--step-ms','20',
                 '--latency-ms','20','--learning-rate','.01','--local-steps',str(steps),'--batch-size','32',
                 '--alpha','.1','--momentum','0','--weight-decay','0','--model-bytes','346251',
@@ -30,7 +30,7 @@ def main():
                 '--dspod-communication-probability','.5','--dspod-probability-mode','capacity']
             commands.append(command)
     dispatch={'profile':args.profile,'commands':commands,
-        'comparison':'Original and immediate-wide V2 cached from audited v2-uploads64; no duplicate V2 runs.',
+        'comparison':'Run other algorithms with scripts/run_cifar.py using the same common settings.',
         'semantics':'H=1 is Eq. (2); H=5 uses the same local-SGD block length as the comparison matrix.',
         'policy':'Connected degree-4 regular graph, Metropolis physical-degree weights; nominal probabilities 0.5 scaled down by relative capacity.',
         'selection':'Predeclared two semantic configurations; report both, no heldout-test hyperparameter selection.'}

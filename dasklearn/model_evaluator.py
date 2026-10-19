@@ -74,7 +74,7 @@ class ModelEvaluator:
             lossf = nn.CrossEntropyLoss() if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else nn.NLLLoss()
         else:
             lossf = nn.CrossEntropyLoss()
-    
+
         with torch.no_grad():
             for batch in iter(test_loader):
                 data, target = batch[feature_column_name], batch[label_column_name]

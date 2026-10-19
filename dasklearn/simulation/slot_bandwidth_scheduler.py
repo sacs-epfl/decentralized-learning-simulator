@@ -52,13 +52,13 @@ class SlotBWScheduler:
         self.num_slots = num_slots
         self.bw_limit = total_bw
         self.slot_bw = total_bw // num_slots  # Each slot gets an equal fraction of the total bandwidth.
-        
+
         self.outgoing_slots = [None] * num_slots
         self.incoming_slots = [None] * num_slots
 
         self.total_bytes_sent: int = 0
         self.total_bytes_received: int = 0
-        
+
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def _find_free_slot(self, slot_list):
@@ -74,10 +74,10 @@ class SlotBWScheduler:
             if slot == transfer:
                 return index
         return None
-    
+
     def has_free_incoming_slot(self):
         return self._find_free_slot(self.incoming_slots) is not None
-    
+
     def has_free_outgoing_slot(self):
         return self._find_free_slot(self.outgoing_slots) is not None
 
@@ -92,7 +92,7 @@ class SlotBWScheduler:
         sender_slot_index = self._find_free_slot(self.outgoing_slots)
         if sender_slot_index is None:
             raise Exception("No free slot available at the sender.")
-        
+
         receiver_slot_index = receiver_scheduler._find_free_slot(receiver_scheduler.incoming_slots)
         if receiver_slot_index is None:
             raise Exception("No free slot available at the receiver.")
@@ -111,7 +111,7 @@ class SlotBWScheduler:
         self.logger.debug(f"Transfer {transfer.transfer_id} scheduled in slot {sender_slot_index} "
                             f"with bandwidth {self.slot_bw} bytes/s and duration {estimated_duration} s.")
         return transfer
-    
+
     def on_outgoing_transfer_complete(self, transfer):
         transfer.finish()
         transfer.transferred = transfer.transfer_size

@@ -27,7 +27,7 @@ from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments,dspodfl_
 from dasklearn.tasks.task import Task
 from dasklearn.util import MICROSECONDS
 from dasklearn import AUGMENTATION_FACTOR_SIM
-from validate_conflux import plot
+from validate_algorithms import plot
 
 
 async def main():
@@ -38,8 +38,8 @@ async def main():
     p.add_argument("--peers", type=int, default=128)
     p.add_argument("--sample-size", type=int, default=32)
     p.add_argument("--chunks", type=int, default=16)
-    p.add_argument("--relay-count", type=int, default=0)
     add_conflux_v2_arguments(p)
+    p.add_argument("--relay-count", type=int, default=0)
     add_dspodfl_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
@@ -70,13 +70,15 @@ async def main():
     torch.use_deterministic_algorithms(True)
     logging.basicConfig(level=logging.WARNING)
     Task.COUNTER.clear()
-    cls, config = (ShatterSimulation, ShatterSettings) if args.variant == "shatter-r2" else (ConfluxV2Simulation, ConfluxV2Settings)
-    specific = {"k": args.chunks, "r": 2} if args.variant == "shatter-r2" else {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": 1}
-    if args.variant in BASELINE_VARIANTS:
+    if args.variant == "shatter-r2":
+        cls, config, specific = ShatterSimulation, ShatterSettings, {"k": args.chunks, "r": 2}
+    elif args.variant == "conflux-v2":
+        cls, config = ConfluxV2Simulation, ConfluxV2Settings
+        specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": 1,
+                    "relay_count": args.relay_count, "immediate_uploads": args.immediate_uploads}
+    else:
         cls, config, specific = baseline_spec(args.variant, args.peers, args.sample_size,
                                              args.group_size, args.averaging_steps)
-    if args.variant == "conflux-v2":
-        specific.update(relay_count=args.relay_count, immediate_uploads=args.immediate_uploads)
     if args.variant=='dspodfl':specific.update(dspodfl_options(args))
     settings = config(algorithm="shatter" if args.variant == "shatter-r2" else args.variant, seed=args.seed,
         work_dir=str(args.output), dataset="tiny_imagenet", model="resnet18", participants=args.peers,

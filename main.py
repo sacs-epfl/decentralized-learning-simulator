@@ -11,24 +11,8 @@ from args import get_args
 from dasklearn.session_settings import SessionSettings, LearningSettings
 from dasklearn.util import MICROSECONDS
 
-# Mapping of algorithms to their respective settings and simulation classes
-ALGORITHM_MAPPING = {
-    "demo": ("dasklearn.simulation.demo.settings.DeMoSettings", "dasklearn.simulation.demo.simulation.DeMoSimulation"),
-    "fl": ("dasklearn.simulation.fl.settings.FLSettings", "dasklearn.simulation.fl.simulation.FLSimulation"),
-    "dpsgd": ("dasklearn.simulation.dpsgd.settings.DPSGDSettings", "dasklearn.simulation.dpsgd.simulation.DPSGDSimulation"),
-    "epidemic": ("dasklearn.simulation.dpsgd.settings.DPSGDSettings", "dasklearn.simulation.dpsgd.simulation.DPSGDSimulation"),
-    "gossip": ("dasklearn.simulation.gossip.settings.GLSettings", "dasklearn.simulation.gossip.simulation.GossipSimulation"),
-    "super-gossip": ("dasklearn.simulation.super_gossip.settings.SuperGossipSettings", "dasklearn.simulation.super_gossip.simulation.SuperGossipSimulation"),
-    "adpsgd": ("dasklearn.simulation.adpsgd.settings.ADPSGDSettings", "dasklearn.simulation.adpsgd.simulation.ADPSGDSimulation"),
-    "lubor": ("dasklearn.simulation.lubor.settings.LuborSettings", "dasklearn.simulation.lubor.simulation.LuborSimulation"),
-    "conflux": ("dasklearn.simulation.conflux.settings.ConfluxSettings", "dasklearn.simulation.conflux.simulation.ConfluxSimulation"),
-    "conflux-v2": ("dasklearn.simulation.conflux_v2.settings.ConfluxV2Settings", "dasklearn.simulation.conflux_v2.simulation.ConfluxV2Simulation"),
-    "dspodfl": ("dasklearn.simulation.dspodfl.settings.DSpodFLSettings", "dasklearn.simulation.dspodfl.simulation.DSpodFLSimulation"),
-    "teleportation": ("dasklearn.simulation.teleportation.settings.TeleportationSettings", "dasklearn.simulation.teleportation.simulation.TeleportationSimulation"),
-    "moshpit": ("dasklearn.simulation.moshpit.settings.MoshpitSettings", "dasklearn.simulation.moshpit.simulation.MoshpitSimulation"),
-    "shatter": ("dasklearn.simulation.shatter.settings.ShatterSettings", "dasklearn.simulation.shatter.simulation.ShatterSimulation"),
-    "pushsum": ("dasklearn.simulation.pushsum.settings.PushSumSettings", "dasklearn.simulation.pushsum.simulation.PushSumSimulation"),
-}
+from dasklearn.algorithms import ALGORITHMS, class_paths
+
 
 def get_torch_device() -> str:
     if torch.cuda.is_available():
@@ -43,7 +27,7 @@ def load_settings_from_dir(directory: str) -> Dict:
     settings_path = os.path.join(directory, "settings.json")
     if not os.path.exists(settings_path):
         raise FileNotFoundError(f"Settings file {settings_path} does not exist.")
-    
+
     with open(settings_path, "r") as settings_file:
         settings_dict = json.load(settings_file)
 
@@ -117,17 +101,25 @@ def run():
             "dag_checkpoint_interval": args.dag_checkpoint_interval,
             "control_message_bytes": args.control_message_bytes,
             "network_latency_ms": args.network_latency_ms,
+            "gpu_residency": args.gpu_residency,
+            "training_batching": args.training_batching,
+            "training_batch_size": args.training_batch_size,
+            "gpu_state_cache_mb": args.gpu_state_cache_mb,
         }
 
-    if args.algorithm not in ALGORITHM_MAPPING:
-        raise RuntimeError(f"Unsupported algorithm {args.algorithm}")
+    algorithm = settings_dict['algorithm']
+    if algorithm not in ALGORITHMS:
+        raise RuntimeError(f"Unsupported algorithm {algorithm}")
 
-    settings_class_path, simulation_class_path = ALGORITHM_MAPPING[args.algorithm]
+    settings_class_path, simulation_class_path = class_paths(algorithm)
 
     # Add algorithm-specific parameters
     from dasklearn.simulation.dspodfl.settings import dspodfl_options
     from dasklearn.simulation.demo.settings import demo_options
     algorithm_params = {
+        "conflux-v2": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample,
+                       "success_fraction": args.success_fraction, "relay_count": args.relay_count,
+                       "immediate_uploads": args.immediate_uploads},
         "demo": demo_options(args),
         "dspodfl": dspodfl_options(args),
         "fl": {"sample_size": args.sample_size},
@@ -138,15 +130,14 @@ def run():
         "adpsgd": {"agg": args.agg},
         "lubor": {"k": args.k, "no_weights": args.no_weights},
         "conflux": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction},
-        "conflux-v2": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "success_fraction": args.success_fraction, "relay_count": args.relay_count, "immediate_uploads": args.immediate_uploads},
         "teleportation": {"sample_size": args.sample_size, "topology": args.teleportation_topology},
         "moshpit": {"group_size": args.group_size, "averaging_steps": args.averaging_steps},
         "shatter": {"k": args.k, "r": args.r},
-        "pushsum": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample, "push_sum_duration": args.push_sum_duration},
     }
 
     # Instantiate settings and simulation class
-    settings_dict.update(algorithm_params.get(args.algorithm, {}))
+    if not args.from_dir:
+        settings_dict.update(algorithm_params.get(algorithm, {}))
     settings = instantiate_class(settings_class_path, **settings_dict)
     simulation = instantiate_class(simulation_class_path, settings=settings)
 

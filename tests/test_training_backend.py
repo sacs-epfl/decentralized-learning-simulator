@@ -1,3 +1,5 @@
+from dasklearn.simulation.moshpit.simulation import MoshpitSimulation
+from dasklearn.simulation.moshpit.settings import MoshpitSettings
 import argparse
 import copy
 from types import SimpleNamespace
@@ -17,9 +19,7 @@ from dasklearn.tasks.training import TrainingExecutor, add_training_arguments
 from dasklearn.tasks.task import Task
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
-from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
-from test_conflux_comparison import settings, simulate
+from helpers import settings, simulate
 
 
 def config(**kwargs):
@@ -160,7 +160,7 @@ def test_input_cache_is_bounded_and_independent():
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cls,setting,extra",[
     (ShatterSimulation,ShatterSettings,{"k":3,"r":2}),
-    (ConfluxV2Simulation,ConfluxV2Settings,{"sample_size":3,"chunks_in_sample":3})])
+    (MoshpitSimulation,MoshpitSettings,{"group_size":3})])
 async def test_prefetch_preserves_dag_and_every_value(tmp_path,cls,setting,extra):
     results,frames=[],[]
     for accelerate in (False,True):

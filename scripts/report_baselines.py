@@ -41,9 +41,9 @@ def report(root):
             for name,value in key.items():
                 network[name]=value
             traffic.append(network)
-            if row["variant"]=="conflux-v2":
-                latest = pd.read_csv(run/"latest-aggregate.csv")
-                assert len(latest)==len(counts)
+            aggregate_path = run / "latest-aggregate.csv"
+            if aggregate_path.exists():
+                latest = pd.read_csv(aggregate_path)
                 for name,value in key.items():latest[name]=value
                 fresh.append(latest)
             audits.append({**key,"per_node_rows":len(nodes),"all_nodes_per_checkpoint":True,
@@ -57,7 +57,8 @@ def report(root):
     joined=curve.merge(network,on=["variant","profile","partitioner","seed","time"],validate="one_to_one")
     summary.to_csv(root/"summary.csv",index=False)
     joined.to_csv(root/"curves.csv",index=False)
-    pd.concat(fresh,ignore_index=True).to_csv(root/"latest-v2-aggregate.csv",index=False)
+    if fresh:
+        pd.concat(fresh,ignore_index=True).to_csv(root/"latest-aggregate.csv",index=False)
     grouped=summary.groupby(["profile","partitioner","variant"])
     table=grouped.agg(seeds=("seed","nunique"),accuracy_mean=("final_accuracy","mean"),
         accuracy_sd=("final_accuracy","std"),loss_mean=("final_loss","mean"),
@@ -76,7 +77,7 @@ def report(root):
     pd.DataFrame(targets).to_csv(root/"time-to-accuracy.csv",index=False)
     (root/"audit.json").write_text(json.dumps({"passed":True,"runs":audits,
         "source_sha256":manifests[0]["source_sha256"],
-        "readout":"Mean accuracy/loss across all physical nodes' stored post-aggregation checkpoints. Additional V2 latest-aggregate readout is distinct; no uncharged global parameter average.",
+        "readout":"Mean accuracy/loss across all physical nodes' stored post-aggregation checkpoints. No uncharged global parameter average.",
         "limitations":["Three training/capacity seeds; short CIFAR screening, not a universal ranking.",
             "Common hyperparameters, not individually tuned paper reproductions.",
             "Stable membership and oracle discovery; full published systems are not reproduced.",

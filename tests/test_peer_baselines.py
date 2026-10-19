@@ -12,7 +12,7 @@ from dasklearn.simulation.teleportation.simulation import TeleportationSimulatio
 from dasklearn.simulation.teleportation.settings import TeleportationSettings
 from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.tasks.local import execute_local
-from test_conflux_comparison import settings, simulate
+from helpers import settings, simulate
 
 
 @pytest.mark.parametrize("bandwidths", [[1,1,1], [1,1,8,8], [1,2,3,4,5], [1,100,1000], [7,7]])

@@ -3,7 +3,6 @@ import threading
 from asyncio import ensure_future
 
 import psutil
-from dasklearn.simulation.pushsum.settings import PushSumSettings
 from dasklearn.util.utils import start_profile, stop_profile
 import torch.multiprocessing as multiprocessing
 from torch.multiprocessing.reductions import shared_cache as mp_torch_sc
@@ -16,12 +15,7 @@ import setproctitle
 
 from dasklearn.communication import Communication
 from dasklearn.functions import *
-from dasklearn.simulation.conflux.settings import ConfluxSettings
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
-from dasklearn.simulation.demo.settings import DeMoSettings
-from dasklearn.simulation.dpsgd.settings import DPSGDSettings
-from dasklearn.simulation.shatter.settings import ShatterSettings
-from dasklearn.simulation.teleportation.settings import TeleportationSettings
+from dasklearn.algorithms import settings_classes
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
 from dasklearn.util.logging import setup_logging
@@ -285,7 +279,7 @@ class Broker:
         self.logger.debug("Handling result of task %s", task)
         if not isinstance(res, (list, tuple)):
             raise RuntimeError("Task result must be a list or tuple")
-        
+
         for idx, res_at_idx in enumerate(res):
             for next_task, next_task_idx in task.outputs:
                 if next_task.data["peer"] in self.brokers_to_clients[self.identity] and idx == next_task_idx:
@@ -306,16 +300,7 @@ class Broker:
                     self.clients_to_brokers[client] = broker
 
             # Load the settings based on the class
-            name_to_cls = {
-                "SessionSettings": SessionSettings,
-                "ConfluxSettings": ConfluxSettings,
-                "ConfluxV2Settings": ConfluxV2Settings,
-                "DeMoSettings": DeMoSettings,
-                "TeleportationSettings": TeleportationSettings,
-                "DPSGDSettings": DPSGDSettings,
-                "ShatterSettings": ShatterSettings,
-                "PushSumSettings": PushSumSettings,
-            }
+            name_to_cls = settings_classes()
             self.settings = name_to_cls[msg["settings_class"]].from_dict(msg["settings"])
             os.makedirs(self.settings.data_dir, exist_ok=True)
             setup_logging(self.settings.data_dir, "%s.log" % self.identity, log_level=self.settings.log_level)

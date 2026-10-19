@@ -17,8 +17,8 @@ p.add_argument("--duration", type=int, default=900)
 p.add_argument("--test-period", type=int, default=90)
 p.add_argument("--step-ms", type=float, default=20)
 p.add_argument("--bandwidth", type=int, default=100000)
-p.add_argument("--variants", nargs="+", choices=["shatter-r2", "shatter-r4", "conflux-v2", "conflux"],
-               default=["shatter-r2", "shatter-r4", "conflux-v2"])
+p.add_argument("--variants", nargs="+", choices=["shatter-r2", "shatter-r4", "moshpit", "conflux", "conflux-v2"],
+               default=["shatter-r2", "shatter-r4", "moshpit"])
 args = p.parse_args()
 root = args.root.resolve()
 output = root / "results" / f"main{args.peers}"

@@ -7,8 +7,8 @@ import torch
 
 from dasklearn import functions
 from dasklearn.session_settings import LearningSettings
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
-from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
+from dasklearn.simulation.teleportation.settings import TeleportationSettings
+from dasklearn.simulation.teleportation.simulation import TeleportationSimulation
 from dasklearn.simulation.events import START_CONTROL_TRANSFER, START_TRANSFER
 from dasklearn.simulation.bandwidth_scheduler import BWScheduler
 from dasklearn.simulation.shatter.client import ShatterClient
@@ -19,11 +19,11 @@ from dasklearn.util import MICROSECONDS
 
 @pytest.mark.asyncio
 async def test_sampled_clients_cannot_train_two_rounds_simultaneously(tmp_path):
-    settings = ConfluxV2Settings(algorithm="conflux-v2", seed=1, work_dir=str(tmp_path),
+    settings = TeleportationSettings(algorithm="teleportation", seed=1, work_dir=str(tmp_path),
         dataset="synthetic", learning=LearningSettings(.1, 0, 0, 16, 2), participants=6,
-        sample_size=4, chunks_in_sample=4, success_fraction=.5, duration=5 * MICROSECONDS,
+        sample_size=4, duration=5 * MICROSECONDS,
         rounds=0, unit_testing=True, test_interval=0, test_period=0)
-    sim = ConfluxV2Simulation(settings)
+    sim = TeleportationSimulation(settings)
     sim.setup_directories()
     def profile():
         for peer in sim.clients:
@@ -53,9 +53,9 @@ def test_shatter_same_host_chunks_are_local():
 
 @pytest.mark.asyncio
 async def test_local_steps_continue_across_epoch_boundary(tmp_path):
-    settings = ConfluxV2Settings(algorithm="conflux-v2", seed=1, work_dir=str(tmp_path),
+    settings = TeleportationSettings(algorithm="teleportation", seed=1, work_dir=str(tmp_path),
         dataset="synthetic", learning=LearningSettings(.1, 0, 0, 128, 5), participants=2,
-        sample_size=2, chunks_in_sample=2)
+        sample_size=2)
     from dasklearn.datasets import create_dataset
     from dasklearn.model_trainer import ModelTrainer
     trainer = ModelTrainer(create_dataset(settings), settings, 0)

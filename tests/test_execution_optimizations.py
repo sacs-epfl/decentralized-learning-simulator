@@ -1,3 +1,5 @@
+from dasklearn.simulation.moshpit.simulation import MoshpitSimulation
+from dasklearn.simulation.moshpit.settings import MoshpitSettings
 import copy
 
 import pandas as pd
@@ -7,14 +9,12 @@ import torch
 from dasklearn import functions
 from dasklearn.models import (create_model, create_model_structure, copy_model_state,
                               serialize_model, unserialize_model)
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
-from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.tasks.local import execute_local
 from dasklearn.tasks.task import Task
 from dasklearn.session_settings import SessionSettings, LearningSettings
-from test_conflux_comparison import settings, simulate
+from helpers import settings, simulate
 
 
 def wire_copy(model, dataset, architecture=None):
@@ -96,7 +96,7 @@ def test_cuda_resnet_training_matches_reference_bit_for_bit(tmp_path, monkeypatc
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cls,config,kwargs", [
     (ShatterSimulation, ShatterSettings, {"k":3, "r":2}),
-    (ConfluxV2Simulation, ConfluxV2Settings, {"sample_size":3, "chunks_in_sample":3})])
+    (MoshpitSimulation, MoshpitSettings, {"group_size":3})])
 async def test_optimized_execution_matches_reference_bit_for_bit(tmp_path, monkeypatch, cls, config, kwargs):
     runs, frames = [], []
     for optimized in (False, True):
@@ -126,13 +126,13 @@ async def test_optimized_execution_matches_reference_bit_for_bit(tmp_path, monke
 @pytest.mark.asyncio
 async def test_invalid_payload_size_rejected(tmp_path):
     with pytest.raises(ValueError, match="model_size_bytes must be positive"):
-        simulate(ConfluxV2Simulation, settings(ConfluxV2Settings, tmp_path,
-            sample_size=3, chunks_in_sample=3, model_size_bytes=0))
+        simulate(MoshpitSimulation, settings(MoshpitSettings, tmp_path,
+            group_size=3, model_size_bytes=0))
 
 
 @pytest.mark.asyncio
 async def test_gradient_only_copy_preserves_gradients_and_predecessor(tmp_path, monkeypatch):
-    config = settings(ConfluxV2Settings, tmp_path, sample_size=3, chunks_in_sample=3)
+    config = settings(MoshpitSettings, tmp_path, group_size=3)
     model = functions.initialize(config, {})[0]
     before = copy.deepcopy(model.state_dict())
     values = []
@@ -152,7 +152,7 @@ async def test_gradient_only_copy_preserves_gradients_and_predecessor(tmp_path, 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cls,config,kwargs", [
     (ShatterSimulation, ShatterSettings, {"k":3, "r":2}),
-    (ConfluxV2Simulation, ConfluxV2Settings, {"sample_size":3, "chunks_in_sample":3})])
+    (MoshpitSimulation, MoshpitSettings, {"group_size":3})])
 async def test_reconstruction_memo_preserves_all_snapshots(tmp_path, monkeypatch, cls, config, kwargs):
     frames = []
     reconstruct = functions.reconstruct_from_chunks

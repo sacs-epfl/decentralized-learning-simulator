@@ -8,7 +8,7 @@ from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments
 from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.tasks.local import execute_local
-from test_conflux_comparison import settings
+from helpers import settings
 
 
 def run_protocol(tmp_path, eager, chunks, fraction=1, skew=True, sample_size=4):

@@ -54,7 +54,7 @@ class ConfluxClient(AsynchronousClient):
         """
         max_round_in_population_view = self.client_manager.get_highest_round_in_population_view()
         return max(self.train_sample_estimate, max_round_in_population_view)
-    
+
     def advertise_membership(self, change: NodeMembershipChange):
         """
         Advertise your (new) membership to random (online) clients.
@@ -95,7 +95,7 @@ class ConfluxClient(AsynchronousClient):
             return
         if round_nr < 1:
             raise RuntimeError("Round number %d invalid!" % round_nr)
-        
+
         # Should we test the model?
         if (round_nr > 1 and self.simulator.settings.test_method == "individual"
                 and self.simulator.settings.test_interval > 0
@@ -205,11 +205,11 @@ class ConfluxClient(AsynchronousClient):
         if any(info.round_nr < round_info.round_nr and not info.train_done
                for info in self.round_info.values()):
             return
-        
+
         # Outdated round
         if round_info.round_nr < self.last_round_completed:
             return
-        
+
         if self.random.random() < 0.5:
             # Pull chunks for underrepresented chunk indices
             self.pull_chunks_for_underrepresented_chunk_idxs(round_info)
@@ -274,10 +274,10 @@ class ConfluxClient(AsynchronousClient):
             sorted_owners = sorted(count_per_owner.items(), key=lambda x: x[1], reverse=True)
             for owner, _ in sorted_owners:
                 other = self.simulator.clients[owner]
-                
+
                 # Coalesce all the chunks from this owner into a single one
                 model_names = self.coalesce_disjoint_chunks(owners[owner])
-                
+
                 chunk_to_pull: Tuple[int, Set[str]] = (chunk_idx, frozenset(model_names))
                 if len(chunk_to_pull[1]) == 0:
                     continue  # This owner has nothing to offer us
@@ -372,7 +372,7 @@ class ConfluxClient(AsynchronousClient):
             round_info.received_chunks[chunk_idx].add(chunk_model_name)
 
         round_info.is_pulling.discard(chunk)
-        
+
         # Update our inventory
         self.available_chunks[round_nr].append(chunk)
 
@@ -467,7 +467,7 @@ class ConfluxClient(AsynchronousClient):
 
             if not self.round_info[round_nr].sample:
                 self.round_info[round_nr].sample = SampleManager.get_sample(round_nr, self.client_manager.get_active_clients(), self.simulator.settings.sample_size, seed=self.simulator.settings.seed)
-            
+
             if self.index not in self.round_info[round_nr].sample:
                 return
 
