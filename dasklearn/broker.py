@@ -3,6 +3,7 @@ import threading
 from asyncio import ensure_future
 
 import psutil
+from dasklearn.util.utils import start_profile, stop_profile
 import torch.multiprocessing as multiprocessing
 from torch.multiprocessing.reductions import shared_cache as mp_torch_sc
 import pickle
@@ -14,10 +15,7 @@ import setproctitle
 
 from dasklearn.communication import Communication
 from dasklearn.functions import *
-from dasklearn.simulation.conflux.settings import ConfluxSettings
-from dasklearn.simulation.dpsgd.settings import DPSGDSettings
-from dasklearn.simulation.shatter.settings import ShatterSettings
-from dasklearn.simulation.teleportation.settings import TeleportationSettings
+from dasklearn.algorithms import settings_classes
 from dasklearn.tasks.dag import WorkflowDAG
 from dasklearn.tasks.task import Task
 from dasklearn.util.logging import setup_logging
@@ -99,10 +97,6 @@ class Broker:
                     num_models = self.dag.get_num_models()
                     shared_mem = 0 if not hasattr(mem_info, "shared") else mem_info.shared
                     mp_torch_cache_items = len(mp_torch_sc)
-                    try:
-                        mp_torch_sc.free_dead_references()
-                    except KeyError:
-                        self.logger.warning("KeyError in free_dead_references()")
 
                     # Calculate the task/sec throughput
                     if self.time_last_check == -1:
@@ -197,7 +191,7 @@ class Broker:
                               received_by_broker_time - task_start_time)
                 self.task_statistics.append(task_stats)
 
-                self.logger.debug("Task %s completed", task.name)
+                self.logger.info("Task %s completed", task.name)
 
                 # If this is a sink task, inform the coordinator about the result
                 if not task.outputs:
@@ -251,6 +245,9 @@ class Broker:
 
         asyncio.get_event_loop().call_later(2, asyncio.get_event_loop().stop)
 
+        if self.args.profile:
+            stop_profile(self.settings.data_dir, is_broker=True)
+
     def shutdown_everyone(self):
         self.logger.error("Will send shutdown signal to all nodes")
         msg = pickle.dumps({"type": "shutdown"})
@@ -259,6 +256,7 @@ class Broker:
         self.shutdown()
 
     def put_in_worker_queue(self, task: Task):
+        self.logger.info("Putting task %s in worker queue", task.name)
         self.items_in_worker_queue += 1
         self.worker_queue.put((task.name, task.func, task.data))
 
@@ -281,7 +279,7 @@ class Broker:
         self.logger.debug("Handling result of task %s", task)
         if not isinstance(res, (list, tuple)):
             raise RuntimeError("Task result must be a list or tuple")
-        
+
         for idx, res_at_idx in enumerate(res):
             for next_task, next_task_idx in task.outputs:
                 if next_task.data["peer"] in self.brokers_to_clients[self.identity] and idx == next_task_idx:
@@ -302,17 +300,12 @@ class Broker:
                     self.clients_to_brokers[client] = broker
 
             # Load the settings based on the class
-            name_to_cls = {
-                "SessionSettings": SessionSettings,
-                "ConfluxSettings": ConfluxSettings,
-                "TeleportationSettings": TeleportationSettings,
-                "DPSGDSettings": DPSGDSettings,
-                "ShatterSettings": ShatterSettings,               
-            }
+            name_to_cls = settings_classes()
             self.settings = name_to_cls[msg["settings_class"]].from_dict(msg["settings"])
             os.makedirs(self.settings.data_dir, exist_ok=True)
             setup_logging(self.settings.data_dir, "%s.log" % self.identity, log_level=self.settings.log_level)
             self.dag = WorkflowDAG.unserialize(msg["dag"])
+            self.dag.build_task_indices()
             self.connect_to_brokers()
             ensure_future(self.start_workers())
         elif identity == "coordinator" and msg["type"] == "tasks":
@@ -334,3 +327,6 @@ class Broker:
         self.communication = Communication(self.identity, self.args.port, self.on_message, is_broker=True)
         self.communication.start()
         self.communication.connect_to_coordinator(self.args.coordinator)
+
+        if self.args.profile:
+            start_profile()

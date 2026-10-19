@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Optional, Dict
 
@@ -6,12 +8,15 @@ from torch.autograd import Variable
 from torch.nn import CrossEntropyLoss, MSELoss, NLLLoss
 from torch.utils.data import DataLoader
 
-from flwr_datasets import FederatedDataset
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from flwr_datasets import FederatedDataset
 
 from dasklearn.optimizer.sgd import SGDOptimizer
 from dasklearn.session_settings import SessionSettings
 
-from datasets import Dataset
+if TYPE_CHECKING:
+    from datasets import Dataset
 
 
 class ModelTrainer:
@@ -26,8 +31,6 @@ class ModelTrainer:
         self.settings: SessionSettings = settings
         self.participant_index: int = participant_index
         self.is_training: bool = False
-
-        self.optimizer: Optional[SGDOptimizer] = None
 
     def get_validation_loss(self, model) -> float:
         validation_set = self.dataset.get_validationset()
@@ -57,25 +60,40 @@ class ModelTrainer:
         avg_loss = total_loss / len(validation_set)
         return float(avg_loss)
 
-    def train(self, model, local_steps: int, gradient_only: bool = False, device_name: str = "cpu") -> Dict:
-        """
-        Train the model on a batch. Return an integer that indicates how many local steps we have done.
-        """
-        self.is_training = True
-
-        # Load the partition if it's not loaded yet
+    def prepare_partition(self):
+        """Load exactly the same partition/transforms for all execution backends."""
         if not self.partition:
             self.partition = self.dataset.load_partition(self.participant_index, "train")
-            if(self.settings.dataset == "cifar10"):
+            if self.settings.dataset == "cifar10":
                 from dasklearn.datasets.transforms import apply_transforms_cifar10, apply_transforms_cifar10_resnet
                 transforms = apply_transforms_cifar10_resnet if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else apply_transforms_cifar10
                 self.partition = self.partition.with_transform(transforms)
-            elif(self.settings.dataset == "google_speech"):
+            elif self.settings.dataset == "femnist":
+                from dasklearn.datasets.transforms import apply_transforms_femnist
+                self.partition = self.partition.with_transform(apply_transforms_femnist)
+            elif self.settings.dataset == "google_speech":
                 # filter removes the silent samples from testing/training as they don't really have a label
                 from dasklearn.datasets.transforms import preprocess_audio_train as transforms
                 self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)
+            elif self.settings.dataset == "tiny_imagenet":
+                from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
+                transforms = apply_transforms_tiny_imagenet_resnet
+                self.partition = self.partition.with_transform(transforms)
+            elif self.settings.dataset in ["synthetic", "digits"]:
+                pass
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
+
+    def make_train_loader(self, seed=None):
+        self.prepare_partition()
+        generator = torch.Generator().manual_seed(seed) if seed is not None else None
+        return DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True, generator=generator)
+
+    def train(self, model, local_steps: int, gradient_only: bool = False, device_name: str = "cpu", seed=None,
+              keep_on_device=False) -> Dict:
+        """Train a private model; accelerator executors may retain its workspace."""
+        self.is_training = True
+        self.prepare_partition()
 
         validation_loss_global_model: Optional[float] = None
         if self.settings.compute_validation_loss_global_model and len(self.dataset.validationset) > 0:
@@ -84,25 +102,34 @@ class ModelTrainer:
         device = torch.device(device_name)
         model = model.to(device)
 
-        train_loader = DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True)
+        train_loader = self.make_train_loader(seed)
 
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
-        if self.optimizer is not None:
-            optimizer.optimizer.load_state_dict(self.optimizer.optimizer.state_dict())
-        self.optimizer = optimizer
-
         self.logger.debug("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",
                           local_steps, device_name, self.settings.learning.batch_size,
                           self.settings.learning.learning_rate, self.settings.learning.weight_decay)
 
         samples_trained_on = 0
-        for local_step, batch in enumerate(train_loader):
-            data, target = batch["img"], batch["label"]  # TODO hard-coded, not generic enough for different datasets
-            if local_step >= local_steps:
-                break
+
+        if self.settings.dataset == "femnist":
+            feature_column_name = "x"
+        elif self.settings.dataset == "tiny_imagenet":
+            feature_column_name = "image"
+        else:
+            feature_column_name = "img"
+
+        label_column_name = "y" if self.settings.dataset == "femnist" else "label"
+        batches = iter(train_loader)
+        for local_step in range(local_steps):
+            try:
+                batch = next(batches)
+            except StopIteration:
+                batches = iter(train_loader)
+                batch = next(batches)
+            data, target = batch[feature_column_name], batch[label_column_name]
 
             model.train()
-            data, target = Variable(data.to(device)), Variable(target.to(device))
+            data, target = data.to(device), target.to(device)
             samples_trained_on += len(data)
 
             optimizer.optimizer.zero_grad()
@@ -125,8 +152,13 @@ class ModelTrainer:
                 break
             optimizer.optimizer.step()
 
+            del data, target, output, loss
+
         self.is_training = False
-        model.to("cpu")
+        if not keep_on_device:
+            model.to("cpu")
+        if self.settings.release_cuda_cache and torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         return {"samples": samples_trained_on, "validation_loss_global": validation_loss_global_model}
 

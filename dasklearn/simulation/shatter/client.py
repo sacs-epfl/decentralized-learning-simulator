@@ -52,7 +52,7 @@ class ShatterClient(BaseClient):
                 round_info.state = "TRAINING"
                 self._start_training(round_info)
             return
-        
+
         # In TRAINING state, if training has finished and we haven't sent chunks yet, do so.
         if round_info.state == "TRAINING":
             if round_info.train_done:
@@ -62,7 +62,7 @@ class ShatterClient(BaseClient):
                 self.simulator.schedule(event)
                 round_info.state = "SENDING_CHUNKS"
             return
-        
+
         if round_info.state == "SENDING_CHUNKS":
             if round_info.chunks_sent:
                 self.client_log("Client %d: Round %d transitioning from SENDING to WAIT_FOR_CHUNKS" % (self.index, cur_round))
@@ -75,15 +75,13 @@ class ShatterClient(BaseClient):
                 self.simulator.add_topology()
 
             my_vns = [self.index * self.simulator.settings.k + i for i in range(self.simulator.settings.k)]
-            for vn in my_vns:
-                self.client_log("Client %d in round %d waiting for chunks from %s" % (self.index, cur_round, list(self.simulator.topologies[cur_round - 1].predecessors(vn))))
-
             total_nbs = sum(len(list(self.simulator.topologies[cur_round - 1].predecessors(vn))) for vn in my_vns)
-            self.client_log("Client %d: Round %d waiting for %d chunks (received %d)" % (self.index, cur_round, total_nbs, round_info.num_received_chunks))
+            #self.client_log("Client %d: Round %d waiting for %d chunks (received %d)" % (self.index, cur_round, total_nbs, round_info.num_received_chunks))
             assert round_info.num_received_chunks <= total_nbs, "Received more chunks than expected (%d > %d)" % (round_info.num_received_chunks, total_nbs)
             if round_info.num_received_chunks == total_nbs:
                 self._aggregate(round_info)
                 self.client_log("Client %d finished round %d" % (self.index, round_info.round_nr))
+                self.simulator.set_finished(round_info.round_nr, round_info.model, was_online=not round_info.should_ignore)
                 self.round_info.pop(cur_round)
                 next_round_nr = cur_round + 1
 
@@ -93,7 +91,7 @@ class ShatterClient(BaseClient):
                     next_round: Round = self.round_info[next_round_nr]
                     next_round.model = round_info.model
                     self.progress_round(next_round)
-    
+
     def _start_training(self, round_info: Round):
         cur_round = round_info.round_nr
         self.client_log("Client %d starting training for round %d" % (self.index, cur_round))
@@ -159,12 +157,14 @@ class ShatterClient(BaseClient):
             "model": model_name,
             "metadata": {"chunk": chunk_idx, "round": round_info.round_nr}
         }
-        start_transfer_event = Event(self.simulator.current_time, self.index, START_TRANSFER, data=event_data)
+        action = INCOMING_MODEL if recipient_idx == self.index else START_TRANSFER
+        start_transfer_event = Event(self.simulator.current_time, self.index, action, data=event_data)
         self.simulator.schedule(start_transfer_event)
 
     def start_transfer(self, event: Event):
         to = event.data["to"]
-        transfer_size = self.simulator.model_size // self.simulator.settings.k
+        transfer_size = self.chunk_transfer_size(event.data["metadata"]["chunk"], self.simulator.settings.k)
+        transfer_size = self.data_transfer_size(transfer_size, event.data["metadata"])
         receiver_scheduler: BWScheduler = self.simulator.clients[to].bw_scheduler
         self.bw_scheduler.add_transfer(receiver_scheduler, transfer_size, event.data["model"], event.data["metadata"])
 
@@ -211,7 +211,8 @@ class ShatterClient(BaseClient):
             })
             self.add_compute_task(task)
             round_info.model = (task_name, 0)
-            if (self.simulator.settings.stop == "rounds" and
+            self.publish_model(round_nr, round_info.model)
+            if (self.simulator.settings.stop == "rounds" and self.simulator.settings.test_method == "individual" and
                 self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0):
                 test_task_name = "test_%d_%d" % (self.index, round_nr)
                 task = Task(test_task_name, "test", data={

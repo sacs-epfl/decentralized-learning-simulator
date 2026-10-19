@@ -1,4 +1,6 @@
 import pickle
+import copy
+from functools import lru_cache
 from typing import Optional
 
 import torch
@@ -16,7 +18,32 @@ def unserialize_model(serialized_model: bytes, dataset: str, architecture: Optio
     return model
 
 
+@lru_cache(maxsize=4)
+def _model_structure(dataset: str, architecture: Optional[str]):
+    # Only used when every state entry will be overwritten. Keep the prototype
+    # private and on CPU; callers always receive independent parameters/buffers.
+    # Constructing it must not perturb task-specific training randomness.
+    with torch.random.fork_rng(devices=[]):
+        return create_model(dataset, architecture=architecture).cpu()
+
+
+def create_model_structure(dataset: str, architecture: Optional[str] = None) -> torch.nn.Module:
+    """Fresh model structure for a complete state overwrite, without reinitialization."""
+    return copy.deepcopy(_model_structure(dataset, architecture))
+
+
+def copy_model_state(model: torch.nn.Module, dataset: str, architecture: Optional[str] = None) -> torch.nn.Module:
+    """Equivalent state transfer to serialize/unserialize, without the wire encoding."""
+    result = create_model_structure(dataset, architecture)
+    result.load_state_dict(model.state_dict())
+    return result
+
+
 def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
+    if dataset == "digits":
+        return torch.nn.Sequential(torch.nn.Linear(64, 32), torch.nn.ReLU(), torch.nn.Linear(32, 10))
+    if dataset == "synthetic":
+        return torch.nn.Sequential(torch.nn.Linear(16, 32), torch.nn.ReLU(), torch.nn.Linear(32, 4))
     if dataset == "cifar10":
         if not architecture or architecture == "lenet":
             from dasklearn.models.cifar10 import LeNet
@@ -38,5 +65,11 @@ def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
     elif dataset == "google_speech":
         from dasklearn.models.resnet_speech import resnet34
         return resnet34(num_classes=35, in_channels=1)
+    elif dataset == "tiny_imagenet":
+        if architecture in ["resnet18", "mobilenet_v3_large"]:
+            import torchvision.models as tormodels
+            return tormodels.__dict__[architecture](num_classes=200)
+        else:
+            raise RuntimeError("Unknown model architecture for Tiny Imagenet: %s" % architecture)
     else:
         raise RuntimeError("Unknown dataset %s" % dataset)

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+import copy
 import os
 import time
 import threading
@@ -6,13 +9,15 @@ from typing import Dict, List, Optional
 
 import torch
 
-from flwr_datasets import FederatedDataset
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from flwr_datasets import FederatedDataset
 
 from dasklearn.datasets import create_dataset
 from dasklearn.model_evaluator import ModelEvaluator
 from dasklearn.model_manager import ModelManager
 from dasklearn.model_trainer import ModelTrainer
-from dasklearn.models import unserialize_model, serialize_model, create_model
+from dasklearn.models import copy_model_state, create_model, create_model_structure
 from dasklearn.session_settings import SessionSettings
 from dasklearn.simulation.conflux.chunk_manager import ChunkManager
 from dasklearn.util import MICROSECONDS
@@ -22,7 +27,18 @@ logger = logging.getLogger(__name__)
 model_trainers: Optional[List[ModelTrainer]] = None
 dataset: Optional[FederatedDataset] = None
 evaluator = None
+last_test_metrics = None
 lock = threading.Lock()
+
+
+def initialize(settings: SessionSettings, params: Dict):
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(settings.seed)
+        return [create_model(settings.dataset, architecture=settings.model)]
+
+
+def training_seed(settings, params):
+    return (settings.seed + 1000003 * params["peer"] + 9176 * params["round"]) % (2 ** 63)
 
 
 def train(settings: SessionSettings, params: Dict):
@@ -46,6 +62,10 @@ def train(settings: SessionSettings, params: Dict):
     if not model:
         torch.manual_seed(settings.seed)
         model = create_model(settings.dataset, architecture=settings.model)
+    else:
+        # A model can feed several training tasks, possibly on one worker.
+        # Never mutate the shared predecessor value in the workflow DAG.
+        model = copy.deepcopy(model)
 
     if model_trainers[peer_id] is None:
         model_trainers[peer_id] = ModelTrainer(dataset, settings, peer_id)
@@ -54,22 +74,25 @@ def train(settings: SessionSettings, params: Dict):
     if gradient_model:
         trainer.gradient_update(model, gradient_model)
     else:
-        train_info = trainer.train(model, local_steps, compute_gradient, settings.torch_device_name)
+        task_seed = training_seed(settings, params)
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(task_seed)
+            train_info = trainer.train(model, local_steps, compute_gradient, settings.torch_device_name, seed=task_seed)
         if train_info["validation_loss_global"] is not None:
             with open(os.path.join(settings.data_dir, "validation_losses.csv"), "a") as loss_file:
                 loss_file.write("%d,%d,%f,%f\n" % (peer_id, round_nr, cur_time, train_info["validation_loss_global"]))
 
     if compute_gradient:
         grad = model.gradient
-        detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+        detached_model = copy_model_state(model, settings.dataset, architecture=settings.model)
         detached_model.gradient = []
         for g in grad:
             g = g.cpu()
             detached_model.gradient.append(g)
     else:
-        detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+        detached_model = copy_model_state(model, settings.dataset, architecture=settings.model)
 
-    if torch.cuda.is_available():
+    if settings.release_cuda_cache and torch.cuda.is_available():
         torch.cuda.empty_cache()
 
     logger.debug("Peer %d training in round %d...", peer_id, round_nr)
@@ -107,40 +130,113 @@ def aggregate(settings: SessionSettings, params: Dict):
 
 
 def test(settings: SessionSettings, params: Dict):
-    global dataset, evaluator
+    global dataset, evaluator, last_test_metrics
     model = params["model"]
     round_nr = params["round"]
     cur_time = params["time"]
     peer_id = params["peer"]
     logger.debug("Testing model in round %d...", round_nr)
 
+    if dataset is None:
+        dataset = create_dataset(settings)
     if not evaluator:
         evaluator = ModelEvaluator(dataset, settings)
-    accuracy, loss = evaluator.evaluate_accuracy(model, device_name=settings.torch_device_name)
+    metrics = params.get("cached_metrics")
+    accuracy, loss = metrics if metrics is not None else evaluator.evaluate_accuracy(
+        model, device_name=settings.torch_device_name, evaluation_examples=params.get("evaluation_examples"))
+    last_test_metrics = (accuracy, loss)
 
-    accuracies_file_path: str = os.path.join(settings.data_dir, "accuracies_" + str(peer_id) + ".csv")
+    accuracies_file_path: str = os.path.join(settings.data_dir, params.get("output_prefix", "accuracies") + "_" + str(peer_id) + ".csv")
     if not os.path.exists(accuracies_file_path):
         with open(accuracies_file_path, "w") as accuracies_file:
-            accuracies_file.write("algorithm,dataset,partitioner,alpha,peer,round,time,accuracy,loss\n")
+            accuracies_file.write("algorithm,dataset,partitioner,alpha,learning_rate,peer,round,time,accuracy,loss\n")
 
     with open(accuracies_file_path, "a") as accuracies_file:
-        accuracies_file.write("%s,%s,%s,%g,%d,%d,%.2f,%f,%f\n" % (
-            settings.algorithm, settings.dataset, settings.partitioner, settings.alpha, peer_id, round_nr, cur_time / MICROSECONDS, accuracy, loss))
+        accuracies_file.write("%s,%s,%s,%g,%g,%d,%d,%.2f,%f,%f\n" % (
+            settings.algorithm, settings.dataset, settings.partitioner,
+            settings.alpha, settings.learning.learning_rate, peer_id,
+            round_nr, cur_time / MICROSECONDS, accuracy, loss))
 
     logger.info("[t=%.2f] Model accuracy (peer %d, round %d): %f, loss: %f", cur_time / MICROSECONDS, peer_id, round_nr, accuracy, loss)
 
-    detached_model = unserialize_model(serialize_model(model), settings.dataset, architecture=settings.model)
+    if not params.get("return_model", True):
+        return []
+    detached_model = copy_model_state(model, settings.dataset, architecture=settings.model)
     return [detached_model]
 
 
 def chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
     model = params["model"]
     num_chunks = params["n"]
-    chunks = ChunkManager.chunk_model(model, num_chunks)
+    chunks = ChunkManager.chunk_model(model, num_chunks, weights=params.get("weights"))
     return chunks
+
 
 def reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:
     chunks = params["chunks"]
-    model = create_model(settings.dataset, architecture=settings.model)
+    model = create_model_structure(settings.dataset, architecture=settings.model)
     model = ChunkManager.reconstruct_model(chunks, model)
     return [model]
+
+
+def aggregate_chunk(settings: SessionSettings, params: Dict):
+    return [torch.stack(params["chunks"]).mean(dim=0)]
+
+
+def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:
+    chunks = params["chunks"]
+    result = []
+    for sublist in chunks:
+        weighted_sum = sum(tensor * weight for tensor, weight in sublist)
+        result.append(weighted_sum)
+
+    model = create_model_structure(settings.dataset, architecture=settings.model)
+    model = ChunkManager.weighted_reconstruct_model(result, model)
+    return [model]
+
+
+def demo_prepare(settings, params):
+    """Accumulate H microbatch gradients at fixed parameters, then compress.
+
+H is compute matched to the local-SGD block in other baselines. It is gradient
+accumulation, NOT H local DeMo steps without communicating. H=1 is canonical.
+"""
+    from dasklearn.optimizer.demo import prepare
+    global dataset, model_trainers
+    if dataset is None:
+        dataset = create_dataset(settings)
+    if model_trainers is None:
+        model_trainers = [None] * settings.participants
+    peer = params['peer']
+    if model_trainers[peer] is None:
+        model_trainers[peer] = ModelTrainer(dataset, settings, peer)
+    trainer = model_trainers[peer]
+    seed = training_seed(settings, params)
+    device = settings.torch_device_name
+    model = copy.deepcopy(params['model']).to(device).train()
+    parameters = list(model.parameters())
+    gradients = [torch.zeros_like(p) for p in parameters]
+    lossf = torch.nn.NLLLoss() if settings.dataset == 'cifar10' and settings.model not in ['resnet8', 'resnet18', 'mobilenet_v3_large'] else torch.nn.CrossEntropyLoss()
+    feature = 'x' if settings.dataset == 'femnist' else 'image' if settings.dataset == 'tiny_imagenet' else 'img'
+    label = 'y' if settings.dataset == 'femnist' else 'label'
+    cuda_devices = [torch.device(device).index or 0] if torch.device(device).type == 'cuda' else []
+    with torch.random.fork_rng(devices=cuda_devices):
+        torch.manual_seed(seed)
+        loader = trainer.make_train_loader(seed); batches = iter(loader)
+        for _ in range(settings.learning.local_steps):
+            try: batch = next(batches)
+            except StopIteration:
+                batches = iter(loader); batch = next(batches)
+            model.zero_grad(set_to_none=True)
+            lossf(model(batch[feature].to(device)), batch[label].to(device)).backward()
+            for gradient, parameter in zip(gradients, parameters):
+                gradient.add_(parameter.grad / settings.learning.local_steps)
+    packet, residual = prepare(gradients, params['residual'], settings.learning.learning_rate,
+        settings.compression_decay, settings.compression_chunk, settings.compression_topk)
+    return [packet, residual]
+
+
+def demo_update(settings, params):
+    from dasklearn.optimizer.demo import update
+    return [update(params['model'], params['packets'], settings.learning.learning_rate,
+                   settings.learning.weight_decay, settings.compression_chunk)]

@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from dasklearn.simulation.churn_manager import ChurnManager
+from dasklearn.util.utils import start_profile, stop_profile
 try:
     import seaborn as sns
     seaborn_available = True
@@ -55,6 +56,7 @@ class Simulation:
         self.workflow_dag = WorkflowDAG()
         self.model_size: int = 0
         self.current_time: int = 0
+        self.latest_models = {}
         self.brokers_available_future: Future = Future()
         self.simulation_start_time: float = 0
         self.churn_manager: ChurnManager = ChurnManager(settings)
@@ -77,20 +79,28 @@ class Simulation:
         self.register_event_callback(INIT_CLIENT, "init_client")
         self.register_event_callback(START_TRAIN, "start_train")
         self.register_event_callback(START_TRANSFER, "start_transfer")
+        self.register_event_callback(INCOMING_MODEL, "on_incoming_model")
+        self.register_event_callback(START_CONTROL_TRANSFER, "start_control_transfer")
+        self.register_event_callback(TEST_SNAPSHOT, "test_snapshot")
         self.register_event_callback(FINISH_OUTGOING_TRANSFER, "finish_outgoing_transfer")
         self.register_event_callback(SEND_MESSAGE, "on_message")
         self.register_event_callback(ONLINE, "come_online")
         self.register_event_callback(OFFLINE, "go_offline")
         self.register_event_callback(MONITOR_BANDWIDTH_UTILIZATION, "monitor_bandwidth_utilization")
+        self.register_event_callback(CHECKPOINT_DAG, "checkpoint_dag")
 
     def setup_data_dir(self, settings: SessionSettings) -> None:
+        if settings.from_dir:
+            self.data_dir = settings.from_dir
+            return  # Everything is setup
+
         self.data_dir = os.path.join(settings.work_dir, "data", "%s_%s_n%d_b%d_s%d_%s" %
                                      (settings.algorithm, settings.dataset, settings.participants,
                                       settings.brokers, settings.seed, datetime.now().strftime("%Y%m%d%H%M")))
         settings.data_dir = self.data_dir
 
     def setup_directories(self):
-        if os.path.exists(self.data_dir):
+        if os.path.exists(self.data_dir) and not self.settings.from_dir:
             shutil.rmtree(self.data_dir)
         os.makedirs(self.data_dir, exist_ok=True)
 
@@ -101,7 +111,7 @@ class Simulation:
         self.brokers_to_clients = {}
         self.clients_to_brokers = {}
 
-        for client in range(len(self.clients)):
+        for client in range(self.settings.participants):
             self.clients_to_brokers[client] = list(self.broker_addresses.keys())[client % len(self.broker_addresses)]
 
         # Build the reverse map
@@ -203,7 +213,7 @@ class Simulation:
             self.apply_diablo_traces()
         else:
             raise RuntimeError("Unknown traces %s" % self.settings.traces)
-        
+
     def apply_churn(self):
         if self.settings.churn == "none":
             return
@@ -240,7 +250,7 @@ class Simulation:
                 self.set_fedscale_trace_for_client(ind, data[device_ids[ind]])
         else:
             raise RuntimeError("Unknown churn model %s" % self.settings.churn)
-        
+
         self.num_active_clients = sum([1 for client in self.clients if client.online])
         self.logger.info("Number of active clients at the start of the simulation: %d", self.num_active_clients)
         self.active_counts.append((int(self.cur_time_in_sec()), self.num_active_clients))
@@ -287,22 +297,6 @@ class Simulation:
 
         self.logger.info("Scheduled %d join/leave events for client %d (trace length in sec: %d)", events, client_id, data["finish_time"])
 
-    def start_profile(self):
-        # Check if the Yappi library has been installed
-        try:
-            import yappi
-        except ImportError:
-            self.logger.error("Yappi library not installed - cannot profile")
-            return
-        yappi.start(builtins=True)
-
-    def stop_profile(self):
-        import yappi
-        yappi.stop()
-        yappi_stats = yappi.get_func_stats()
-        yappi_stats.sort("tsub")
-        yappi_stats.save(os.path.join(self.data_dir, "yappi.stats"), type='callgrind')
-
     def monitor_bandwidth_utilization(self, event: Event) -> None:
         """
         Monitor the bandwidth utilization of all clients that are sending or receiving data.
@@ -317,22 +311,63 @@ class Simulation:
                 total_in_used += client.bw_scheduler.get_allocated_incoming_bw()
                 total_out_used += client.bw_scheduler.get_allocated_outgoing_bw()
 
-        self.bw_utilization.append((time_to_sec(self.current_time), total_in_used / total_in, total_out_used / total_out))
+        self.bw_utilization.append((time_to_sec(self.current_time), total_in_used / total_in if total_in else 0, total_out_used / total_out if total_out else 0))
 
         # Schedule the next event
         next_event = Event(self.current_time + MICROSECONDS, 0, MONITOR_BANDWIDTH_UTILIZATION, is_global=True)
         self.schedule(next_event)
 
-    async def run(self):
-        if self.settings.profile:
-            self.start_profile()
+    def test_snapshot(self, event: Event):
+        # The same wall-clock cadence and the same available-node metric for
+        # sampled and all-node algorithms. No free global parameter averaging.
+        for peer, (round_nr, model) in sorted(self.latest_models.items()):
+            if self.clients[peer].online:
+                task = Task(Task.generate_name("test_snapshot"), "test", data={
+                    "model": model, "round": round_nr, "time": self.current_time, "peer": peer})
+                self.clients[peer].add_compute_task(task)
+        self.schedule(Event(self.current_time + self.settings.test_period, 0, TEST_SNAPSHOT, is_global=True))
 
+    def checkpoint_dag(self, _: Event) -> None:
+        self.logger.info("Checkpointing workflow DAG...")
+        self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_dag"))
+
+        # Schedule the next event
+        next_event = Event(self.current_time + self.settings.dag_checkpoint_interval * MICROSECONDS, 0, CHECKPOINT_DAG, is_global=True)
+        self.schedule(next_event)
+
+    async def run(self):
         self.simulation_start_time: float = time.time()
         self.setup_directories()
         if not self.settings.unit_testing:
             setup_logging(self.data_dir, "coordinator.log")
-            self.communication = Communication("coordinator", self.settings.port, self.on_message)
-            self.communication.start()
+            if not self.settings.dry_run:
+                self.communication = Communication("coordinator", self.settings.port, self.on_message)
+                self.communication.start()
+
+        try:
+            if not self.settings.from_dir:
+                self.simulate()
+            else:
+                self.logger.info("Loading workflow DAG from %s", self.settings.from_dir)
+                self.workflow_dag = WorkflowDAG.load_from_file(os.path.join(self.settings.from_dir, "workflow_dag"))
+        except KeyboardInterrupt:
+            self.logger.info("Received keyboard interrupt - stopping simulation and proceeding with the workflow DAG as is")
+
+        # Sanity check the DAG
+        self.workflow_dag.build_task_indices()
+        self.workflow_dag.check_validity()
+        self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())
+
+        if not self.settings.dry_run:
+            await self.solve_workflow_graph()
+
+        if self.settings.dry_run:
+            self.logger.info("Dry run - shutdown")
+            asyncio.get_event_loop().stop()
+
+    def simulate(self):
+        if self.settings.profile:
+            start_profile()
 
         # Create the clients
         for client_id in range(self.settings.participants):
@@ -357,6 +392,11 @@ class Simulation:
 
         # Initialize the clients
         self.initialize_clients()
+        if self.settings.test_method == "snapshot" and self.settings.test_period > 0:
+            initial = Task(Task.generate_name("initialize"), "initialize", {"peer": 0, "round": 0, "time": 0})
+            self.clients[0].add_compute_task(initial)
+            self.latest_models = {peer: (0, (initial.name, 0)) for peer in range(self.settings.participants)}
+            self.schedule(Event(self.settings.test_period, 0, TEST_SNAPSHOT, is_global=True))
 
         # Initialize the bandwidth utilization monitor if needed
         if self.settings.log_bandwidth_utilization:
@@ -364,14 +404,27 @@ class Simulation:
             monitor_bw_event: Event = Event(MICROSECONDS, 0, MONITOR_BANDWIDTH_UTILIZATION, is_global=True)
             self.schedule(monitor_bw_event)
 
+        if self.settings.dag_checkpoint_interval > 0:
+            self.logger.info("Initializing DAG checkpointing every %d seconds", self.settings.dag_checkpoint_interval)
+            checkpoint_event: Event = Event(self.settings.dag_checkpoint_interval * MICROSECONDS, 0, CHECKPOINT_DAG, is_global=True)
+            self.schedule(checkpoint_event)
+
         # Determine the size of the model, which will be used to determine the duration of model transfers
-        self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
+        if self.settings.model_size_bytes is None:
+            self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
+        else:
+            if self.settings.model_size_bytes <= 0:
+                raise ValueError("model_size_bytes must be positive")
+            self.model_size = self.settings.model_size_bytes
         self.logger.info("Determine model size: %d bytes", self.model_size)
 
         process = psutil.Process()
         self.memory_log.append((self.current_time, process.memory_info()))
 
         while self.events and self.current_time < self.settings.duration:
+            if self.events[0][0] > self.settings.duration:
+                self.current_time = self.settings.duration
+                break
             # Process synchronous events
             _, _, event = self.events.pop(0)
             assert event.time >= self.current_time, "New event %s cannot be executed in the past! (current time: %d)" % (str(event), self.current_time)
@@ -380,7 +433,14 @@ class Simulation:
             # No need to track memory at every event
             if random.random() < 0.1 / self.settings.participants:
                 self.memory_log.append((self.current_time, process.memory_info()))
-        
+
+        # The common time budget may end mid-transfer. These bytes consumed
+        # bandwidth even though the payload cannot yet be used for learning.
+        for client in self.clients:
+            for transfer in list(client.bw_scheduler.outgoing_transfers.values()):
+                transfer.update()
+                transfer.sender_scheduler.total_bytes_sent += transfer.transferred
+                transfer.receiver_scheduler.total_bytes_received += transfer.transferred
         self.events = []
 
         # We're done - summarize statistics
@@ -391,25 +451,15 @@ class Simulation:
 
         self.logger.info("Simulation done! Total bytes sent: %d, total bytes received: %d", total_bw_out, total_bw_in)
 
-
         self.memory_log.append((self.current_time, process.memory_info()))
-        self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_graph.txt"))
+        self.workflow_dag.save_to_file(os.path.join(self.data_dir, "workflow_dag"))
+        with open(os.path.join(self.data_dir, "settings.json"), "w") as out_file:
+            out_file.write(self.settings.to_json())
+
         self.save_measurements()
 
         if self.settings.profile:
-            self.stop_profile()
-
-        # Sanity check the DAG
-        self.workflow_dag.check_validity()
-        self.plot_compute_graph()
-        self.n_sink_tasks = len(self.workflow_dag.get_sink_tasks())
-
-        if not self.settings.dry_run:
-            await self.solve_workflow_graph()
-
-        if self.settings.dry_run:
-            self.logger.info("Dry run - shutdown")
-            asyncio.get_event_loop().stop()
+            stop_profile(self.settings.data_dir)
 
     def cur_time_in_sec(self) -> float:
         return self.current_time / MICROSECONDS
@@ -425,7 +475,7 @@ class Simulation:
             callback: Callable = getattr(self, self.event_callbacks[event.action])
         else:
             callback: Callable = getattr(self.clients[event.client_id], self.event_callbacks[event.action])
-        
+
         callback(event)
 
     def schedule(self, event: Event):
@@ -469,9 +519,6 @@ class Simulation:
             self.schedule_tasks_on_broker(tasks, broker)
 
     def plot_loss(self):
-        if not seaborn_available:
-            self.logger.warning("Seaborn not available - skipping plotting.")
-            return
         # Check if the accuracies file exists
         path = os.path.join(self.settings.data_dir, "accuracies.csv")
         if not os.path.exists(path):
@@ -486,29 +533,25 @@ class Simulation:
         all_combinations.sort_values('time', inplace=True)
         all_combinations = all_combinations.groupby('peer').ffill()
         # Convert to hours
-        all_combinations['hours'] = all_combinations['time'] / MICROSECONDS / 3600
+        # functions.test writes seconds, not simulation microseconds.
+        all_combinations['hours'] = all_combinations['time'] / 3600
         # Plot
         fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-        sns.lineplot(all_combinations, x='hours', y='loss', ax=ax[0])
-        sns.lineplot(all_combinations, x='hours', y='accuracy', ax=ax[1])
+        for axis, metric in zip(ax, ["loss", "accuracy"]):
+            grouped = all_combinations.groupby("hours")[metric]
+            mean, std = grouped.mean(), grouped.std().fillna(0)
+            axis.plot(mean.index, mean.values)
+            axis.fill_between(mean.index, mean - std, mean + std, alpha=0.2)
+            axis.set(xlabel="Time [h]", ylabel=metric)
         plt.savefig(os.path.join(self.settings.data_dir, "accuracies.png"))
-
-    def plot_compute_graph(self):
-        self.logger.info("Plotting compute graph")
-        graph, position, colors, color_key = self.workflow_dag.to_nx(self.settings.compute_graph_plot_size)
-        nx.draw(graph, position, node_color=colors, node_size=50, arrows=True)
-        # Dummy points for legend
-        dummy_points = [plt.Line2D([0], [-1], marker='o', color='w', markerfacecolor=color, markersize=10,
-                                   label=f'{node}') for node, color in color_key.items()]
-        plt.legend(handles=dummy_points)
-        plt.savefig(os.path.join(self.settings.data_dir, "compute_graph.png"))
+        plt.close(fig)
 
     def merge_accuracies_files(self):
         paths = [os.path.join(self.settings.data_dir, "accuracies_" + str(i) + ".csv")
                  for i in range(self.settings.participants)]
 
         with open(os.path.join(self.settings.data_dir, "accuracies.csv"), "w") as output_file:
-            output_file.write("algorithm,dataset,partitioner,alpha,peer,round,time,accuracy,loss\n")
+            output_file.write("algorithm,dataset,partitioner,alpha,learning_rate,peer,round,time,accuracy,loss\n")
             for path in paths:
                 if os.path.exists(path):
                     with open(path, "r") as input_file:

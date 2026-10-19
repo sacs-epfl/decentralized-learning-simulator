@@ -5,24 +5,25 @@ from dasklearn.tasks.task import Task
 
 @pytest.fixture
 def task():
-    task = Task("dummy_task", "func", {"a": "input_1", "b": "input_2", "c": [{"d": "input_1"}, {"e": "input_2"}]})
+    task = Task("dummy_task", "func", {"a": ("input_1", 0), "b": ("input_2", 0), "c": [{"d": ("input_1", 0)}, {"e": ("input_2", 0)}]})
     t1 = Task("input_1", "func", {})
-    t1.outputs = [task]
+    t1.outputs = [(task, 0)]
     t2 = Task("input_2", "func", {})
-    t2.outputs = [task]
-    task.inputs = [t1, t2]
+    t2.outputs = [(task, 0)]
+    task.inputs = [(t1, 0), (t2, 0)]
+    task.build_index(task.data)
     return task
 
 
 def test_task_resolve_input(task):
     assert task.inputs_resolve == 0
 
-    task.set_data("input_1", 42)
+    task.set_data(("input_1", 0), 42)
     assert task.inputs_resolve == 1
     assert task.data["a"] == 42
     assert task.data["c"][0]["d"] == 42
 
-    task.set_data("input_2", 43)
+    task.set_data(("input_2", 0), 43)
     assert task.inputs_resolve == 2
     assert task.data["b"] == 43
     assert task.data["c"][1]["e"] == 43

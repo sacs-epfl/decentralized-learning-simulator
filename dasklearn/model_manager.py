@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import logging
 from typing import Dict, List, Optional
 
 import torch.nn as nn
 
-from flwr_datasets import FederatedDataset
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from flwr_datasets import FederatedDataset
 
 from dasklearn.gradient_aggregation import GradientAggregationMethod
 from dasklearn.gradient_aggregation.fedavg import FedAvg
