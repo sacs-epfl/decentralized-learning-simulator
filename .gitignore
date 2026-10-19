@@ -7,3 +7,4 @@ __pycache__/
 output/**/runs/
 
 output/classic-validation/
+output/choco-validation/

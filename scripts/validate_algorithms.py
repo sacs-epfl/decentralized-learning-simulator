@@ -35,6 +35,7 @@ from dasklearn.simulation.peer_baselines import BASELINE_VARIANTS, baseline_spec
 from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments, dspodfl_options
 from dasklearn.simulation.demo.settings import add_demo_arguments, demo_options
 from dasklearn.tasks.task import Task
+from dasklearn.simulation.choco.settings import add_choco_arguments, choco_options
 from dasklearn.util import MICROSECONDS
 
 
@@ -59,6 +60,7 @@ async def run_one(args, variant, profile, partitioner, seed):
         specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": args.success_fraction}
     else:
         raise ValueError("Unknown comparison variant: " + variant)
+    if variant=='choco':specific.update(choco_options(args))
     if variant=='demo':specific.update(demo_options(args))
     if variant=='dspodfl':specific.update(dspodfl_options(args))
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
@@ -198,6 +200,7 @@ async def main():
     parser.add_argument("--relay-count", type=int, default=0)
     add_dspodfl_arguments(parser)
     add_demo_arguments(parser)
+    add_choco_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)
     parser.add_argument("--bandwidth", type=int, default=4000)

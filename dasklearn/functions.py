@@ -173,6 +173,18 @@ def test(settings: SessionSettings, params: Dict):
     return [detached_model]
 
 
+def choco_prepare(settings, params):
+    from dasklearn.optimizer.choco import prepare
+    model, packet = prepare(params['model'], params['state'], settings.compressor,
+                            settings.keep_ratio, settings.consensus_stepsize, training_seed(settings, params))
+    return [model, packet]
+
+
+def choco_receive(settings, params):
+    from dasklearn.optimizer.choco import receive
+    return [receive(params['state'], params['packets'], params['weights'], params['size'])]
+
+
 def chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
     model = params["model"]
     num_chunks = params["n"]

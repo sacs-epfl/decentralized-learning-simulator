@@ -40,6 +40,8 @@ def get_args():
     add_dspodfl_arguments(parser)
     from dasklearn.simulation.demo.settings import add_demo_arguments
     add_demo_arguments(parser)
+    from dasklearn.simulation.choco.settings import add_choco_arguments
+    add_choco_arguments(parser)
     parser.add_argument('--group-size', type=int, default=8)
     parser.add_argument('--averaging-steps', type=int, default=1)
     parser.add_argument('--teleportation-topology', choices=['ring', 'hypercube', 'complete'], default='ring')
