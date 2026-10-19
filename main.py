@@ -116,7 +116,9 @@ def run():
     # Add algorithm-specific parameters
     from dasklearn.simulation.dspodfl.settings import dspodfl_options
     from dasklearn.simulation.demo.settings import demo_options
+    from dasklearn.simulation.choco.settings import choco_options
     algorithm_params = {
+        "choco": choco_options(args),
         "demo": demo_options(args),
         "dspodfl": dspodfl_options(args),
         "fl": {"sample_size": args.sample_size, "aggregation_weighting": args.fl_weighting},

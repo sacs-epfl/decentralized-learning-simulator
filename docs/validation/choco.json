@@ -1,0 +1,761 @@
+{
+  "date": "2026-10-19",
+  "purpose": "CHOCO baseline correctness and execution checks, not a comparative performance benchmark",
+  "base_revision": "af2b044c764782e475204f68ded63854b7ce80c1",
+  "runtime_sha256": "f9d3416694868f44a60a07ae7076e739f428bde7882de03e3557a4680dc8426d",
+  "runtime_digest_definition": "SHA256 of sorted dasklearn/**/*.py relative path bytes followed by file bytes",
+  "update_contract": "ICML 2019 Algorithm 2; H>1 is a local-SGD block extension",
+  "suites": {
+    "macos_cpu": {
+      "passed": 195,
+      "cuda_skipped": 10
+    },
+    "linux_cuda": {
+      "passed": 205,
+      "skipped": 0
+    }
+  },
+  "reference_audit": {
+    "passed": true,
+    "reference_commit": "3cb976a54499c2cdc8ea68e001217b42b58870ae",
+    "workers": 4,
+    "steps": 8,
+    "scope": "SGD, Top-k compressor, old-hat correction and persistent estimate updates; not MPI transport",
+    "max_parameter_error": 6.661338147750939e-16,
+    "source_sha256": {
+      "dl_code/pcode/utils/sparsification.py": "c8803ef4cf4341e89fbcfc808cb1147d5fb90fbd68a77a781718eac46e0c76d7",
+      "dl_code/pcode/optim/utils.py": "3bd27ec468614ce555a5c78fc5008e4256517ffbda64fd90d7e87afb1fb8b6b9"
+    }
+  },
+  "broker_validation": {
+    "purpose": "correctness validation, not an algorithm ranking",
+    "base_revision": null,
+    "python": "3.12.15",
+    "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
+    "torch": "2.14.1+cu130",
+    "source_sha256": "f9d3416694868f44a60a07ae7076e739f428bde7882de03e3557a4680dc8426d",
+    "cases": [
+      {
+        "case": "choco-s0-iid-uniform",
+        "algorithm": "choco",
+        "seed": 0,
+        "partitioner": "iid",
+        "heterogeneous": false,
+        "snapshots": 4,
+        "nodes_per_snapshot": 4,
+        "tasks": 66,
+        "traffic_bytes": 6656,
+        "final_mean_accuracy": 43.371582,
+        "final_mean_loss": 1.3128742500000001,
+        "dag_sha256": "b4478fa5644ecdecad2e5c106793724a03e385520ad741b476f9ddb5b6603c36",
+        "status": "passed"
+      },
+      {
+        "case": "choco-s0-iid-hetero",
+        "algorithm": "choco",
+        "seed": 0,
+        "partitioner": "iid",
+        "heterogeneous": true,
+        "snapshots": 4,
+        "nodes_per_snapshot": 4,
+        "tasks": 66,
+        "traffic_bytes": 6656,
+        "final_mean_accuracy": 43.371582,
+        "final_mean_loss": 1.3128742500000001,
+        "dag_sha256": "3544ee53c45c14edbe2ea0690d64fe2980c3b604c5937407953d648f012b4c04",
+        "status": "passed"
+      },
+      {
+        "case": "choco-s0-dirichlet-uniform",
+        "algorithm": "choco",
+        "seed": 0,
+        "partitioner": "dirichlet",
+        "heterogeneous": false,
+        "snapshots": 4,
+        "nodes_per_snapshot": 4,
+        "tasks": 66,
+        "traffic_bytes": 6656,
+        "final_mean_accuracy": 29.37011725,
+        "final_mean_loss": 1.4404249999999998,
+        "dag_sha256": "b4478fa5644ecdecad2e5c106793724a03e385520ad741b476f9ddb5b6603c36",
+        "status": "passed"
+      },
+      {
+        "case": "choco-s0-dirichlet-hetero",
+        "algorithm": "choco",
+        "seed": 0,
+        "partitioner": "dirichlet",
+        "heterogeneous": true,
+        "snapshots": 4,
+        "nodes_per_snapshot": 4,
+        "tasks": 66,
+        "traffic_bytes": 6656,
+        "final_mean_accuracy": 29.37011725,
+        "final_mean_loss": 1.4404249999999998,
+        "dag_sha256": "3544ee53c45c14edbe2ea0690d64fe2980c3b604c5937407953d648f012b4c04",
+        "status": "passed",
+        "distributed": [
+          {
+            "brokers": 1,
+            "workers_per_broker": 2,
+            "metric_rows": 16,
+            "status": "matched-local",
+            "wall_seconds": 4.909
+          },
+          {
+            "brokers": 2,
+            "workers_per_broker": 1,
+            "metric_rows": 16,
+            "status": "matched-local",
+            "wall_seconds": 5.009
+          }
+        ]
+      }
+    ]
+  },
+  "synthetic": {
+    "manifest": {
+      "output": "/Users/martijndevos/Documents/decentralized-learning-simulator/output/choco-validation/synthetic",
+      "dataset": "synthetic",
+      "variants": [
+        "choco"
+      ],
+      "profiles": [
+        "uniform",
+        "heterogeneous"
+      ],
+      "partitioners": [
+        "iid",
+        "dirichlet"
+      ],
+      "seeds": [
+        0,
+        1
+      ],
+      "peers": 8,
+      "sample_size": 8,
+      "chunks": 4,
+      "success_fraction": 1,
+      "dspod_degree": 4,
+      "dspod_sgd_probability": 0.5,
+      "dspod_communication_probability": 0.5,
+      "dspod_probability_mode": "capacity",
+      "demo_decay": 0.999,
+      "demo_chunk": 64,
+      "demo_topk": 32,
+      "choco_topology": "ring",
+      "choco_degree": 4,
+      "choco_compressor": "topk",
+      "choco_keep_ratio": 0.01,
+      "choco_consensus_stepsize": 0.1,
+      "duration": 6.0,
+      "test_period": 2.0,
+      "bandwidth": 4000,
+      "latency_ms": 2,
+      "learning_rate": 0.1,
+      "local_steps": 1,
+      "alpha": 0.3,
+      "gpu_residency": true,
+      "training_batching": true,
+      "training_batch_size": 2,
+      "gpu_state_cache_mb": 256,
+      "python": "3.12.15",
+      "torch": "2.14.1",
+      "numpy": "2.5.4",
+      "source_sha256": "f5be24f190ea10b12e951814e5ee19849558f1c061fabe410ad0cbb63bca2c6c"
+    },
+    "cases": [
+      {
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 0,
+        "learning_rate": 0.1,
+        "final_accuracy": 69.610595625,
+        "final_loss": 1.014918,
+        "model_bytes": 4057,
+        "bytes_sent": 149764,
+        "training_tasks": 366,
+        "simulated_compute_s": 3.285,
+        "actual_execution_s": 0.91167529100494,
+        "tta_40_s": 2.0,
+        "tta_50_s": 2.0,
+        "tta_60_s": 4.0,
+        "tta_70_s": null,
+        "tta_80_s": null
+      },
+      {
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 1,
+        "learning_rate": 0.1,
+        "final_accuracy": 66.52832025000001,
+        "final_loss": 1.050013,
+        "model_bytes": 4057,
+        "bytes_sent": 149764,
+        "training_tasks": 366,
+        "simulated_compute_s": 3.285,
+        "actual_execution_s": 0.4094427919917507,
+        "tta_40_s": 2.0,
+        "tta_50_s": 4.0,
+        "tta_60_s": 6.0,
+        "tta_70_s": null,
+        "tta_80_s": null
+      },
+      {
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "learning_rate": 0.1,
+        "final_accuracy": 44.3603515,
+        "final_loss": 1.23145525,
+        "model_bytes": 4057,
+        "bytes_sent": 149764,
+        "training_tasks": 366,
+        "simulated_compute_s": 3.285,
+        "actual_execution_s": 0.4016354170016711,
+        "tta_40_s": 6.0,
+        "tta_50_s": null,
+        "tta_60_s": null,
+        "tta_70_s": null,
+        "tta_80_s": null
+      },
+      {
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "learning_rate": 0.1,
+        "final_accuracy": 40.209961125,
+        "final_loss": 1.29788725,
+        "model_bytes": 4057,
+        "bytes_sent": 149764,
+        "training_tasks": 366,
+        "simulated_compute_s": 3.285,
+        "actual_execution_s": 0.3439385830133687,
+        "tta_40_s": 6.0,
+        "tta_50_s": null,
+        "tta_60_s": null,
+        "tta_70_s": null,
+        "tta_80_s": null
+      },
+      {
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 0,
+        "learning_rate": 0.1,
+        "final_accuracy": 57.91015625,
+        "final_loss": 1.19070275,
+        "model_bytes": 4057,
+        "bytes_sent": 81438,
+        "training_tasks": 200,
+        "simulated_compute_s": 4.575,
+        "actual_execution_s": 0.2972946670051897,
+        "tta_40_s": 2.0,
+        "tta_50_s": 4.0,
+        "tta_60_s": null,
+        "tta_70_s": null,
+        "tta_80_s": null
+      },
+      {
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 1,
+        "learning_rate": 0.1,
+        "final_accuracy": 49.316406375,
+        "final_loss": 1.255214375,
+        "model_bytes": 4057,
+        "bytes_sent": 71030,
+        "training_tasks": 175,
+        "simulated_compute_s": 6.54,
+        "actual_execution_s": 0.2052877499954775,
+        "tta_40_s": 4.0,
+        "tta_50_s": null,
+        "tta_60_s": null,
+        "tta_70_s": null,
+        "tta_80_s": null
+      },
+      {
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "learning_rate": 0.1,
+        "final_accuracy": 37.9089355,
+        "final_loss": 1.345301375,
+        "model_bytes": 4057,
+        "bytes_sent": 81438,
+        "training_tasks": 200,
+        "simulated_compute_s": 4.575,
+        "actual_execution_s": 0.2237628340080846,
+        "tta_40_s": null,
+        "tta_50_s": null,
+        "tta_60_s": null,
+        "tta_70_s": null,
+        "tta_80_s": null
+      },
+      {
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "learning_rate": 0.1,
+        "final_accuracy": 33.874511874999996,
+        "final_loss": 1.443582375,
+        "model_bytes": 4057,
+        "bytes_sent": 71030,
+        "training_tasks": 175,
+        "simulated_compute_s": 6.54,
+        "actual_execution_s": 0.2731090419983957,
+        "tta_40_s": null,
+        "tta_50_s": null,
+        "tta_60_s": null,
+        "tta_70_s": null,
+        "tta_80_s": null
+      }
+    ],
+    "curves": [
+      {
+        "time": 2.0,
+        "accuracy": 50.793457125,
+        "loss": 1.261410125,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 0
+      },
+      {
+        "time": 4.0,
+        "accuracy": 61.669921875,
+        "loss": 1.144054125,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 0
+      },
+      {
+        "time": 6.0,
+        "accuracy": 69.610595625,
+        "loss": 1.014918,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 0
+      },
+      {
+        "time": 2.0,
+        "accuracy": 41.4611815,
+        "loss": 1.30546325,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 1
+      },
+      {
+        "time": 4.0,
+        "accuracy": 57.89184575,
+        "loss": 1.182867,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 1
+      },
+      {
+        "time": 6.0,
+        "accuracy": 66.52832025000001,
+        "loss": 1.050013,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 1
+      },
+      {
+        "time": 2.0,
+        "accuracy": 34.9975585,
+        "loss": 1.368506875,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 4.0,
+        "accuracy": 39.4470215,
+        "loss": 1.31765,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 6.0,
+        "accuracy": 44.3603515,
+        "loss": 1.23145525,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 2.0,
+        "accuracy": 31.7077635,
+        "loss": 1.452531125,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 1
+      },
+      {
+        "time": 4.0,
+        "accuracy": 36.181640625,
+        "loss": 1.3988585,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 1
+      },
+      {
+        "time": 6.0,
+        "accuracy": 40.209961125,
+        "loss": 1.29788725,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 1
+      },
+      {
+        "time": 2.0,
+        "accuracy": 42.785644625,
+        "loss": 1.315578875,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 0
+      },
+      {
+        "time": 4.0,
+        "accuracy": 51.519775375,
+        "loss": 1.254520375,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 0
+      },
+      {
+        "time": 6.0,
+        "accuracy": 57.91015625,
+        "loss": 1.19070275,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 0
+      },
+      {
+        "time": 2.0,
+        "accuracy": 32.757568375,
+        "loss": 1.369885125,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 1
+      },
+      {
+        "time": 4.0,
+        "accuracy": 40.515136625,
+        "loss": 1.310555625,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 1
+      },
+      {
+        "time": 6.0,
+        "accuracy": 49.316406375,
+        "loss": 1.255214375,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 1
+      },
+      {
+        "time": 2.0,
+        "accuracy": 33.52050775,
+        "loss": 1.367382,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 4.0,
+        "accuracy": 35.32714825,
+        "loss": 1.364567125,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 6.0,
+        "accuracy": 37.9089355,
+        "loss": 1.345301375,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 2.0,
+        "accuracy": 29.23584,
+        "loss": 1.432289,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 1
+      },
+      {
+        "time": 4.0,
+        "accuracy": 31.317138625,
+        "loss": 1.45289825,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 1
+      },
+      {
+        "time": 6.0,
+        "accuracy": 33.874511874999996,
+        "loss": 1.443582375,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 1
+      }
+    ],
+    "curve_rows": 24,
+    "nodes_per_snapshot": 8,
+    "artifact_directory": "output/choco-validation/synthetic"
+  },
+  "cifar": {
+    "manifest": {
+      "output": "/mnt/data/mdevos/conflux/results/choco-cifar-smoke",
+      "dataset_base_path": "/mnt/data/mdevos/conflux/datasets",
+      "variants": [
+        "choco"
+      ],
+      "profiles": [
+        "uniform",
+        "heterogeneous"
+      ],
+      "partitioners": [
+        "dirichlet"
+      ],
+      "seeds": [
+        0
+      ],
+      "peers": 8,
+      "sample_size": 32,
+      "chunks": 16,
+      "dspod_degree": 4,
+      "dspod_sgd_probability": 0.5,
+      "dspod_communication_probability": 0.5,
+      "dspod_probability_mode": "capacity",
+      "demo_decay": 0.999,
+      "demo_chunk": 64,
+      "demo_topk": 32,
+      "choco_topology": "ring",
+      "choco_degree": 4,
+      "choco_compressor": "topk",
+      "choco_keep_ratio": 0.01,
+      "choco_consensus_stepsize": 0.1,
+      "group_size": 8,
+      "averaging_steps": 1,
+      "model_bytes": null,
+      "duration": 30.0,
+      "test_period": 10.0,
+      "bandwidth": 100000,
+      "step_ms": 20,
+      "latency_ms": 20,
+      "learning_rate": 0.01,
+      "local_steps": 1,
+      "batch_size": 32,
+      "alpha": 0.1,
+      "momentum": 0,
+      "weight_decay": 0,
+      "torch_threads": 4,
+      "evaluation_split": "test",
+      "device": "cuda:0",
+      "gpu_residency": true,
+      "training_batching": true,
+      "training_batch_size": 2,
+      "gpu_state_cache_mb": 256,
+      "dataset": "cifar10",
+      "model": "gnlenet",
+      "success_fraction": 1,
+      "equal_capacity": true,
+      "streaming": true,
+      "python": "3.12.15",
+      "torch": "2.14.1+cu130",
+      "numpy": "2.5.4",
+      "source_sha256": "a98e3f73b40e3a667c4066da72b92e7f11047bbd473acb8c5d96c0c847b43ab6",
+      "gpu": "NVIDIA RTX 5000 Ada Generation",
+      "cuda_visible_devices": "1",
+      "split": "45000 training / 5000 validation / 10000 test; no augmentation",
+      "capacity": "same mean bandwidth and compute step time across profiles",
+      "dataset_provenance": {
+        "source": "uoft-cs/cifar10",
+        "sha256": {
+          "train": "8428b53a88a11ac374111006708df51469e315a22ac6d66470afd9c78d2ae883",
+          "test": "841389e6f2d64f28bf17310e430aebac20ec3ba611a3c5e231dc93c645ce84de"
+        }
+      }
+    },
+    "cases": [
+      {
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "learning_rate": 0.01,
+        "final_accuracy": 16.31125,
+        "final_loss": 3.632921,
+        "model_bytes": 346251,
+        "bytes_sent": 17547980,
+        "training_tasks": 847,
+        "simulated_compute_s": 16.92,
+        "actual_execution_s": 7.752581492997706,
+        "tta_40_s": null,
+        "tta_50_s": null,
+        "tta_60_s": null,
+        "tta_70_s": null,
+        "tta_80_s": null
+      },
+      {
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "learning_rate": 0.01,
+        "final_accuracy": 16.27875,
+        "final_loss": 3.708668375,
+        "model_bytes": 346251,
+        "bytes_sent": 8219440,
+        "training_tasks": 398,
+        "simulated_compute_s": 7.968932,
+        "actual_execution_s": 4.818089126958512,
+        "tta_40_s": null,
+        "tta_50_s": null,
+        "tta_60_s": null,
+        "tta_70_s": null,
+        "tta_80_s": null
+      }
+    ],
+    "curves": [
+      {
+        "time": 10.0,
+        "accuracy": 14.9525,
+        "loss": 3.840324375,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 20.0,
+        "accuracy": 13.81875,
+        "loss": 3.907423625,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 30.0,
+        "accuracy": 16.31125,
+        "loss": 3.632921,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 10.0,
+        "accuracy": 14.04625,
+        "loss": 3.874635125,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 20.0,
+        "accuracy": 13.9675,
+        "loss": 3.873637375,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0
+      },
+      {
+        "time": 30.0,
+        "accuracy": 16.27875,
+        "loss": 3.708668375,
+        "nodes": 8,
+        "variant": "choco",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0
+      }
+    ],
+    "node_metric_rows_audited": 48,
+    "nodes_per_snapshot": 8,
+    "packet_payload_bytes": 10308,
+    "trainable_parameter_bytes": 341416,
+    "server_artifacts": "mdevos@sacs006:/mnt/data/mdevos/conflux/results/choco-cifar-smoke",
+    "completed_round_range_at_30s": {
+      "uniform": [
+        104,
+        105
+      ],
+      "heterogeneous": [
+        48,
+        49
+      ]
+    }
+  },
+  "server_code": "/mnt/data/mdevos/conflux/choco-validation-code",
+  "server_test_log": "/mnt/data/mdevos/conflux/choco-validation-tests.txt"
+}

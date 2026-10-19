@@ -63,7 +63,7 @@ def _execute_local(simulation,retain_results,progress,share_readonly_inputs,
     # These built-ins read their inputs or make their own private model copy.
     # Unknown functions retain defensive edge copies. Test/evaluation moves the
     # input model between devices and changes its mode, so it also needs a copy.
-    readonly = {"train", "compute_gradient", "gradient_update", "aggregate", "chunk",
+    readonly = {"train", "compute_gradient", "gradient_update", "aggregate", "chunk", "choco_prepare", "choco_receive",
                 "aggregate_chunk", "reconstruct_from_chunks", "weighted_reconstruct_from_chunks"}
 
     def resolve(value, share=False):

@@ -155,3 +155,11 @@ trajectories for those methods, migration of Gossip/Super-Gossip/HGL, model-buff
 and optimizer-state coverage on more architectures, supported failure modes,
 and then replicated small CIFAR-10 convergence checks. No additional large
 accuracy benchmark or learning-rate selection was performed in this audit.
+
+## CHOCO-SGD addition
+
+CHOCO-SGD has independent multi-round numerical checks, persistent compression
+state checks, and an optional pinned reference-helper audit. See the separate
+[CHOCO contract and validation evidence](choco.md) for its update order, supported
+compressors, local-SGD extension and communication accounting. Earlier audit
+counts and source hashes above describe the earlier classic-baseline snapshot.
