@@ -80,6 +80,15 @@ substituted; the reference's SGD, Nesterov, virtual-sequence and momentum-buffer
 arithmetic is executed unchanged over eight rounds on four workers. This does
 not claim to reproduce its MPI deployment or paper benchmark recipe.
 
+The [validation record](validation/qgm.json) pins the source and checks. The
+eight-round reference comparison has maximum parameter error
+`2.22e-16`. The main-branch suite passed 227 tests on macOS CPU (13 CUDA skips);
+the common research execution snapshot passed all 265 tests on Linux CUDA.
+Real replay through one broker/two workers and two brokers/one worker matched
+all 48 validation rows and all eight final full-test rows against CPU local
+execution. Those execution checks establish numerical/state consistency, not
+comparative algorithm performance.
+
 CIFAR evaluation uses disjoint training/validation/test splits. Balanced fixed
 validation subsets accelerate curves; final test tasks explicitly select the
 full held-out test set. Their metric-cache key includes the evaluation split,

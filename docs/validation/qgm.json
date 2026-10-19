@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-19",
+  "implementation_revision": "c830468",
+  "replay_provenance_revision": "bb0eb9b",
+  "update_contract": "ICML 2021 QG-DSGDm, exactly one gradient step per exchange; ordinary and Nesterov variants",
+  "suites": {
+    "main_macos_cpu": {
+      "passed": 227,
+      "cuda_skipped": 13
+    },
+    "research_macos_cpu": {
+      "passed": 252,
+      "cuda_skipped": 13
+    },
+    "common_frozen_linux_cuda": {
+      "passed": 265,
+      "skipped": 0
+    }
+  },
+  "reference_audit": {
+    "passed": true,
+    "reference_commit": "d1d2f758c549db6093c52be71bcdbdf1a3976549",
+    "reference_file": "code/pcode/optim/decentralized_qg_sgd.py",
+    "source_sha256": "5bb138182cc28730ee24f9ee81c1e52d72148519fa71c8b2ce61bfac6af8511f",
+    "workers": 4,
+    "steps": 8,
+    "nesterov": [
+      false,
+      true
+    ],
+    "weight_decay": 0.01,
+    "max_parameter_error": 2.220446049250313e-16,
+    "scope": "Actual reference optimizer numerical step with predetermined weighted transport; excludes MPI setup"
+  },
+  "broker_validation": {
+    "scope": "QGM Nesterov CIFAR-10 saved-DAG replay, validation and final heldout tasks; compared against CPU local executor",
+    "cases": [
+      {
+        "brokers": 1,
+        "workers_per_broker": 2,
+        "metric_rows": 48,
+        "status": "matched-local",
+        "wall_seconds": 15.221,
+        "full_test_rows_matched": 8
+      },
+      {
+        "brokers": 2,
+        "workers_per_broker": 1,
+        "metric_rows": 48,
+        "status": "matched-local",
+        "wall_seconds": 14.919,
+        "full_test_rows_matched": 8
+      }
+    ]
+  },
+  "execution_snapshot": {
+    "revision": "0334052",
+    "source_sha256": "f8cb89129d345e21e6823d2e7f8f1b8328e4e074f9bfff50e0866acaea72332a",
+    "digest_definition": "SHA256 of sorted dasklearn/**/*.py and scripts/*.py relative path bytes followed by file bytes",
+    "server_code": "/mnt/data/mdevos/conflux/qgm-evaluation-code",
+    "torch": "2.14.1+cu130",
+    "cuda_tests_log": "/mnt/data/mdevos/conflux/qgm-cuda-tests.txt"
+  }
+}
