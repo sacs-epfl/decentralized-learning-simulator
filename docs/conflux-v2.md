@@ -76,6 +76,7 @@ maintained suite with `python -m pytest` on this branch.
 - [Baseline comparisons and upload/reducer ablations](experiments/peer-baselines.md).
 - [DSpodFL comparison](experiments/dspodfl.md).
 - [DeMo comparison](experiments/demo.md).
+- [QG momentum comparison: fresh one-step CIFAR-10 matrix](experiments/qgm.md).
 - [Original research log, including Tiny ImageNet and execution optimizations](experiments/research-log.md).
 - Compact results, manifests, plots and audit scripts retain their original
   paths under `output/`. Raw DAGs and per-node files remain in the server paths

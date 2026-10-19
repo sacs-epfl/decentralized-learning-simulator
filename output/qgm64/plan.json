@@ -1,0 +1,32 @@
+{
+  "source_sha256": "f8cb89129d345e21e6823d2e7f8f1b8328e4e074f9bfff50e0866acaea72332a",
+  "variants": [
+    "qgm",
+    "dsgdm",
+    "dsgd",
+    "conflux-v2"
+  ],
+  "rates": [
+    0.001,
+    0.003,
+    0.01,
+    0.03,
+    0.1
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "peers": 64,
+  "duration": 900,
+  "nesterov": true,
+  "dataset_base_path": "/mnt/data/mdevos/conflux/datasets",
+  "torch": "2.14.1+cu130",
+  "capacity": "same mean 20ms/SGD step and 100000 B/s; independent compute/BW heterogeneity",
+  "data": "45000 training, disjoint 5000 validation, disjoint 10000 test; GN-LeNet, no augmentation",
+  "learning": "one gradient step per exchange; beta=mu=.9; no weight decay; V2 S=N/4, K=R=16, immediate uploads",
+  "selection_rule": "Per variant, highest mean uniform IID/Dirichlet full validation accuracy at final time, seed 0; lower LR breaks ties.",
+  "curves": "Balanced fixed 1000-image validation subset; final full 10000-image test, all nodes",
+  "limitation": "Small validation LR grid; does not reproduce the paper model, epoch schedule, or tuned recipe"
+}
