@@ -20,6 +20,7 @@ from dasklearn.simulation.conflux_v2.settings import add_conflux_v2_arguments
 from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments
 from dasklearn.simulation.demo.settings import add_demo_arguments
 from dasklearn.simulation.choco.settings import add_choco_arguments, choco_options
+from dasklearn.simulation.qgm.settings import add_qgm_arguments, qgm_options
 
 
 async def main():
@@ -38,6 +39,7 @@ async def main():
     add_dspodfl_arguments(p)
     add_demo_arguments(p)
     add_choco_arguments(p)
+    add_qgm_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--model-bytes", type=int)

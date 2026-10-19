@@ -32,3 +32,18 @@ async def test_streaming_executor_preserves_every_snapshot(tmp_path):
         sim.merge_accuracies_files()
         frames.append(pd.read_csv(sim.data_dir + "/accuracies.csv").sort_values(["time", "peer"]).reset_index(drop=True))
     pd.testing.assert_frame_equal(*frames)
+
+
+def test_balanced_evaluation_subset_is_reproducible_and_stays_in_its_split():
+    import torch
+    from dasklearn.datasets.cifar10 import CifarPartition
+    labels=torch.arange(10).repeat_interleave(40);features=torch.zeros(400,3,2,2)
+    indices=np.concatenate([np.arange(i*40,i*40+20) for i in range(10)])
+    partition=CifarPartition(features,labels,indices)
+    subset=partition.evaluation_subset(100)
+    assert subset is partition.evaluation_subset(100)
+    assert np.isin(subset.indices,indices).all()
+    assert np.array_equal(np.bincount(labels[subset.indices]),np.full(10,10))
+    assert np.array_equal(subset.indices,CifarPartition(features,labels,indices).evaluation_subset(100).indices)
+    assert partition.evaluation_subset(1000) is partition
+    with pytest.raises(ValueError):partition.evaluation_subset(11)

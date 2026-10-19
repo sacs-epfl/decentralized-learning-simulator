@@ -26,6 +26,7 @@ from dasklearn.simulation.peer_baselines import BASELINE_VARIANTS, baseline_spec
 from dasklearn.simulation.dspodfl.settings import add_dspodfl_arguments,dspodfl_options
 from dasklearn.tasks.task import Task
 from dasklearn.simulation.choco.settings import add_choco_arguments, choco_options
+from dasklearn.simulation.qgm.settings import add_qgm_arguments, qgm_options
 from dasklearn.util import MICROSECONDS
 from dasklearn import AUGMENTATION_FACTOR_SIM
 from validate_algorithms import plot
@@ -43,6 +44,7 @@ async def main():
     p.add_argument("--relay-count", type=int, default=0)
     add_dspodfl_arguments(p)
     add_choco_arguments(p)
+    add_qgm_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--duration", type=int, default=1800)
@@ -81,9 +83,12 @@ async def main():
     else:
         cls, config, specific = baseline_spec(args.variant, args.peers, args.sample_size,
                                              args.group_size, args.averaging_steps)
+    if args.variant in {'qgm','dsgdm','dsgd'}:
+        mode=specific['mode'];specific.update(qgm_options(args))
+        if args.variant!='qgm':specific['mode']=mode
     if args.variant=='choco':specific.update(choco_options(args))
     if args.variant=='dspodfl':specific.update(dspodfl_options(args))
-    settings = config(algorithm="shatter" if args.variant == "shatter-r2" else args.variant, seed=args.seed,
+    settings = config(algorithm="shatter" if args.variant == "shatter-r2" else "qgm" if args.variant in {"qgm","dsgdm","dsgd"} else args.variant, seed=args.seed,
         work_dir=str(args.output), dataset="tiny_imagenet", model="resnet18", participants=args.peers,
         dataset_base_path=args.data, partitioner="dirichlet", alpha=.1,
         torch_device_name=str(device), torch_threads=args.torch_threads,

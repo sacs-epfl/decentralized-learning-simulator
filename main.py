@@ -117,10 +117,12 @@ def run():
     from dasklearn.simulation.dspodfl.settings import dspodfl_options
     from dasklearn.simulation.demo.settings import demo_options
     from dasklearn.simulation.choco.settings import choco_options
+    from dasklearn.simulation.qgm.settings import qgm_options
     algorithm_params = {
         "conflux-v2": {"sample_size": args.sample_size, "chunks_in_sample": args.chunks_in_sample,
                        "success_fraction": args.success_fraction, "relay_count": args.relay_count,
                        "immediate_uploads": args.immediate_uploads},
+        "qgm": qgm_options(args),
         "choco": choco_options(args),
         "demo": demo_options(args),
         "dspodfl": dspodfl_options(args),

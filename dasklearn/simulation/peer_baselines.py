@@ -11,12 +11,16 @@ from dasklearn.simulation.demo.settings import DeMoSettings
 from dasklearn.simulation.demo.simulation import DeMoSimulation
 from dasklearn.simulation.choco.settings import ChocoSettings
 from dasklearn.simulation.choco.simulation import ChocoSimulation
+from dasklearn.simulation.qgm.settings import QGMSettings
+from dasklearn.simulation.qgm.simulation import QGMSimulation
 
 
-BASELINE_VARIANTS = ("choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
+BASELINE_VARIANTS = ("qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
 
 
 def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
+    if variant in {'qgm','dsgdm','dsgd'}:
+        return QGMSimulation, QGMSettings, {'mode':{'qgm':'quasi','dsgdm':'local','dsgd':'plain'}[variant]}
     if variant == 'choco':
         return ChocoSimulation, ChocoSettings, {}
     if variant == 'demo':
