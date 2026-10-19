@@ -97,6 +97,50 @@ tests check both split isolation and balanced subset membership.
 
 `benchmark_qgm.py` supports separate tuning, LR selection and evaluation phases
 with resumable per-job manifests and disjoint worker slots. The implementation
-and experiments are recorded separately; see the evaluation report added after
-completion for the actual configuration, source hashes, tuning choices and
-results. Historical experiment directories are not modified.
+and experiments are recorded separately. Historical experiment directories are
+not modified.
+
+## CIFAR-10 screening benchmark
+
+The [audited benchmark record](validation/qgm-cifar64.json) contains all 36
+baseline runs: 64 nodes, three seeds, uniform/heterogeneous capacities and
+IID/Dirichlet-alpha-.1 partitions, GN-LeNet without augmentation, batch 32,
+one gradient step per exchange, and 900 simulated seconds. The fixed ring uses
+symmetric Metropolis mixing. Independent compute/network heterogeneity preserves
+the uniform profile's mean capacity (20 ms per gradient step and 100000 B/s).
+These are synthetic capacities, not FedScale traces. Membership is stable.
+
+Each variant selected its learning rate from `.001,.003,.01,.03,.1` using the
+mean final full-validation accuracy across uniform IID/non-IID seed-0 runs.
+The selected rates are `.003` for QG/local momentum and `.01` for plain DSGD;
+beta=mu=.9, Nesterov enabled for both momentum variants, zero weight decay.
+Training uses 45000 examples, selection uses a disjoint 5000, and final test
+uses the separate full 10000-image set. Six curves use a fixed balanced
+1000-image validation subset; those curves are distinct from final test metrics.
+
+Final full-test accuracy, mean of all 64 stored local models, then mean ± sample
+SD over the three seeds:
+
+| Capacities | Data | Plain DSGD | Local momentum | QG momentum |
+|---|---|---:|---:|---:|
+| Uniform | IID | 35.27 ± 0.17 | 44.10 ± 0.50 | 44.24 ± 0.21 |
+| Uniform | Dirichlet α=.1 | 19.29 ± 0.43 | 20.86 ± 1.21 | 25.23 ± 1.09 |
+| Heterogeneous | IID | 27.45 ± 0.41 | 34.12 ± 0.52 | 32.85 ± 0.41 |
+| Heterogeneous | Dirichlet α=.1 | 15.66 ± 0.67 | 17.13 ± 0.51 | 19.14 ± 1.05 |
+
+QG's correction improves non-IID accuracy over persistent local momentum by
+4.37/2.01 percentage points, with lower cross-entropy (2.577/2.853 versus
+3.310/3.497). IID performance is tied under uniform capacities and worse than
+local momentum under heterogeneous capacities. This is screening evidence, not
+a universal ranking or reproduction of the paper's architecture/training recipe.
+
+All three controls have exactly identical simulated traffic/work within each
+profile/seed. Uniform runs send 4.713 decimal GB and schedule 6937 gradient
+tasks; heterogeneous means are 1.809 GB and 2678.67 tasks. Traffic includes
+in-flight bytes at the final snapshot. Every node at all six snapshots and
+all final test rows is finite; capacities match exactly across controls.
+Real per-run GPU execution is approximately 58–61 seconds (uniform) and 27–29
+seconds (heterogeneous), separately from the 900-second simulated horizon.
+Custom gradient tasks use scalar CUDA execution. These execution timings do not
+establish algorithm speed. Broader tuning, longer runs, other models/topologies
+and more seeds could change the result.
