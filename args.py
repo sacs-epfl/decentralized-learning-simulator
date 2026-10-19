@@ -45,6 +45,8 @@ def get_args():
     parser.add_argument('--teleportation-topology', choices=['ring', 'hypercube', 'complete'], default='ring')
     parser.add_argument('--topology', type=str, default="kreg", choices=["ring", "kreg"])
     parser.add_argument('--sample-size', type=int, default=10)
+    parser.add_argument('--fl-weighting', choices=['uniform', 'examples'], default='uniform',
+                        help='Centralized FL client weights: historical uniform or partition example counts')
     parser.add_argument('--chunks-in-sample', type=int, default=10)
     parser.add_argument('--success-fraction', type=float, default=1)
     parser.add_argument('--control-message-bytes', type=int, default=64)
@@ -99,6 +101,8 @@ def get_broker_args():
     # Learning settings
     parser.add_argument("--port", type=int, default=5556)
     parser.add_argument('--coordinator', type=str)
+    parser.add_argument('--advertise-host', default=None,
+                        help='Broker address reachable by coordinator and other brokers')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--profile', action=argparse.BooleanOptionalAction)
 

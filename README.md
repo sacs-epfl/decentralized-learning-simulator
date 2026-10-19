@@ -35,27 +35,29 @@ supports an existing environment. Hugging Face-backed datasets require
 
 ## Algorithms
 
-| Algorithm | CLI name / runner alias | Paper or original source | Implementation notes |
-|---|---|---|---|
-| FedAvg / centralized FL | `fl` | [Communication-Efficient Learning of Deep Networks from Decentralized Data — AISTATS 2017](https://proceedings.mlr.press/v54/mcmahan17a.html) | Legacy centralized averaging baseline. |
-| D-PSGD | `dpsgd` | [Can Decentralized Algorithms Outperform Centralized Algorithms? — NeurIPS 2017](https://papers.nips.cc/paper/2017/hash/f75526659f31040afeb61cb7133e4e6d-Abstract.html) | Legacy fixed-topology implementation. |
-| AD-PSGD (A-DPSGD) | `adpsgd` | [Asynchronous Decentralized Parallel Stochastic Gradient Descent — ICML 2018](https://proceedings.mlr.press/v80/lian18a.html) | Legacy asynchronous implementation. |
-| Epidemic Learning | `epidemic` | [Epidemic Learning: Boosting Decentralized Learning with Randomized Communication — NeurIPS 2023](https://papers.nips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html) | Legacy changing-topology implementation. |
-| Gossip Learning | `gossip` | [Gossip Learning as a Decentralized Alternative to Federated Learning — DAIS 2019](https://www.inf.u-szeged.hu/~ihegedus/publ/dais19a.pdf) | Legacy periodic gossip and model-age weighting. |
-| Super Gossip Learning | `super-gossip` | [Budaj's EPFL thesis, §4.5 — 2024](https://www.epfl.ch/labs/sacs/wp-content/uploads/2024/07/2024-spring-lubor-1.pdf#page=23); [original project](https://github.com/sacs-epfl/async-dl) | Internal research variant; no separate peer-reviewed paper identified. |
-| Heterogeneous Gossip Learning (HGL) | `lubor` | [Budaj's EPFL thesis, Chapter 6 — 2024](https://www.epfl.ch/labs/sacs/wp-content/uploads/2024/07/2024-spring-lubor-1.pdf#page=39) | Thesis prototype; retains its historical CLI name. |
-| Shatter | `shatter`; `shatter-r2`, `shatter-r4` in runners | [Noiseless Privacy-Preserving Decentralized Learning — PoPETs 2025](https://petsymposium.org/popets/2025/popets-2025-0043.php) | Real-node chunked-exchange specialization. |
-| Moshpit SGD | `moshpit` | [Moshpit SGD: Communication-Efficient Decentralized Training on Heterogeneous Unreliable Devices — NeurIPS 2021](https://papers.neurips.cc/paper_files/paper/2021/hash/97275a23ca44226c9964043c8462be96-Abstract.html) | Stable-membership group collectives. |
-| Teleportation | `teleportation`; `teleportation-ring`, `teleportation-hypercube` in runners | [Scalable Decentralized Learning with Teleportation — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/b3732a13897c4cea145c3bdece80de64-Abstract-Conference.html) | Algorithm 1 specialization; hypercube is not the paper's Base-2 graph. |
-| D-Local-SGD | `d-local-sgd-ring` in runners | [A Unified Theory of Decentralized SGD with Changing Topology and Local Updates — ICML 2020](https://proceedings.mlr.press/v119/koloskova20a.html) | Fixed full-participation ring with configurable local updates. |
-| DSpodFL | `dspodfl` | [Decentralized Sporadic Federated Learning: A Unified Algorithmic Framework with Convergence Guarantees — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/9521b6e7f33e039e7d92e23f5e37bbf4-Abstract-Conference.html) | One-step rule and explicit local-SGD block extension. |
-| DeMo | `demo` | [DeMo: Decoupled Momentum Optimization — ICLR 2026](https://proceedings.iclr.cc/paper_files/paper/2026/hash/17790fc9b4828206f99a0dea35da3657-Abstract-Conference.html) | Reference Signum optimizer; ring all-gather and CNN adaptation. |
-| Conflux (original) | `conflux` | Unpublished prototype; related sampling work: [Practical Federated Learning without a Server — EuroMLSys 2025](https://euromlsys.eu/pdf/euromlsys25-10.pdf). | Chunked sampling prototype; not an implementation of Plexus. |
-| Conflux V2 | `conflux-v2` | [Research protocol documentation](docs/conflux-v2.md); unpublished prototype. | Research branch only. |
+| Algorithm | CLI name / runner alias | Paper or original source | Implementation notes | Validation status |
+|---|---|---|---|---|
+| FedAvg / centralized FL | `fl` | [Communication-Efficient Learning of Deep Networks from Decentralized Data — AISTATS 2017](https://proceedings.mlr.press/v54/mcmahan17a.html) | Fixed local steps; uniform weights by default, example weighting optional. | Equation + integration checks |
+| D-PSGD | `dpsgd` | [Can Decentralized Algorithms Outperform Centralized Algorithms? — NeurIPS 2017](https://papers.nips.cc/paper/2017/hash/f75526659f31040afeb61cb7133e4e6d-Abstract.html) | Fixed-topology train-then-average variant; differs from the original paper’s update order. | Equation + integration checks |
+| AD-PSGD (A-DPSGD) | `adpsgd` | [Asynchronous Decentralized Parallel Stochastic Gradient Descent — ICML 2018](https://proceedings.mlr.press/v80/lian18a.html) | Active/passive asynchronous specialization; single-gradient passive updates. | Update + integration checks |
+| Epidemic Learning | `epidemic` | [Epidemic Learning: Boosting Decentralized Learning with Randomized Communication — NeurIPS 2023](https://papers.nips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html) | Changing directed/regular graphs; paper equivalence not established. | Mixing + integration checks |
+| Gossip Learning | `gossip` | [Gossip Learning as a Decentralized Alternative to Federated Learning — DAIS 2019](https://www.inf.u-szeged.hu/~ihegedus/publ/dais19a.pdf) | Legacy periodic gossip and model-age weighting. | Legacy |
+| Super Gossip Learning | `super-gossip` | [Budaj's EPFL thesis, §4.5 — 2024](https://www.epfl.ch/labs/sacs/wp-content/uploads/2024/07/2024-spring-lubor-1.pdf#page=23); [original project](https://github.com/sacs-epfl/async-dl) | Internal research variant; no separate peer-reviewed paper identified. | Legacy |
+| Heterogeneous Gossip Learning (HGL) | `lubor` | [Budaj's EPFL thesis, Chapter 6 — 2024](https://www.epfl.ch/labs/sacs/wp-content/uploads/2024/07/2024-spring-lubor-1.pdf#page=39) | Thesis prototype; retains its historical CLI name. | Legacy |
+| Shatter | `shatter`; `shatter-r2`, `shatter-r4` in runners | [Noiseless Privacy-Preserving Decentralized Learning — PoPETs 2025](https://petsymposium.org/popets/2025/popets-2025-0043.php) | Real-node chunked-exchange specialization. | Protocol checks |
+| Moshpit SGD | `moshpit` | [Moshpit SGD: Communication-Efficient Decentralized Training on Heterogeneous Unreliable Devices — NeurIPS 2021](https://papers.neurips.cc/paper_files/paper/2021/hash/97275a23ca44226c9964043c8462be96-Abstract.html) | Stable-membership group collectives. | Equation checks |
+| Teleportation | `teleportation`; `teleportation-ring`, `teleportation-hypercube` in runners | [Scalable Decentralized Learning with Teleportation — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/b3732a13897c4cea145c3bdece80de64-Abstract-Conference.html) | Algorithm 1 specialization; hypercube is not the paper's Base-2 graph. | Equation checks |
+| D-Local-SGD | `d-local-sgd-ring` in runners | [A Unified Theory of Decentralized SGD with Changing Topology and Local Updates — ICML 2020](https://proceedings.mlr.press/v119/koloskova20a.html) | Fixed full-participation ring with configurable local updates. | Shared Teleportation checks |
+| DSpodFL | `dspodfl` | [Decentralized Sporadic Federated Learning: A Unified Algorithmic Framework with Convergence Guarantees — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/9521b6e7f33e039e7d92e23f5e37bbf4-Abstract-Conference.html) | One-step rule and explicit local-SGD block extension. | Equation checks |
+| DeMo | `demo` | [DeMo: Decoupled Momentum Optimization — ICLR 2026](https://proceedings.iclr.cc/paper_files/paper/2026/hash/17790fc9b4828206f99a0dea35da3657-Abstract-Conference.html) | Reference Signum optimizer; ring all-gather and CNN adaptation. | Optimizer reference check |
+| Conflux (original) | `conflux` | Unpublished prototype; related sampling work: [Practical Federated Learning without a Server — EuroMLSys 2025](https://euromlsys.eu/pdf/euromlsys25-10.pdf). | Chunked sampling prototype; not an implementation of Plexus. | Legacy |
+| Conflux V2 | `conflux-v2` | [Research protocol documentation](docs/conflux-v2.md); unpublished prototype. | Research branch only. | Protocol checks + research experiments |
 
 [Baseline contracts and sources](docs/peer-baselines.md),
 [DSpodFL semantics](docs/dspodfl.md), [DeMo semantics](docs/demo.md).
 Paper links identify the source algorithms, not a claim of exact paper reproduction.
+Validation labels describe specific checks, not a certification of every option.
+[Validation contracts, evidence and remaining gaps](docs/baseline-validation.md).
 Stable-membership restrictions, optimizer assumptions and adaptations are
 explicit in those documents. Legacy entries have not all been re-audited. PushSum remains on its existing experimental branch.
 

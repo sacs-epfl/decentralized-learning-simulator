@@ -110,10 +110,18 @@ def gradient_update(settings: SessionSettings, params: Dict):
 
 
 def aggregate(settings: SessionSettings, params: Dict):
+    global dataset
     models = params["models"]
     round_nr = params["round"]
     peer_id = params["peer"]
     weights = params["weights"] if "weights" in params else None
+    if params.get("weight_by_examples"):
+        if dataset is None:
+            dataset = create_dataset(settings)
+        counts = [len(dataset.load_partition(peer, "train")) for peer in params["sample_peers"]]
+        if not counts or min(counts) <= 0:
+            raise ValueError("FedAvg requires nonempty selected client partitions")
+        weights = [count / sum(counts) for count in counts]
     if peer_id is not None:
         logger.debug("Peer %d aggregating %d models in round %d...", peer_id, len(models), round_nr)
     else:

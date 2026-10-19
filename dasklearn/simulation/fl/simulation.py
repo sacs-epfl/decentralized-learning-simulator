@@ -12,6 +12,14 @@ class FLSimulation(Simulation):
 
     def __init__(self, settings: SessionSettings):
         super().__init__(settings)
+        if settings.sample_size == 0:
+            settings.sample_size = settings.participants
+        if settings.participants < 1 or settings.sample_size < 1 or settings.learning.local_steps < 1:
+            raise ValueError("FL requires positive participants, sample_size and local_steps")
+        if settings.aggregation_weighting not in {"uniform", "examples"}:
+            raise ValueError("aggregation_weighting must be uniform or examples")
+        if settings.churn != "none":
+            raise ValueError("FL currently supports stable membership only")
         self.server: Optional[FLServer] = None
 
         self.register_event_callback(START_ROUND, "start_next_round")

@@ -133,16 +133,17 @@ class BaseClient:
         self.simulator.workflow_dag.tasks[task.name] = task
         self.latest_task = task
         # Link inputs/outputs of particular tasks
-        if (task.func == "train" and task.data["model"][0] is not None) or task.func == "test" or \
-                (task.func == "compute_gradient" and task.data["model"] is not None) or task.func == "gradient_update" or task.func == "chunk":
+        if (task.func in {"train", "compute_gradient"} and task.data["model"] is not None
+                and task.data["model"][0] is not None) or task.func == "test" or task.func == "gradient_update" or task.func == "chunk":
             model_name, output_idx = task.data["model"]
             preceding_task: Task = self.simulator.workflow_dag.tasks[model_name]
             preceding_task.outputs.append((task, output_idx))
             task.inputs.append((preceding_task, output_idx))
             if task.func == "gradient_update" and task.data["gradient_model"] != task.data["model"]:
-                preceding_task: Task = self.simulator.workflow_dag.tasks[task.data["gradient_model"]]
-                preceding_task.outputs.append((task, 0))
-                task.inputs.append((preceding_task, 0))
+                gradient_name, gradient_idx = task.data["gradient_model"]
+                preceding_task: Task = self.simulator.workflow_dag.tasks[gradient_name]
+                preceding_task.outputs.append((task, gradient_idx))
+                task.inputs.append((preceding_task, gradient_idx))
         elif task.func == "aggregate":
             for model_name, output_idx in task.data["models"]:
                 preceding_task: Task = self.simulator.workflow_dag.tasks[model_name]

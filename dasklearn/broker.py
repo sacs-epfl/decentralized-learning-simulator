@@ -326,7 +326,7 @@ class Broker:
     async def start(self):
         self.communication = Communication(self.identity, self.args.port, self.on_message, is_broker=True)
         self.communication.start()
-        self.communication.connect_to_coordinator(self.args.coordinator)
+        self.communication.connect_to_coordinator(self.args.coordinator, getattr(self.args, "advertise_host", None))
 
         if self.args.profile:
             start_profile()
