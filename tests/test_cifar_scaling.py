@@ -4,16 +4,21 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from dasklearn.datasets.cifar10 import partition_indices
+from datasets import Dataset
+from dasklearn.datasets.huggingface import allocate_indices
+from dasklearn.session_settings import SessionSettings, LearningSettings
 from dasklearn.tasks.local import execute_local
 from helpers import settings, simulate
 
 
 @pytest.mark.parametrize("partitioner", ["iid", "dirichlet"])
 def test_cifar_partition_is_complete_disjoint_and_reproducible(partitioner):
-    labels = np.repeat(np.arange(10), 500)
-    parts = partition_indices(labels, 128, partitioner, .3, 42)
-    assert parts == partition_indices(labels, 128, partitioner, .3, 42)
+    labels = np.repeat(np.arange(10), 5000)
+    config = SessionSettings(algorithm="test", seed=42, work_dir="", dataset="cifar10", participants=128,
+                             partitioner=partitioner, alpha=.3, learning=LearningSettings(.1, 0, 0, 8, 1))
+    data = Dataset.from_dict({"label": labels})
+    parts = allocate_indices(data, config, min_size=8)
+    assert parts == allocate_indices(data, config, min_size=8)
     assert min(map(len, parts)) >= 8
     assert sorted(i for part in parts for i in part) == list(range(len(labels)))
 

@@ -11,7 +11,7 @@ import torch
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from flwr_datasets import FederatedDataset
+    from dasklearn.datasets.huggingface import FederatedData
 
 from dasklearn.datasets import create_dataset
 from dasklearn.model_evaluator import ModelEvaluator
@@ -25,7 +25,7 @@ from dasklearn.util import MICROSECONDS
 
 logger = logging.getLogger(__name__)
 model_trainers: Optional[List[ModelTrainer]] = None
-dataset: Optional[FederatedDataset] = None
+dataset: Optional[FederatedData] = None
 evaluator = None
 last_test_metrics = None
 lock = threading.Lock()
@@ -276,8 +276,8 @@ accumulation, NOT H local DeMo steps without communicating. H=1 is canonical.
     parameters = list(model.parameters())
     gradients = [torch.zeros_like(p) for p in parameters]
     lossf = torch.nn.NLLLoss() if settings.dataset == 'cifar10' and settings.model not in ['resnet8', 'resnet18', 'mobilenet_v3_large'] else torch.nn.CrossEntropyLoss()
-    feature = 'x' if settings.dataset == 'femnist' else 'image' if settings.dataset == 'tiny_imagenet' else 'img'
-    label = 'y' if settings.dataset == 'femnist' else 'label'
+    from dasklearn.datasets.huggingface import column_names
+    feature, label = column_names(settings)
     cuda_devices = [torch.device(device).index or 0] if torch.device(device).type == 'cuda' else []
     with torch.random.fork_rng(devices=cuda_devices):
         torch.manual_seed(seed)
@@ -287,9 +287,9 @@ accumulation, NOT H local DeMo steps without communicating. H=1 is canonical.
             except StopIteration:
                 batches = iter(loader); batch = next(batches)
             model.zero_grad(set_to_none=True)
-            if settings.dataset == "text":
-                from dasklearn.datasets.text import text_forward
-                text_forward(model, batch, device)[0].backward()
+            if settings.lora:
+                from dasklearn.lora import lora_forward
+                lora_forward(model, batch, device)[0].backward()
             else:
                 lossf(model(batch[feature].to(device)), batch[label].to(device)).backward()
             for gradient, parameter in zip(gradients, parameters):

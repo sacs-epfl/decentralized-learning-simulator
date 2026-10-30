@@ -74,7 +74,7 @@ async def main():
                 "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
                 "split": "45000 training / 5000 validation / 10000 test; no augmentation",
                 "capacity": "same mean bandwidth and compute step time across profiles"}
-    provenance = Path(args.dataset_base_path) / "cifar10-hf-manifest.json"
+    provenance = Path(args.dataset_base_path) / "source.json"
     if provenance.exists():
         manifest["dataset_provenance"] = json.loads(provenance.read_text())
     manifest = json.loads(json.dumps(manifest, default=str))

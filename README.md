@@ -38,12 +38,12 @@ python -m pytest -q
 The environment specifies Python 3.12 and the modern Torch/TorchVision versions
 used for validation. CPU execution works without CUDA. For a GPU host, install a
 compatible CUDA Torch build in the Conda environment. `requirements.txt` also
-supports an existing environment. Hugging Face-backed datasets require
-`flwr-datasets`; speech transforms use `librosa`.
+supports an existing environment. Both dependency files include Hugging Face
+`datasets` and Flower `flwr-datasets`; speech transforms use `librosa`.
 
 ## LoRA fine-tuning
 
-LoRA supports pretrained Hugging Face transformers with a shared frozen base per
+LoRA supports pretrained Hugging Face text and vision transformers with a shared frozen base per
 worker and adapter-only client state. Install `requirements-lora.txt` inside your
 conda environment, then run `scripts/run_lora.py` for local execution without
 brokers. See [LoRA setup, CLI examples, memory model and validation](docs/lora.md).
@@ -92,8 +92,9 @@ python scripts/validate_algorithms.py --variants shatter-r2 moshpit \
 
 The runner also supports bundled handwritten digits (`--dataset digits`).
 `validate_conflux.py` remains a compatibility entry point for older commands.
-CIFAR-10 and Tiny ImageNet use `prepare_cifar.py` / `prepare_tiny.py` followed by
-`run_cifar.py` / `run_tiny.py`; use `--help` for their dataset paths and settings.
+CIFAR-10 and Tiny ImageNet can load directly from Hugging Face. For offline
+benchmark runs, save them with `scripts/prepare_dataset.py` and pass the directory
+to `run_cifar.py` / `run_tiny.py`; see [dataset configuration](docs/datasets.md).
 Each run records parameters, versions, a source hash and per-run outputs.
 
 At fixed simulated times, accuracy is the mean of all nodes' latest completed

@@ -2,12 +2,12 @@
 
 Normalization matches the existing CIFAR pipeline. No augmentation is used.
 """
-from pathlib import Path
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+from dasklearn.datasets.huggingface import allocate_indices, load_splits
 
 class CifarPartition(Dataset):
     def __init__(self, features, labels, indices):
@@ -43,63 +43,27 @@ class CifarPartition(Dataset):
         return self.subsets[count]
 
 
-def partition_indices(labels, participants, partitioner, alpha, seed):
-    rng = np.random.default_rng(seed)
-    if participants < 1 or participants * 8 > len(labels):
-        raise ValueError("CIFAR validation needs at least eight examples per client")
-    if partitioner == "iid":
-        return [part.tolist() for part in np.array_split(rng.permutation(len(labels)), participants)]
-    if partitioner != "dirichlet" or alpha <= 0:
-        raise ValueError("Native CIFAR supports IID or positive-alpha Dirichlet partitioning")
-    parts = [[] for _ in range(participants)]
-    for label in np.unique(labels):
-        indices = rng.permutation(np.flatnonzero(labels == label))
-        counts = rng.multinomial(len(indices), rng.dirichlet(np.full(participants, alpha)))
-        for peer, chunk in enumerate(np.split(indices, np.cumsum(counts)[:-1])):
-            parts[peer].extend(chunk.tolist())
-    # Move examples, never duplicate them. Record the resulting size histogram.
-    for part in parts:
-        while len(part) < 8:
-            part.append(max(parts, key=len).pop())
-    return parts
-
-
 class Cifar10Dataset:
     def __init__(self, settings):
-        from torchvision.datasets import CIFAR10
         if settings.model not in ["gnlenet", "lenet"]:
             raise ValueError("Native CIFAR tensor loading currently supports gnlenet/lenet")
-        root = str(Path(settings.dataset_base_path).expanduser())
-        archive = Path(root) / "cifar10-hf.npz"
-        if archive.exists():
-            with np.load(archive, allow_pickle=False) as data:
-                train_images, labels = data["train_images"], data["train_labels"]
-                test_images, test_labels = data["test_images"], data["test_labels"]
-        else:
-            train, test = CIFAR10(root, train=True, download=True), CIFAR10(root, train=False, download=True)
-            train_images, labels = train.data, np.asarray(train.targets)
-            test_images, test_labels = test.data, np.asarray(test.targets)
-        rng = np.random.default_rng(1729)  # Fixed held-out data across training seeds.
-        validation, training = [], []
-        for label in range(10):
-            ids = rng.permutation(np.flatnonzero(labels == label))
-            validation.extend(ids[:500])
-            training.extend(ids[500:])
+        splits = load_splits(settings)
         mean = torch.tensor([.4914, .4822, .4465]).view(1, 3, 1, 1)
         std = torch.tensor([.2470, .2435, .2616]).view(1, 3, 1, 1)
 
-        def features(images):
-            return (torch.from_numpy(images).permute(0, 3, 1, 2).float().div_(255) - mean) / std
+        def tensors(split):
+            images = np.stack([np.asarray(image.convert("RGB")) for image in split["img"]])
+            features = torch.from_numpy(images).permute(0, 3, 1, 2).float().div_(255)
+            return features.sub_(mean).div_(std), torch.tensor(list(split["label"]))
 
-        train_features, train_labels = features(train_images), torch.tensor(labels)
-        self.validation = CifarPartition(train_features, train_labels, validation)
-        self.test = CifarPartition(features(test_images), torch.tensor(test_labels), np.arange(len(test_labels)))
-        training = np.asarray(training)
-        indices = partition_indices(labels[training], settings.participants, settings.partitioner, settings.alpha, settings.seed)
-        self.partitions = [CifarPartition(train_features, train_labels, training[part]) for part in indices]
+        indices = allocate_indices(splits["train"], settings, min_size=8)
+        features, labels = tensors(splits["train"])
+        self.partitions = [CifarPartition(features, labels, part) for part in indices]
+        self.validation = CifarPartition(*tensors(splits["validation"]), np.arange(len(splits["validation"])))
+        self.test = CifarPartition(*tensors(splits["test"]), np.arange(len(splits["test"])))
 
     def load_partition(self, peer, split="train"):
         return self.partitions[peer]
 
     def load_split(self, split):
-        return self.validation if split == "validation" else self.test
+        return {"validation": self.validation, "test": self.test}[split]

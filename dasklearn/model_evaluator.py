@@ -6,11 +6,10 @@ if TYPE_CHECKING:
     from datasets import Dataset
 
 if TYPE_CHECKING:
-    from flwr_datasets import FederatedDataset
+    from dasklearn.datasets.huggingface import FederatedData
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
@@ -22,41 +21,29 @@ class ModelEvaluator:
     Contains the logic to evaluate the accuracy of a given model on a test dataset.
     """
 
-    def __init__(self, dataset: FederatedDataset, settings: SessionSettings):
+    def __init__(self, dataset: FederatedData, settings: SessionSettings):
         self.dataset = dataset
         self.settings: SessionSettings = settings
         self.partition: Optional[Dataset] = None
 
     def evaluate_accuracy(self, model, device_name: str = "cpu", evaluation_examples=None):
-        if not self.partition:
-            partition_name = "valid" if self.settings.dataset == "tiny_imagenet" else "test"
-            if self.settings.evaluation_split != "test":
-                partition_name = self.settings.evaluation_split
-            self.partition = self.dataset.load_split(partition_name)
-            if self.settings.dataset == "cifar10":
-                from dasklearn.datasets.transforms import apply_transforms_cifar10, apply_transforms_cifar10_resnet
-                transforms = apply_transforms_cifar10_resnet if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else apply_transforms_cifar10
-                self.partition = self.partition.with_transform(transforms)
-            elif self.settings.dataset == "femnist":
-                from dasklearn.datasets.transforms import apply_transforms_femnist
-                self.partition = self.partition.with_transform(apply_transforms_femnist)
-            elif self.settings.dataset == "google_speech":
-                from dasklearn.datasets.transforms import preprocess_audio_test as transforms
-                # filter removes the silent samples from testing/training as they don't really have a label
-                self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)
-            elif self.settings.dataset == "tiny_imagenet":
-                from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
-                self.partition = self.partition.with_transform(apply_transforms_tiny_imagenet_resnet)
-            elif self.settings.dataset in ["synthetic", "digits", "text"]:
-                pass
-            else:
-                raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
+        if self.partition is None:
+            from dasklearn.datasets.transforms import prepare_partition
+            self.partition = prepare_partition(
+                self.dataset.load_split(self.settings.evaluation_split), self.settings, training=False)
 
         limit = self.settings.evaluation_examples if evaluation_examples is None else evaluation_examples
-        partition = self.partition.evaluation_subset(limit) if limit else self.partition
-        if self.settings.dataset == "text":
-            from dasklearn.datasets.text import evaluate_text
-            return evaluate_text(model, partition, self.settings, device_name)
+        partition = self.partition
+        if limit:
+            if limit < 0:
+                raise ValueError("evaluation_examples must be nonnegative")
+            partition = (partition.evaluation_subset(limit) if hasattr(partition, "evaluation_subset")
+                         else partition.select(range(min(limit, len(partition)))))
+        if not len(partition):
+            raise ValueError("Cannot evaluate an empty dataset split")
+        if self.settings.lora:
+            from dasklearn.lora import evaluate_lora
+            return evaluate_lora(model, partition, self.settings, device_name)
         test_loader = DataLoader(partition, batch_size=256)
         device = torch.device(device_name)
 
@@ -64,14 +51,8 @@ class ModelEvaluator:
         model.to(device)
         model.eval()
 
-        if self.settings.dataset == "femnist":
-            feature_column_name = "x"
-        elif self.settings.dataset == "tiny_imagenet":
-            feature_column_name = "image"
-        else:
-            feature_column_name = "img"
-
-        label_column_name = "y" if self.settings.dataset == "femnist" else "label"
+        from dasklearn.datasets.huggingface import column_names
+        feature_column_name, label_column_name = column_names(self.settings)
 
         if self.settings.dataset == "cifar10":
             lossf = nn.CrossEntropyLoss() if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else nn.NLLLoss()

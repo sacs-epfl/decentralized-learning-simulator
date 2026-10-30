@@ -7,7 +7,7 @@ import torch.nn as nn
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from flwr_datasets import FederatedDataset
+    from dasklearn.datasets.huggingface import FederatedData
 
 from dasklearn.gradient_aggregation import GradientAggregationMethod
 from dasklearn.gradient_aggregation.fedavg import FedAvg
@@ -20,7 +20,7 @@ class ModelManager:
     This class manages the current ML model and training.
     """
 
-    def __init__(self, dataset: FederatedDataset, settings: SessionSettings, participant_index: int):
+    def __init__(self, dataset: FederatedData, settings: SessionSettings, participant_index: int):
         self.settings: SessionSettings = settings
         self.participant_index: int = participant_index
         self.logger = logging.getLogger(self.__class__.__name__)

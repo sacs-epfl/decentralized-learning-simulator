@@ -12,8 +12,9 @@ pytest-asyncio==1.4.0
 requests==2.34.2
 setproctitle==1.3.8
 scikit-learn==1.9.1
-# Optional for Hugging Face datasets (not required for offline validation).
-flwr-datasets>=0.3
+# Shared data loading and federated partitioning.
+datasets>=3,<5
+flwr-datasets>=0.6,<0.7
 
 # Speech and legacy plotting support retained from main.
 librosa~=0.11.0

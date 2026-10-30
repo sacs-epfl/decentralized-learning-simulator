@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from dasklearn.datasets.femnist import FLAT_SIZE, NUM_CLASSES
+FLAT_SIZE, NUM_CLASSES = 28 * 28, 62
 from dasklearn.models.Model import Model
 from dasklearn.models.resnet import BasicBlock, Bottleneck, conv1x1
 

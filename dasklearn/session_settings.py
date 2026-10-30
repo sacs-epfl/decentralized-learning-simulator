@@ -36,6 +36,7 @@ class SessionSettings:
     base_model: Optional[str] = None
     model_revision: Optional[str] = None
     tokenizer: Optional[str] = None
+    image_processor: Optional[str] = None
     lora_rank: int = 8
     lora_alpha: float = 16
     lora_dropout: float = 0.0
@@ -48,7 +49,19 @@ class SessionSettings:
     text_column: str = "text"
     label_column: str = "label"
     alpha: float = 1
+    dataset_name: Optional[str] = None
+    dataset_config: Optional[str] = None
+    dataset_revision: Optional[str] = None
+    dataset_cache_dir: Optional[str] = None
+    dataset_data_files: Optional[dict] = None
     dataset_base_path: Optional[str] = None
+    train_split: str = "train"
+    test_split: Optional[str] = None
+    validation_split: Optional[str] = None
+    feature_column: Optional[str] = None
+    partition_column: Optional[str] = None
+    shards_per_partition: int = 2
+    min_partition_size: int = 1
     validation_set_fraction: float = 0
     compute_validation_loss_global_model: bool = False
     partitioner: str = "iid"  # iid, shards or dirichlet
