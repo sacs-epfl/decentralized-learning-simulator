@@ -47,13 +47,16 @@ class ModelEvaluator:
             elif self.settings.dataset == "tiny_imagenet":
                 from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
                 self.partition = self.partition.with_transform(apply_transforms_tiny_imagenet_resnet)
-            elif self.settings.dataset in ["synthetic", "digits"]:
+            elif self.settings.dataset in ["synthetic", "digits", "text"]:
                 pass
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
 
         limit = self.settings.evaluation_examples if evaluation_examples is None else evaluation_examples
         partition = self.partition.evaluation_subset(limit) if limit else self.partition
+        if self.settings.dataset == "text":
+            from dasklearn.datasets.text import evaluate_text
+            return evaluate_text(model, partition, self.settings, device_name)
         test_loader = DataLoader(partition, batch_size=256)
         device = torch.device(device_name)
 

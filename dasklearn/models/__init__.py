@@ -12,8 +12,8 @@ def serialize_model(model: torch.nn.Module) -> bytes:
     return pickle.dumps(model.state_dict())
 
 
-def unserialize_model(serialized_model: bytes, dataset: str, architecture: Optional[str] = None) -> torch.nn.Module:
-    model = create_model(dataset, architecture=architecture)
+def unserialize_model(serialized_model: bytes, dataset: str, architecture: Optional[str] = None, settings=None) -> torch.nn.Module:
+    model = create_model(dataset, architecture=architecture, settings=settings)
     model.load_state_dict(pickle.loads(serialized_model))
     return model
 
@@ -27,19 +27,29 @@ def _model_structure(dataset: str, architecture: Optional[str]):
         return create_model(dataset, architecture=architecture).cpu()
 
 
-def create_model_structure(dataset: str, architecture: Optional[str] = None) -> torch.nn.Module:
+def create_model_structure(dataset: str, architecture: Optional[str] = None, settings=None) -> torch.nn.Module:
     """Fresh model structure for a complete state overwrite, without reinitialization."""
+    if settings is not None and settings.lora:
+        return create_model(dataset, architecture, settings=settings)
     return copy.deepcopy(_model_structure(dataset, architecture))
 
 
-def copy_model_state(model: torch.nn.Module, dataset: str, architecture: Optional[str] = None) -> torch.nn.Module:
+def copy_model_state(model: torch.nn.Module, dataset: str, architecture: Optional[str] = None, settings=None) -> torch.nn.Module:
     """Equivalent state transfer to serialize/unserialize, without the wire encoding."""
+    from dasklearn.lora import LoRAModel
+    if isinstance(model, LoRAModel):
+        result = copy.deepcopy(model).cpu()
+        result.zero_grad(set_to_none=True)
+        return result
     result = create_model_structure(dataset, architecture)
     result.load_state_dict(model.state_dict())
     return result
 
 
-def create_model(dataset: str, architecture: Optional[str] = None) -> Model:
+def create_model(dataset: str, architecture: Optional[str] = None, settings=None) -> Model:
+    if settings is not None and settings.lora:
+        from dasklearn.lora import LoRAModel, LoRASpec
+        return LoRAModel(LoRASpec.from_settings(settings))
     if dataset == "digits":
         return torch.nn.Sequential(torch.nn.Linear(64, 32), torch.nn.ReLU(), torch.nn.Linear(32, 10))
     if dataset == "synthetic":

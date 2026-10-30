@@ -33,6 +33,10 @@ class ModelTrainer:
         self.is_training: bool = False
 
     def get_validation_loss(self, model) -> float:
+        if self.settings.dataset == "text":
+            from dasklearn.datasets.text import evaluate_text
+            device = self.settings.torch_device_name
+            return evaluate_text(model, self.dataset.load_split("validation"), self.settings, device)[1]
         validation_set = self.dataset.get_validationset()
         total_loss = 0.0
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -79,7 +83,7 @@ class ModelTrainer:
                 from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
                 transforms = apply_transforms_tiny_imagenet_resnet
                 self.partition = self.partition.with_transform(transforms)
-            elif self.settings.dataset in ["synthetic", "digits"]:
+            elif self.settings.dataset in ["synthetic", "digits", "text"]:
                 pass
             else:
                 raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
@@ -96,7 +100,8 @@ class ModelTrainer:
         self.prepare_partition()
 
         validation_loss_global_model: Optional[float] = None
-        if self.settings.compute_validation_loss_global_model and len(self.dataset.validationset) > 0:
+        if self.settings.compute_validation_loss_global_model and (
+                self.settings.dataset == "text" or len(self.dataset.validationset) > 0):
             validation_loss_global_model = self.get_validation_loss(model)
 
         device = torch.device(device_name)
@@ -126,6 +131,19 @@ class ModelTrainer:
             except StopIteration:
                 batches = iter(train_loader)
                 batch = next(batches)
+            if self.settings.dataset == "text":
+                from dasklearn.datasets.text import text_forward
+                model.train()
+                optimizer.optimizer.zero_grad()
+                loss, output, target = text_forward(model, batch, device)
+                samples_trained_on += len(target)
+                loss.backward()
+                if gradient_only:
+                    model.gradient = [p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)
+                                      for p in model.parameters()]
+                    break
+                optimizer.optimizer.step()
+                continue
             data, target = batch[feature_column_name], batch[label_column_name]
 
             model.train()

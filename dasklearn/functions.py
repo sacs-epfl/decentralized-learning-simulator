@@ -34,7 +34,7 @@ lock = threading.Lock()
 def initialize(settings: SessionSettings, params: Dict):
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(settings.seed)
-        return [create_model(settings.dataset, architecture=settings.model)]
+        return [create_model(settings.dataset, architecture=settings.model, settings=settings)]
 
 
 def training_seed(settings, params):
@@ -61,7 +61,7 @@ def train(settings: SessionSettings, params: Dict):
             model_trainers = [None] * settings.participants
     if not model:
         torch.manual_seed(settings.seed)
-        model = create_model(settings.dataset, architecture=settings.model)
+        model = create_model(settings.dataset, architecture=settings.model, settings=settings)
     else:
         # A model can feed several training tasks, possibly on one worker.
         # Never mutate the shared predecessor value in the workflow DAG.
@@ -233,7 +233,7 @@ def chunk(settings: SessionSettings, params: Dict) -> List[torch.Tensor]:
 
 def reconstruct_from_chunks(settings: SessionSettings, params: Dict) -> List[torch.nn.Module]:
     chunks = params["chunks"]
-    model = create_model_structure(settings.dataset, architecture=settings.model)
+    model = create_model_structure(settings.dataset, architecture=settings.model, settings=settings)
     model = ChunkManager.reconstruct_model(chunks, model)
     return [model]
 
@@ -249,7 +249,7 @@ def weighted_reconstruct_from_chunks(settings: SessionSettings, params: Dict) ->
         weighted_sum = sum(tensor * weight for tensor, weight in sublist)
         result.append(weighted_sum)
 
-    model = create_model_structure(settings.dataset, architecture=settings.model)
+    model = create_model_structure(settings.dataset, architecture=settings.model, settings=settings)
     model = ChunkManager.weighted_reconstruct_model(result, model)
     return [model]
 
@@ -287,7 +287,11 @@ accumulation, NOT H local DeMo steps without communicating. H=1 is canonical.
             except StopIteration:
                 batches = iter(loader); batch = next(batches)
             model.zero_grad(set_to_none=True)
-            lossf(model(batch[feature].to(device)), batch[label].to(device)).backward()
+            if settings.dataset == "text":
+                from dasklearn.datasets.text import text_forward
+                text_forward(model, batch, device)[0].backward()
+            else:
+                lossf(model(batch[feature].to(device)), batch[label].to(device)).backward()
             for gradient, parameter in zip(gradients, parameters):
                 gradient.add_(parameter.grad / settings.learning.local_steps)
     packet, residual = prepare(gradients, params['residual'], settings.learning.learning_rate,
