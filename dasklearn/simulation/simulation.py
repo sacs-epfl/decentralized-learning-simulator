@@ -504,7 +504,7 @@ class Simulation:
 
         # Determine the size of the model, which will be used to determine the duration of model transfers
         if self.settings.model_size_bytes is None:
-            self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model)))
+            self.model_size = len(serialize_model(create_model(self.settings.dataset, architecture=self.settings.model, settings=self.settings)))
         else:
             if self.settings.model_size_bytes <= 0:
                 raise ValueError("model_size_bytes must be positive")

@@ -32,6 +32,21 @@ class SessionSettings:
     participants: int
     synchronous: bool = False
     model: Optional[str] = None
+    lora: bool = False
+    base_model: Optional[str] = None
+    model_revision: Optional[str] = None
+    tokenizer: Optional[str] = None
+    lora_rank: int = 8
+    lora_alpha: float = 16
+    lora_dropout: float = 0.0
+    lora_target_modules: Optional[str] = None
+    lora_task: str = "sequence-classification"
+    num_labels: int = 2
+    max_sequence_length: int = 128
+    text_dataset: str = "toy-text"
+    text_dataset_config: Optional[str] = None
+    text_column: str = "text"
+    label_column: str = "label"
     alpha: float = 1
     dataset_base_path: Optional[str] = None
     validation_set_fraction: float = 0

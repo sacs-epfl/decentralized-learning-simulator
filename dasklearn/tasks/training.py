@@ -54,7 +54,7 @@ class TrainingExecutor:
             self.stats["fallback_reasons"].append(reason)
 
     def can_train(self, data):
-        return (not self.settings.compute_validation_loss_global_model
+        return (not self.settings.lora and not self.settings.compute_validation_loss_global_model
                 and not data.get("compute_gradient") and data.get("gradient_model") is None
                 and data.get("local_steps", self.settings.learning.local_steps) > 0)
 

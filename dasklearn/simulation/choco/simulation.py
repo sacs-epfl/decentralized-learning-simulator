@@ -54,7 +54,7 @@ class ChocoSimulation(Simulation):
                 raise ValueError('CHOCO requires a connected regular graph')
         else:
             raise ValueError('Unknown CHOCO topology')
-        model = create_model(settings.dataset, architecture=settings.model)
+        model = create_model(settings.dataset, architecture=settings.model, settings=settings)
         params = parameters(model)
         if not params or len({p.dtype for p in params}) != 1 or any(not p.is_floating_point() for p in params):
             raise ValueError('CHOCO requires trainable floating parameters with one common dtype')

@@ -40,7 +40,7 @@ class QGMSimulation(Simulation):
                 if nx.is_connected(graph):break
             else:raise ValueError('QGM needs a connected graph')
         else:raise ValueError('Unknown QGM topology')
-        model=create_model(settings.dataset,architecture=settings.model)
+        model=create_model(settings.dataset,architecture=settings.model,settings=settings)
         params=list(model.parameters())
         if not params or any(not p.requires_grad or not p.is_floating_point() for p in params) or len({p.dtype for p in params})!=1:
             raise ValueError('QGM requires unfrozen floating parameters with a common dtype')

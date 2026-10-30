@@ -41,6 +41,13 @@ compatible CUDA Torch build in the Conda environment. `requirements.txt` also
 supports an existing environment. Hugging Face-backed datasets require
 `flwr-datasets`; speech transforms use `librosa`.
 
+## LoRA fine-tuning
+
+LoRA supports pretrained Hugging Face transformers with a shared frozen base per
+worker and adapter-only client state. Install `requirements-lora.txt` inside your
+conda environment, then run `scripts/run_lora.py` for local execution without
+brokers. See [LoRA setup, CLI examples, memory model and validation](docs/lora.md).
+
 ## Algorithms
 
 | Algorithm | CLI name / runner alias | Paper or original source | Implementation notes | Validation status |

@@ -64,6 +64,8 @@ def run():
         settings_dict = load_settings_from_dir(args.from_dir)
         settings_dict["from_dir"] = args.from_dir
         settings_dict["dry_run"] = False  # No dry runs
+        if args.device != "auto":
+            settings_dict["torch_device_name"] = args.device
     else:
         learning_settings = LearningSettings(
             learning_rate=args.learning_rate,
@@ -81,7 +83,7 @@ def run():
             "dataset_base_path": args.dataset_base_path,
             "validation_set_fraction": args.validation_set_fraction,
             "compute_validation_loss_global_model": args.compute_validation_loss_global_model,
-            "torch_device_name": get_torch_device(),
+            "torch_device_name": get_torch_device() if args.device == "auto" else args.device,
             "work_dir": "",
             "learning": learning_settings,
             "participants": args.peers,
@@ -118,6 +120,10 @@ def run():
             "training_batch_size": args.training_batch_size,
             "gpu_state_cache_mb": args.gpu_state_cache_mb,
         }
+
+    if not args.from_dir:
+        from dasklearn.lora import lora_options
+        settings_dict.update(lora_options(args))
 
     algorithm = settings_dict['algorithm']
     if algorithm not in ALGORITHMS:

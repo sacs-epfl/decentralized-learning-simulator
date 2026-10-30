@@ -21,7 +21,7 @@ class DeMoSimulation(Simulation):
             raise ValueError('Positive chunk, topk and gradient accumulation count required')
         if settings.test_method == 'global':
             raise ValueError('Use snapshot or individual evaluation')
-        model = create_model(settings.dataset, architecture=settings.model)
+        model = create_model(settings.dataset, architecture=settings.model, settings=settings)
         if list(model.buffers()) or any(not p.requires_grad for p in model.parameters()):
             raise ValueError('DeMo currently requires models without buffers or frozen parameters')
         self.packet_size = packet_bytes([p.shape for p in model.parameters()], settings.compression_chunk,

@@ -120,7 +120,7 @@ class IncomingModelObserver:
         """After simulation, add audit dependencies without perturbing the protocol."""
         initial = None
         total = sum(value.numel() for value in create_model_structure(
-            simulation.settings.dataset, simulation.settings.model).state_dict().values())
+            simulation.settings.dataset, simulation.settings.model, settings=simulation.settings).state_dict().values())
         audits = []
         for key, observation in sorted(self.observations.items()):
             attacker, sender, round_nr = key
