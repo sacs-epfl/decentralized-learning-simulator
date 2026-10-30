@@ -121,10 +121,9 @@ def add_lora_arguments(parser):
     parser.add_argument("--lora-task", choices=["sequence-classification", "causal-lm"], default="sequence-classification")
     parser.add_argument("--num-labels", type=int, default=2)
     parser.add_argument("--max-sequence-length", type=int, default=128)
-    parser.add_argument("--text-dataset", default="toy-text", help="toy-text, a Hugging Face dataset ID, or a directory of train/test/validation.jsonl")
+    parser.add_argument("--text-dataset", default="toy-text", help="Alias for --dataset-name for text (default: toy-text)")
     parser.add_argument("--text-dataset-config", default=None)
     parser.add_argument("--text-column", default="text")
-    parser.add_argument("--label-column", default="label")
 
 
 def lora_options(args):

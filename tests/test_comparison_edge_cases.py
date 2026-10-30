@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from dasklearn import functions
-from dasklearn.session_settings import LearningSettings
+from dasklearn.session_settings import LearningSettings, SessionSettings
 from dasklearn.simulation.teleportation.settings import TeleportationSettings
 from dasklearn.simulation.teleportation.simulation import TeleportationSimulation
 from dasklearn.simulation.events import INCOMING_PAYLOAD
@@ -91,7 +91,8 @@ def test_legacy_coalescing_does_not_deduplicate_overlapping_averages():
 @pytest.mark.parametrize("partitioner", ["iid", "dirichlet"])
 def test_real_digits_partitions_are_disjoint(partitioner):
     from dasklearn.datasets.digits import DigitsDataset
-    settings = SimpleNamespace(seed=1, participants=24, alpha=.3, partitioner=partitioner)
+    settings = SessionSettings(algorithm="test", work_dir="", dataset="digits", seed=1, participants=24,
+                               alpha=.3, partitioner=partitioner, learning=LearningSettings(.1, 0, 0, 8, 1))
     dataset = DigitsDataset(settings)
     assert all(len(partition) >= 8 for partition in dataset.partitions)
     assert sum(len(partition) for partition in dataset.partitions) + len(dataset.test) == 1797

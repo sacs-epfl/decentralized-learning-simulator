@@ -102,7 +102,7 @@ async def main():
         "pretrained":False,"train_images":95000,"tuning_images":5000,"heldout_images":10000,
         "curve_examples":args.evaluation_examples,"final_examples":0 if args.no_final_full else 10000,
         "network":"quarter fast, 8x spread, 10 MB/s mean by default; independent compute ranking",
-        "provenance":json.loads((Path(args.data)/"tiny-manifest.json").read_text())}
+        "provenance":json.loads((Path(args.data)/"source.json").read_text()) if (Path(args.data)/"source.json").exists() else None}
     manifest=json.loads(json.dumps(manifest,default=str))
     path=args.output/"manifest.json"
     if path.exists() and json.loads(path.read_text())!=manifest:raise ValueError("Existing configuration/source differs")

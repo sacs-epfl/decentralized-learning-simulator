@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from args import get_args
 from dasklearn.algorithms import class_paths
 from dasklearn.lora import lora_options
+from dasklearn.datasets.huggingface import dataset_options
 from dasklearn.session_settings import LearningSettings
 from dasklearn.tasks.local import execute_local
 from dasklearn.util import MICROSECONDS
@@ -51,7 +52,7 @@ async def run():
         validation_set_fraction=args.validation_set_fraction,
         compute_validation_loss_global_model=args.compute_validation_loss_global_model,
         test_method=args.test_method, test_interval=args.test_interval, test_period=args.test_period * MICROSECONDS,
-        dry_run=True, **lora_options(args), **specific)
+        dry_run=True, **lora_options(args), **dataset_options(args), **specific)
     simulation = instantiate_class(simulation_path, settings=settings)
     simulation.setup_directories()
     simulation.simulate()

@@ -4,11 +4,6 @@ import torchvision.transforms as T
 cifar10_normalization_vectors = (0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)
 tiny_imagenet_normalization_vectors = (0.4802, 0.4481, 0.3975), (0.2302, 0.2265, 0.2262)
 
-transforms_tens = T.Compose([
-    T.ToTensor(),
-    T.Normalize(*cifar10_normalization_vectors),
-])
-
 transforms_tens_resnet = T.Compose([
     T.Resize((224, 224)),  # Ensure input size is large enough for ResNet
     T.ToTensor(),
@@ -72,7 +67,7 @@ def preprocess_audio_train(batch):
 
 
 def preprocess_audio_test(batch):
-    from dasklearn.datasets.transforms_wav import FixAudioLength, ToMelSpectrogram
+    from dasklearn.datasets.transforms_wav import FixAudioLength, ToMelSpectrogram, ToTensor
     test_transform = T.Compose(
             [FixAudioLength(), ToMelSpectrogram(n_mels=32), ToTensor('mel_spectrogram', 'input')])
 
@@ -84,5 +79,30 @@ def preprocess_audio_test(batch):
     batch["label"] = torch.tensor(batch["label"]).long()
 
     del batch['audio']
-    del batch['speaker_id']
+    batch.pop('speaker_id', None)
     return batch
+
+
+def prepare_partition(partition, settings, *, training):
+    """One preprocessing decision shared by training and evaluation."""
+    if settings.dataset in {"synthetic", "digits", "text"}:
+        return partition
+    if settings.dataset == "cifar10":
+        transform = (apply_transforms_cifar10_resnet if settings.model in
+                     {"resnet8", "resnet18", "mobilenet_v3_large"} else apply_transforms_cifar10)
+    elif settings.dataset == "tiny_imagenet":
+        transform = apply_transforms_tiny_imagenet_resnet
+    elif settings.dataset == "femnist":
+        transform = apply_transforms_femnist
+    elif settings.dataset == "google_speech":
+        transform = preprocess_audio_train if training else preprocess_audio_test
+    else:
+        raise ValueError(f"Unknown preprocessing preset {settings.dataset!r}")
+    feature = "x" if settings.dataset == "femnist" else "image" if settings.dataset == "tiny_imagenet" else "img"
+    label = "y" if settings.dataset == "femnist" else "label"
+
+    def model_inputs(batch):
+        transformed = transform(batch)
+        return {feature: transformed[feature], label: transformed[label]}
+
+    return partition.with_transform(model_inputs)

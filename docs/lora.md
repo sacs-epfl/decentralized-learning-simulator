@@ -41,19 +41,23 @@ OS processes each load their own base. More workers do not share CUDA storage.
 - `--lora-task sequence-classification` (default), `--num-labels 2`.
 - `--lora-task causal-lm`: next-token prediction using a causal checkpoint.
 - `--max-sequence-length`: fixed truncation/padding length (default 128).
-- `--text-dataset`: `toy-text`, a Hugging Face dataset ID, or a directory with
+- `--dataset-name`: `toy-text`, a Hugging Face dataset ID, or a directory with
   `train.jsonl`, `test.jsonl`, and optionally `validation.jsonl`.
-- `--text-dataset-config`: optional Hugging Face dataset subset/config.
+- `--dataset-config`: optional Hugging Face dataset subset/config.
+- `--text-dataset` and `--text-dataset-config`: compatibility aliases for older commands.
 - `--text-column`, `--label-column`: default to `text`, `label`.
 
-For example, use `--text-dataset ag_news --num-labels 4`, or
-`--text-dataset imdb`. Datasets must have train and test splits; if validation is
+For example, use `--dataset-name ag_news --num-labels 4`, or
+`--dataset-name imdb`. Datasets must have train and test splits; if validation is
 absent, a deterministic 10% of training data is held out (configurable via
 `--validation-set-fraction`). Classification labels must be integers in
 `[0, num_labels)`. Local JSONL rows look like `{"text":"a good movie","label":1}`.
 For causal LM, rows need only the text column. Each row is tokenized separately;
 padding positions are ignored. Sequences need at least two tokens. IID partitions
-work for both tasks; Dirichlet partitions require classification labels.
+work for both tasks; Dirichlet and shard partitions require labels (or an explicit
+`--partition-column` for causal LM). Flower handles IID, Dirichlet, shard and
+natural client partitions. See [dataset configuration](datasets.md) for local
+CSV/JSON/Parquet data, custom splits, and natural client IDs.
 
 Example causal LM run:
 

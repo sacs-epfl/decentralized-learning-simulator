@@ -124,6 +124,8 @@ def run():
     if not args.from_dir:
         from dasklearn.lora import lora_options
         settings_dict.update(lora_options(args))
+        from dasklearn.datasets.huggingface import dataset_options
+        settings_dict.update(dataset_options(args))
 
     algorithm = settings_dict['algorithm']
     if algorithm not in ALGORITHMS:

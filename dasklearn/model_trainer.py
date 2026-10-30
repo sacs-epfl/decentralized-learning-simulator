@@ -4,13 +4,12 @@ import logging
 from typing import Optional, Dict
 
 import torch
-from torch.autograd import Variable
-from torch.nn import CrossEntropyLoss, MSELoss, NLLLoss
+from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.utils.data import DataLoader
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from flwr_datasets import FederatedDataset
+    from dasklearn.datasets.huggingface import FederatedData
 
 from dasklearn.optimizer.sgd import SGDOptimizer
 from dasklearn.session_settings import SessionSettings
@@ -24,69 +23,26 @@ class ModelTrainer:
     Manager to train a particular model.
     """
 
-    def __init__(self, dataset: FederatedDataset, settings: SessionSettings, participant_index: int):
+    def __init__(self, dataset: FederatedData, settings: SessionSettings, participant_index: int):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.dataset: FederatedDataset = dataset
+        self.dataset: FederatedData = dataset
         self.partition: Optional[Dataset] = None
         self.settings: SessionSettings = settings
         self.participant_index: int = participant_index
         self.is_training: bool = False
 
     def get_validation_loss(self, model) -> float:
-        if self.settings.dataset == "text":
-            from dasklearn.datasets.text import evaluate_text
-            device = self.settings.torch_device_name
-            return evaluate_text(model, self.dataset.load_split("validation"), self.settings, device)[1]
-        validation_set = self.dataset.get_validationset()
-        total_loss = 0.0
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-        model.eval()  # set model to evaluation mode
-
-        with torch.no_grad():
-            for data, target in validation_set:
-                data, target = data.to(device), target.to(device)
-                output = model(data)
-
-                if self.settings.dataset == "movielens":
-                    loss_func = MSELoss()
-                elif self.settings.dataset == "cifar10":
-                    if self.settings.model == "resnet8":
-                        loss_func = CrossEntropyLoss()
-                    else:
-                        loss_func = NLLLoss()
-                else:
-                    loss_func = CrossEntropyLoss()
-
-                loss = loss_func(output, target)
-                total_loss += loss.item()
-
-        avg_loss = total_loss / len(validation_set)
-        return float(avg_loss)
+        from dataclasses import replace
+        from dasklearn.model_evaluator import ModelEvaluator
+        settings = replace(self.settings, evaluation_split="validation", evaluation_examples=0)
+        return ModelEvaluator(self.dataset, settings).evaluate_accuracy(model, settings.torch_device_name)[1]
 
     def prepare_partition(self):
         """Load exactly the same partition/transforms for all execution backends."""
-        if not self.partition:
-            self.partition = self.dataset.load_partition(self.participant_index, "train")
-            if self.settings.dataset == "cifar10":
-                from dasklearn.datasets.transforms import apply_transforms_cifar10, apply_transforms_cifar10_resnet
-                transforms = apply_transforms_cifar10_resnet if self.settings.model in ["resnet8", "resnet18", "mobilenet_v3_large"] else apply_transforms_cifar10
-                self.partition = self.partition.with_transform(transforms)
-            elif self.settings.dataset == "femnist":
-                from dasklearn.datasets.transforms import apply_transforms_femnist
-                self.partition = self.partition.with_transform(apply_transforms_femnist)
-            elif self.settings.dataset == "google_speech":
-                # filter removes the silent samples from testing/training as they don't really have a label
-                from dasklearn.datasets.transforms import preprocess_audio_train as transforms
-                self.partition = self.partition.filter(lambda x : x["speaker_id"] is not None).with_transform(transforms)
-            elif self.settings.dataset == "tiny_imagenet":
-                from dasklearn.datasets.transforms import apply_transforms_tiny_imagenet_resnet
-                transforms = apply_transforms_tiny_imagenet_resnet
-                self.partition = self.partition.with_transform(transforms)
-            elif self.settings.dataset in ["synthetic", "digits", "text"]:
-                pass
-            else:
-                raise RuntimeError("Unknown dataset %s for partitioning!" % self.settings.dataset)
+        if self.partition is None:
+            from dasklearn.datasets.transforms import prepare_partition
+            self.partition = prepare_partition(
+                self.dataset.load_partition(self.participant_index, "train"), self.settings, training=True)
 
     def make_train_loader(self, seed=None):
         self.prepare_partition()
@@ -100,8 +56,7 @@ class ModelTrainer:
         self.prepare_partition()
 
         validation_loss_global_model: Optional[float] = None
-        if self.settings.compute_validation_loss_global_model and (
-                self.settings.dataset == "text" or len(self.dataset.validationset) > 0):
+        if self.settings.compute_validation_loss_global_model:
             validation_loss_global_model = self.get_validation_loss(model)
 
         device = torch.device(device_name)
@@ -116,14 +71,8 @@ class ModelTrainer:
 
         samples_trained_on = 0
 
-        if self.settings.dataset == "femnist":
-            feature_column_name = "x"
-        elif self.settings.dataset == "tiny_imagenet":
-            feature_column_name = "image"
-        else:
-            feature_column_name = "img"
-
-        label_column_name = "y" if self.settings.dataset == "femnist" else "label"
+        from dasklearn.datasets.huggingface import column_names
+        feature_column_name, label_column_name = column_names(self.settings)
         batches = iter(train_loader)
         for local_step in range(local_steps):
             try:

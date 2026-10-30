@@ -1,8 +1,7 @@
 """Native 64x64 Tiny ImageNet tensors, disjoint clients, fixed tuning/eval splits."""
-from pathlib import Path
 import numpy as np
 import torch
-from dasklearn.datasets.cifar10 import partition_indices
+from dasklearn.datasets.huggingface import allocate_indices, load_splits
 
 
 class TinyPartition:
@@ -39,35 +38,23 @@ class TinyPartition:
 
 class TinyImagenetDataset:
     def __init__(self, settings):
-        root = Path(settings.dataset_base_path)
+        splits = load_splits(settings)
         mean = torch.tensor([.4802, .4481, .3975]).view(1, 3, 1, 1)
         std = torch.tensor([.2302, .2265, .2262]).view(1, 3, 1, 1)
 
-        def load(split):
-            # Copy into one normalized float tensor; the original image archive
-            # stays memory mapped and is not duplicated in every client partition.
-            images = np.load(root / f"{split}_images.npy", mmap_mode="r")
-            features = torch.from_numpy(np.array(images)).permute(0, 3, 1, 2).float()
-            features.div_(255).sub_(mean).div_(std)
-            labels = torch.from_numpy(np.load(root / f"{split}_labels.npy"))
-            return features, labels
+        def tensors(split):
+            images = np.stack([np.asarray(image.convert("RGB")) for image in split["image"]])
+            features = torch.from_numpy(images).permute(0, 3, 1, 2).float().div_(255)
+            return features.sub_(mean).div_(std), torch.tensor(list(split["label"]))
 
-        features, labels = load("train")
-        rng = np.random.default_rng(1729)
-        tuning, training = [], []
-        for label in range(200):
-            ids = rng.permutation(np.flatnonzero(labels.numpy() == label))
-            tuning.extend(ids[:25])
-            training.extend(ids[25:])
-        self.tuning = TinyPartition(features, labels, tuning)
-        training = np.asarray(training)
-        indices = partition_indices(labels[training].numpy(), settings.participants, settings.partitioner, settings.alpha, settings.seed)
-        self.partitions = [TinyPartition(features, labels, training[part]) for part in indices]
-        valid_features, valid_labels = load("valid")
-        self.valid = TinyPartition(valid_features, valid_labels, np.arange(len(valid_labels)))
+        indices = allocate_indices(splits["train"], settings, min_size=8)
+        features, labels = tensors(splits["train"])
+        self.partitions = [TinyPartition(features, labels, part) for part in indices]
+        self.tuning = TinyPartition(*tensors(splits["validation"]), np.arange(len(splits["validation"])))
+        self.valid = TinyPartition(*tensors(splits["test"]), np.arange(len(splits["test"])))
 
     def load_partition(self, peer, split="train"):
         return self.partitions[peer]
 
     def load_split(self, split):
-        return self.tuning if split == "validation" else self.valid
+        return {"validation": self.tuning, "test": self.valid, "valid": self.valid}[split]
