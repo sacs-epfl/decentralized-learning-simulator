@@ -127,7 +127,7 @@ def load_splits(settings):
 
 def column_names(settings):
     return ("x", "y") if settings.dataset == "femnist" else (
-        "image" if settings.dataset == "tiny_imagenet" else "img", "label")
+        "image" if settings.dataset in {"tiny_imagenet", "vision"} else "img", "label")
 
 
 def partition_dataset(data, settings, *, min_size=1, label_column="label"):

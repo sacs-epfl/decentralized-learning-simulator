@@ -26,6 +26,37 @@ Use `--compute-validation-loss-global-model` to also record the loss of each
 client's incoming model on a separate validation split in `validation_losses.csv`.
 The small toy dataset checks the pipeline; its scores are not benchmark results.
 
+## Vision transformers and Food-101
+
+The generic local runner also supports pretrained image classifiers. This single
+command downloads/caches Food-101 and ViT-Tiny and runs 16 D-PSGD peers on a
+seeded 3-regular graph:
+
+```sh
+python scripts/run_lora.py --dataset vision --dataset-name ethz/food101 \
+  --test-split validation --lora --lora-task image-classification \
+  --base-model WinKawaks/vit-tiny-patch16-224 --num-labels 101 \
+  --algorithm dpsgd --topology kreg --k 3 --peers 16 --synchronous \
+  --partitioner iid --rounds 5 --local-steps 5 --batch-size 8 \
+  --learning-rate .03 --momentum .9 --test-interval 5 \
+  --work-dir output/food101-iid
+```
+
+Replace `--partitioner iid` with `--partitioner dirichlet --alpha .1` and use
+`--work-dir output/food101-dirichlet-a01` for non-IID clients. Food-101's source
+`validation` split is the benchmark test set; a
+separate tuning split is held out from training. No preparation command is
+required for a full-data run. Both runs must use the same seed, model revision,
+and training settings for a controlled comparison. The runner selects MPS on
+supported Macs, CUDA when available, or CPU; use `--device` to override.
+
+The image processor comes from the checkpoint, with optional
+`--image-processor` override. Vision LoRA keeps the base frozen and trains the
+LoRA projections plus the `classifier` head. ViT query/value projection names
+are detected across supported Transformers versions; other architectures may
+need `--lora-target-modules`. Images default to the `image` column; use
+`--feature-column` and `--label-column` for other schemas.
+
 The same LoRA arguments work with `main.py` and normal broker execution. Start
 with **one worker per GPU**: clients within a worker share a base, but independent
 OS processes each load their own base. More workers do not share CUDA storage.

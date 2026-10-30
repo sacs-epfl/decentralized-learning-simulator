@@ -43,7 +43,7 @@ supports an existing environment. Both dependency files include Hugging Face
 
 ## LoRA fine-tuning
 
-LoRA supports pretrained Hugging Face transformers with a shared frozen base per
+LoRA supports pretrained Hugging Face text and vision transformers with a shared frozen base per
 worker and adapter-only client state. Install `requirements-lora.txt` inside your
 conda environment, then run `scripts/run_lora.py` for local execution without
 brokers. See [LoRA setup, CLI examples, memory model and validation](docs/lora.md).

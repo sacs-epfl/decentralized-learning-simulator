@@ -80,11 +80,11 @@ class ModelTrainer:
             except StopIteration:
                 batches = iter(train_loader)
                 batch = next(batches)
-            if self.settings.dataset == "text":
-                from dasklearn.datasets.text import text_forward
+            if self.settings.lora:
+                from dasklearn.lora import lora_forward
                 model.train()
                 optimizer.optimizer.zero_grad()
-                loss, output, target = text_forward(model, batch, device)
+                loss, output, target = lora_forward(model, batch, device)
                 samples_trained_on += len(target)
                 loss.backward()
                 if gradient_only:

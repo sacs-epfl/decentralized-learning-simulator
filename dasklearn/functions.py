@@ -287,9 +287,9 @@ accumulation, NOT H local DeMo steps without communicating. H=1 is canonical.
             except StopIteration:
                 batches = iter(loader); batch = next(batches)
             model.zero_grad(set_to_none=True)
-            if settings.dataset == "text":
-                from dasklearn.datasets.text import text_forward
-                text_forward(model, batch, device)[0].backward()
+            if settings.lora:
+                from dasklearn.lora import lora_forward
+                lora_forward(model, batch, device)[0].backward()
             else:
                 lossf(model(batch[feature].to(device)), batch[label].to(device)).backward()
             for gradient, parameter in zip(gradients, parameters):

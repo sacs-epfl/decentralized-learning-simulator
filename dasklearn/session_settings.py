@@ -36,6 +36,7 @@ class SessionSettings:
     base_model: Optional[str] = None
     model_revision: Optional[str] = None
     tokenizer: Optional[str] = None
+    image_processor: Optional[str] = None
     lora_rank: int = 8
     lora_alpha: float = 16
     lora_dropout: float = 0.0

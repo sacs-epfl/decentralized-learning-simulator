@@ -85,7 +85,7 @@ def preprocess_audio_test(batch):
 
 def prepare_partition(partition, settings, *, training):
     """One preprocessing decision shared by training and evaluation."""
-    if settings.dataset in {"synthetic", "digits", "text"}:
+    if settings.dataset in {"synthetic", "digits", "text", "vision"}:
         return partition
     if settings.dataset == "cifar10":
         transform = (apply_transforms_cifar10_resnet if settings.model in

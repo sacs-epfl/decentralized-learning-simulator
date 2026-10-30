@@ -4,7 +4,10 @@ Hugging Face `datasets` loads data, and Flower `flwr-datasets` assigns examples
 to clients. New sources do not need a Python loader or a dataset registry entry.
 `--dataset` selects an existing model/preprocessing preset; `--dataset-name`
 selects the source. Images must match the preset's input dimensions and class
-count. Text supports different class counts through `--num-labels`.
+count. Text and vision LoRA support different class counts through `--num-labels`.
+Use `--dataset vision --lora --lora-task image-classification` with a pretrained
+image-classification checkpoint for arbitrary image datasets; its processor
+handles resizing and normalization. See the [Food-101 example](lora.md#vision-transformers-and-food-101).
 
 For example, train LoRA on AG News with four labels and non-IID clients:
 

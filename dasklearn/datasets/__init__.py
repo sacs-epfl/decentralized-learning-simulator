@@ -4,6 +4,9 @@ from dasklearn.session_settings import SessionSettings
 
 
 def create_dataset(settings: SessionSettings) -> FederatedData:
+    if settings.dataset == "vision":
+        from dasklearn.datasets.vision import VisionDataset
+        return VisionDataset(settings)
     if settings.dataset in {"synthetic", "digits"} and (
             settings.dataset_name or settings.dataset_base_path or settings.dataset_data_files):
         raise ValueError("Offline synthetic/digits workloads do not accept custom dataset sources; choose a model/preprocessing preset")

@@ -3,8 +3,7 @@ from functools import lru_cache
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
-from torch.nn import functional as F
+from torch.utils.data import Dataset
 
 
 @lru_cache(maxsize=2)
@@ -81,34 +80,5 @@ class TextDataset:
         if split not in {"test", "validation"}:
             raise ValueError("Text evaluation split must be test or validation")
         return getattr(self, split)
-
-
-def text_forward(model, batch, device):
-    inputs = {name: value.to(device) for name, value in batch.items()}
-    # Use explicit losses so classification and token normalization agree across
-    # training, validation, accuracy CSVs, and gradient-based algorithms.
-    labels = inputs.pop("labels")
-    logits = model(**inputs).logits
-    if model.spec.task == "causal-lm":
-        logits, labels = logits[:, :-1, :].contiguous(), labels[:, 1:].contiguous()
-    loss = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), labels.reshape(-1))
-    return loss, logits, labels
-
-
-def evaluate_text(model, partition, settings, device):
-    if not len(partition):
-        raise ValueError("Cannot evaluate an empty text partition")
-    total_loss = correct = count = 0
-    model.to(device).eval()
-    try:
-        with torch.no_grad():
-            for batch in DataLoader(partition, batch_size=settings.learning.batch_size):
-                loss, logits, labels = text_forward(model, batch, device)
-                mask = labels != -100
-                size = mask.sum().item()
-                total_loss += loss.item() * size
-                correct += ((logits.argmax(-1) == labels) & mask).sum().item()
-                count += size
-        return 100 * correct / count, total_loss / count
-    finally:
-        model.cpu()
+# Compatibility names for callers of the original text-only LoRA API.
+from dasklearn.lora import lora_forward as text_forward, evaluate_lora as evaluate_text

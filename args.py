@@ -13,7 +13,7 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--local-steps', type=int, default=5)
 
-    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist", "google_speech", "tiny_imagenet", "synthetic", "digits", "text"], help="Model/preprocessing preset; use --dataset-name to select the data source")
+    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist", "google_speech", "tiny_imagenet", "synthetic", "digits", "text", "vision"], help="Model/preprocessing preset; use --dataset-name to select the data source")
     parser.add_argument('--partitioner', type=str, default="iid", choices=["iid", "natural", "shards", "dirichlet"])
     from dasklearn.datasets.huggingface import add_dataset_arguments
     add_dataset_arguments(parser)
@@ -21,6 +21,7 @@ def get_args():
     parser.add_argument('--rounds', type=int, default=0)
     parser.add_argument('--model', type=str, default="gnlenet")
     parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--work-dir', default="", help="Parent directory for run artifacts; use separate directories for comparisons")
     parser.add_argument('--log-level', type=str, default="INFO")
     parser.add_argument('--torch-threads', type=int, default=4)
     parser.add_argument('--device', default='auto', help='auto, cpu, cuda[:index], or mps')

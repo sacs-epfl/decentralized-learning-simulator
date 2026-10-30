@@ -41,9 +41,9 @@ class ModelEvaluator:
                          else partition.select(range(min(limit, len(partition)))))
         if not len(partition):
             raise ValueError("Cannot evaluate an empty dataset split")
-        if self.settings.dataset == "text":
-            from dasklearn.datasets.text import evaluate_text
-            return evaluate_text(model, partition, self.settings, device_name)
+        if self.settings.lora:
+            from dasklearn.lora import evaluate_lora
+            return evaluate_lora(model, partition, self.settings, device_name)
         test_loader = DataLoader(partition, batch_size=256)
         device = torch.device(device_name)
 
