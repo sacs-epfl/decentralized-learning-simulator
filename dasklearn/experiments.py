@@ -182,6 +182,13 @@ def validate_run(options):
         raise ValueError("seed must be nonnegative")
     if options["evaluation_examples"] < 0:
         raise ValueError("evaluation_examples must be nonnegative")
+    if options["capacity_profile"] != "default":
+        if options["traces"] != "none":
+            raise ValueError("Controlled capacities cannot be combined with traces")
+        if options["bandwidth_bytes_per_s"] < 1 or options["compute_step_ms"] <= 0:
+            raise ValueError("Controlled bandwidth and compute step time must be positive")
+    if options["final_heldout"] and options["evaluation_split"] != "validation":
+        raise ValueError("final_heldout requires validation curves")
     if options["model_size_bytes"] is not None and options["model_size_bytes"] <= 0:
         raise ValueError("model_size_bytes must be positive")
     for field in ("learning_rate", "momentum", "weight_decay"):

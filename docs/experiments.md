@@ -198,3 +198,19 @@ This is experiment orchestration, not training checkpoint/resume: an interrupted
 run may have partial metrics and does not imply saved final models. Output
 protection and manifests are managed by `run_experiment.py`; direct legacy entry
 points retain their usual run-directory behavior.
+
+## Conflux V2 research branch
+
+This branch also registers `algorithm: conflux-v2`, including `sample_size`,
+`chunks_in_sample`, `relay_count`, `success_fraction`, and `immediate_uploads`.
+Controlled experiments can set `capacity_profile` to `uniform`, `network`,
+`compute`, or `heterogeneous`, with `bandwidth_bytes_per_s` and `compute_step_ms`.
+The default profile preserves the existing trace/default behavior. Controlled
+profiles require `traces: none`; mean compute time and bandwidth stay matched
+while network and compute heterogeneity can be varied independently.
+
+`final_heldout: true` in local mode adds a full final test of each node's stored
+checkpoint after validation curves; use `evaluation_split: validation`. These
+evaluations are included in the saved DAG. They do not advance protocol time.
+See [the expanded convergence study](experiments/convergence-20261031.md) for
+the study design, assumptions, tuning, censoring, and server commands.

@@ -77,6 +77,12 @@ def create_parser():
     parser.add_argument('--min-bandwidth', type=int, default=0)  # The minimum bandwidth a node must have to participate, in bytes/s.
     parser.add_argument('--traces', type=str, default="none", choices=["none", "fedscale", "diablo"])
 
+    parser.add_argument("--capacity-profile", choices=["default", "uniform", "network", "compute", "heterogeneous"], default="default")
+    parser.add_argument("--bandwidth-bytes-per-s", type=int, default=1000000)
+    parser.add_argument("--compute-step-ms", type=float, default=20)
+    parser.add_argument("--final-heldout", action=argparse.BooleanOptionalAction, default=False,
+                        help="After validation curves, evaluate all final node checkpoints on the full test split (local mode)")
+
     # Churn
     parser.add_argument('--churn', type=str, default="none", choices=["none", "synthetic", "fedscale"])
 
@@ -139,6 +145,8 @@ def get_args(argv=None):
         parser.error('--local and --dry-run cannot be combined')
     if args.local and args.from_dir:
         parser.error('--local does not support --from-dir')
+    if args.final_heldout and not args.local:
+        parser.error('--final-heldout requires local execution')
     if selected.config:
         from dasklearn.experiments import validate_run
         try:

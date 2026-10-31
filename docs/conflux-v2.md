@@ -92,3 +92,13 @@ CUDA skips) and all 145 on Linux/CUDA on sacs006. A fresh three-protocol smoke
 run executes Shatter, full-sample immediate-upload V2 and Moshpit, preserving
 complete per-node snapshots. These are reorganization regression checks, not
 new convergence experiments.
+
+## Current main integration and expanded study
+
+The 31 October 2026 integration rebases the research delta onto main `bda202a`
+and migrates V2 to explicit task references and main's compute/payload APIs.
+The original full history is retained at `codex/conflux-v2-before-rebase`;
+historical records keep their original provenance. V2 settings work with the
+shared YAML/JSON runner, including independent controlled capacity profiles.
+See [the expanded study](experiments/convergence-20261031.md) for the four
+workloads, six algorithms, validation-only tuning, and paired confirmation plan.

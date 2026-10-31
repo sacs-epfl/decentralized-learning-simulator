@@ -11,8 +11,9 @@ from math import ceil
 
 from dasklearn.simulation.client import BaseClient
 from dasklearn.simulation.conflux.sample_manager import SampleManager
-from dasklearn.simulation.events import Event, START_ROUND, START_TRAIN, START_TRANSFER
+from dasklearn.simulation.events import Event, START_ROUND, START_TRAIN
 from dasklearn.tasks.task import Task
+from dasklearn.tasks.references import TaskRef
 
 
 class ConfluxV2Client(BaseClient):
@@ -46,7 +47,7 @@ class ConfluxV2Client(BaseClient):
     def init_client(self, event):
         if self.index in self.sample(1):
             self.simulator.schedule(Event(event.time, self.index, START_ROUND,
-                                          {"round": 1, "model": (None, 0)}))
+                                          {"round": 1, "model": None}))
 
     def start_round(self, event):
         round_nr = event.data["round"]
@@ -80,19 +81,17 @@ class ConfluxV2Client(BaseClient):
         if state["trained"]:
             return
         state["trained"] = True
-        self.compute_time += event.data["train_time"]
-        task = Task(Task.generate_name("chunk"), "chunk", {
+        task = self.create_compute_task("chunk", {
             "model": event.data["model"], "n": self.simulator.settings.chunks_in_sample,
-            "round": round_nr, "peer": self.index, "time": self.simulator.current_time})
-        self.add_compute_task(task)
+            "round": round_nr, "peer": self.index, "time": self.simulator.current_time}, name=Task.generate_name("chunk"))
         state["chunked"] = task.name
         if self.install_known_plan(round_nr):
             _, owners = self.layout(round_nr)
             for chunk_idx, owner in enumerate(owners):
-                self.send_chunk(owner, (state["chunked"], chunk_idx), round_nr, chunk_idx, "upload")
+                self.send_chunk(owner, TaskRef(state["chunked"], chunk_idx), round_nr, chunk_idx, "upload")
             return
         leader, _ = self.layout(round_nr)
-        self.send_message_to_client(leader, "ready", {"round": round_nr})
+        self.send_control(leader, "ready", {"round": round_nr})
 
     def on_message(self, event):
         message = event.data["message"]
@@ -110,7 +109,7 @@ class ConfluxV2Client(BaseClient):
                 self.simulator.contributor_sets[round_nr] = contributors
                 plan = {"round": round_nr, "contributors": contributors}
                 for peer in sorted(set(contributors) | set(owners)):
-                    self.send_message_to_client(peer, "plan", plan)
+                    self.send_control(peer, "plan", plan)
         elif event.data["type"] == "plan":
             if event.data["from"] != leader or state.get("plan_received"):
                 return
@@ -118,25 +117,15 @@ class ConfluxV2Client(BaseClient):
             state["plan"] = message["contributors"]
             if self.index in state["plan"]:
                 for chunk_idx, owner in enumerate(owners):
-                    self.send_chunk(owner, (state["chunked"], chunk_idx), round_nr, chunk_idx, "upload")
+                    self.send_chunk(owner, TaskRef(state["chunked"], chunk_idx), round_nr, chunk_idx, "upload")
             self.try_reduce(round_nr)
         else:
             raise ValueError("Unknown Conflux v2 message: %s" % event.data["type"])
 
     def send_chunk(self, recipient, model, round_nr, chunk_idx, phase):
-        data = {"from": self.index, "to": recipient, "model": model,
-                "metadata": {"round": round_nr, "chunk": chunk_idx, "phase": phase}}
-        if recipient == self.index:
-            # Local reducer contributions do not use network capacity.
-            self.on_incoming_model(Event(self.simulator.current_time, self.index, "incoming_model", data))
-        else:
-            self.simulator.schedule(Event(self.simulator.current_time, self.index, START_TRANSFER, data))
-
-    def start_transfer(self, event):
-        size = self.chunk_transfer_size(event.data["metadata"]["chunk"], self.simulator.settings.chunks_in_sample)
-        size = self.data_transfer_size(size, event.data["metadata"])
-        self.bw_scheduler.add_transfer(self.simulator.clients[event.data["to"]].bw_scheduler,
-                                       size, event.data["model"], event.data["metadata"])
+        meta = {"round": round_nr, "chunk": chunk_idx, "phase": phase}
+        size = self.chunk_transfer_size(chunk_idx, self.simulator.settings.chunks_in_sample)
+        self.send(recipient, model, size_bytes=size, metadata=meta)
 
     def on_incoming_model(self, event):
         meta = event.data["metadata"]
@@ -151,16 +140,15 @@ class ConfluxV2Client(BaseClient):
                 return
             state["received"][chunk_idx] = event.data["model"]
             if len(state["received"]) == self.simulator.settings.chunks_in_sample:
-                task = Task(Task.generate_name("reconstruct_from_chunks"), "reconstruct_from_chunks", {
+                task = self.create_compute_task("reconstruct_from_chunks", {
                     "chunks": [[state["received"][idx]] for idx in range(self.simulator.settings.chunks_in_sample)],
-                    "round": round_nr, "peer": self.index, "time": self.simulator.current_time})
-                self.add_compute_task(task)
-                model = (task.name, 0)
+                    "round": round_nr, "peer": self.index, "time": self.simulator.current_time}, name=Task.generate_name("reconstruct_from_chunks"))
+                model = TaskRef(task.name, 0)
                 self.publish_model(round_nr, model)
                 self.simulator.completed_rounds.append((round_nr, self.index, self.simulator.current_time))
                 if self.simulator.settings.test_method == "individual" and self.simulator.settings.test_interval > 0 and round_nr % self.simulator.settings.test_interval == 0:
-                    self.add_compute_task(Task(Task.generate_name("test"), "test", {
-                        "model": model, "round": round_nr, "peer": self.index, "time": self.simulator.current_time}))
+                    self.create_compute_task("test", {
+                        "model": model, "round": round_nr, "peer": self.index, "time": self.simulator.current_time}, name=Task.generate_name("test"))
                 if self.simulator.settings.rounds <= 0 or round_nr < self.simulator.settings.rounds:
                     self.simulator.schedule(Event(self.simulator.current_time, self.index, START_ROUND,
                                                   {"round": round_nr + 1, "model": model}))
@@ -176,9 +164,8 @@ class ConfluxV2Client(BaseClient):
             if not set(state["plan"]).issubset(state["uploads"][idx]):
                 continue
             state["reduced"].add(idx)
-            task = Task(Task.generate_name("aggregate_chunk"), "aggregate_chunk", {
+            task = self.create_compute_task("aggregate_chunk", {
                 "chunks": [state["uploads"][idx][peer] for peer in state["plan"]],
-                "round": round_nr, "peer": self.index, "time": self.simulator.current_time})
-            self.add_compute_task(task)
+                "round": round_nr, "peer": self.index, "time": self.simulator.current_time}, name=Task.generate_name("aggregate_chunk"))
             for peer in self.sample(round_nr + 1):
-                self.send_chunk(peer, (task.name, 0), round_nr, idx, "aggregate")
+                self.send_chunk(peer, TaskRef(task.name, 0), round_nr, idx, "aggregate")

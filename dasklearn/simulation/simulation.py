@@ -235,6 +235,10 @@ class Simulation:
             node.overlays[0].other_nodes_bws = nodes_bws
 
     def apply_traces(self):
+        if self.settings.capacity_profile != "default":
+            from dasklearn.simulation.capacities import apply_capacities
+            apply_capacities(self.clients, self.settings)
+            return
         if self.settings.traces == "none":
             return
         elif self.settings.traces == "fedscale":

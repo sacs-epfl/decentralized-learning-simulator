@@ -1,0 +1,54 @@
+[
+  {
+    "workload": "digits-mlp",
+    "parameters": 2410,
+    "model_payload_bytes": 11034,
+    "initial_payload_sha256": "fb276d7582355862047698f217e1c802c205e255e52715aa91ee6d9ea1ca32a4",
+    "local_block_median_seconds": 0.0027624210342764854,
+    "validation_seconds": 0.02583098108880222,
+    "peak_cuda_bytes": 67222016,
+    "validation_accuracy": 11.931818181818182,
+    "modeled_compute_step_ms": 20,
+    "gpu": "NVIDIA RTX 5000 Ada Generation",
+    "torch": "2.14.1+cu130"
+  },
+  {
+    "workload": "cifar10-gnlenet",
+    "parameters": 85354,
+    "model_payload_bytes": 346251,
+    "initial_payload_sha256": "cf453651ffa3c9c3156ceafc307e9eff9f96cc5fcb0ccae926315ddab1af2539",
+    "local_block_median_seconds": 0.00806959206238389,
+    "validation_seconds": 0.014552195090800524,
+    "peak_cuda_bytes": 126619648,
+    "validation_accuracy": 12.9,
+    "modeled_compute_step_ms": 20,
+    "gpu": "NVIDIA RTX 5000 Ada Generation",
+    "torch": "2.14.1+cu130"
+  },
+  {
+    "workload": "tiny-mobilenet",
+    "parameters": 4458232,
+    "model_payload_bytes": 18040763,
+    "initial_payload_sha256": "66053562347946fc232da7a19f4d2b82173a5de95bc9a6fb250e412c87f545b7",
+    "local_block_median_seconds": 0.07702156295999885,
+    "validation_seconds": 0.07773656118661165,
+    "peak_cuda_bytes": 266567680,
+    "validation_accuracy": 0.5,
+    "modeled_compute_step_ms": 50,
+    "gpu": "NVIDIA RTX 5000 Ada Generation",
+    "torch": "2.14.1+cu130"
+  },
+  {
+    "workload": "tiny-resnet18",
+    "parameters": 11279112,
+    "model_payload_bytes": 45195718,
+    "initial_payload_sha256": "9991bbb18a8a9a8c15668dd9aace4cb53ffbfb77859c8be8180b22dc08605bcf",
+    "local_block_median_seconds": 0.055379773024469614,
+    "validation_seconds": 0.09094970603473485,
+    "peak_cuda_bytes": 317084672,
+    "validation_accuracy": 0.6,
+    "modeled_compute_step_ms": 50,
+    "gpu": "NVIDIA RTX 5000 Ada Generation",
+    "torch": "2.14.1+cu130"
+  }
+]

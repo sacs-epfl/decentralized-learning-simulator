@@ -70,6 +70,10 @@ class SessionSettings:
     test_interval: int = 0
     scheduler: Optional[str] = None
     brokers: int = 1
+    capacity_profile: str = "default"
+    bandwidth_bytes_per_s: int = 1000000
+    compute_step_ms: float = 20
+    final_heldout: bool = False
     traces: str = "none"
     churn: str = "none"
     min_bandwidth: int = 0

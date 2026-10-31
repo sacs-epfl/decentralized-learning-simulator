@@ -250,3 +250,33 @@ def test_runtime_failure_is_recorded_and_can_continue(tmp_path):
     assert [run["status"] for run in suite["runs"]] == ["failed", "completed"]
     failed = next((tmp_path / "results/runs").glob("*bad*/run.log"))
     assert "at least two participants" in failed.read_text()
+
+
+def test_conflux_v2_configuration_keeps_protocol_options(tmp_path):
+    from dasklearn.settings_factory import session_options
+    path = configuration(tmp_path, settings=dict(algorithm="conflux-v2", dataset="synthetic", model="mlp",
+        peers=8, rounds=2, sample_size=4, chunks_in_sample=8, relay_count=6, immediate_uploads=True,
+        capacity_profile="heterogeneous", bandwidth_bytes_per_s=123456, compute_step_ms=12.5))
+    args = get_args(["--config", str(path)])
+    options = session_options(args, "cpu")
+    from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings
+    settings = ConfluxV2Settings(**options)
+    assert (settings.sample_size, settings.chunks_in_sample, settings.relay_count) == (4, 8, 6)
+    assert settings.immediate_uploads and settings.capacity_profile == "heterogeneous"
+    assert settings.bandwidth_bytes_per_s == 123456 and settings.compute_step_ms == 12.5
+    result = invoke(path)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize('changes',[
+    dict(capacity_profile='heterogeneous',traces='fedscale'),
+    dict(capacity_profile='uniform',bandwidth_bytes_per_s=0),
+    dict(capacity_profile='compute',compute_step_ms=-1),
+    dict(final_heldout=True,evaluation_split='test'),
+])
+def test_invalid_controlled_study_settings_are_rejected(tmp_path,changes):
+    path=configuration(tmp_path)
+    document=json.loads(path.read_text());document['settings'].update(changes)
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError):
+        resolve_experiment(path,create_parser())

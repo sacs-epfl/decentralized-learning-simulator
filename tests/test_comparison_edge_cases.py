@@ -95,8 +95,20 @@ def test_real_digits_partitions_are_disjoint(partitioner):
                                alpha=.3, partitioner=partitioner, learning=LearningSettings(.1, 0, 0, 8, 1))
     dataset = DigitsDataset(settings)
     assert all(len(partition) >= 8 for partition in dataset.partitions)
-    assert sum(len(partition) for partition in dataset.partitions) + len(dataset.test) == 1797
+    assert sum(len(partition) for partition in dataset.partitions) + len(dataset.validation) + len(dataset.test) == 1797
     fingerprints = []
-    for partition in [*dataset.partitions, dataset.test]:
+    for partition in [*dataset.partitions, dataset.validation, dataset.test]:
         fingerprints.extend((row.numpy().tobytes(), int(label)) for row, label in zip(partition.features, partition.labels))
     assert len(set(fingerprints)) == 1797
+
+
+def test_digits_holdouts_are_fixed_across_partition_seeds():
+    from dasklearn.datasets.digits import DigitsDataset
+    options=dict(algorithm="test", work_dir="", dataset="digits", participants=4,
+                 learning=LearningSettings(.1, 0, 0, 8, 1))
+    first=DigitsDataset(SessionSettings(seed=0, **options))
+    second=DigitsDataset(SessionSettings(seed=1, **options))
+    import torch
+    for split in ("validation", "test"):
+        assert torch.equal(first.load_split(split).features,second.load_split(split).features)
+        assert torch.equal(first.load_split(split).labels,second.load_split(split).labels)

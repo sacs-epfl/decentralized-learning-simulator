@@ -64,9 +64,9 @@ async def test_research_payloads_are_snapshots_and_training_does_not_mutate_pred
     from dasklearn import functions
     sim = simulate(ConfluxV2Simulation, settings(ConfluxV2Settings, tmp_path, sample_size=2, chunks_in_sample=2))
     message = {'peers': [1]}
-    sim.clients[0].send_message_to_client(1, 'ready', message)
+    sim.clients[0].send_control(1, 'ready', message)
     message['peers'].append(2)
-    assert sim.events[-1][2].data['message'] == {'peers': [1]}
+    assert sim.events[-1][2].data['payload']['message'] == {'peers': [1]}
     functions.dataset = None
     functions.model_trainers = None
     model = functions.initialize(sim.settings, {})[0]
