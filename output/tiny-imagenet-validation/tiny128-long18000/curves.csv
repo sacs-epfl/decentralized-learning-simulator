@@ -1,0 +1,61 @@
+time,accuracy,loss,nodes,variant,readout
+900.0,0.81796875,5.519812734375,128.0,shatter-r2,all-node stored checkpoints
+1800.0,1.456640625,5.4065744921875,128.0,shatter-r2,all-node stored checkpoints
+2700.0,2.053515625,5.2144658125,128.0,shatter-r2,all-node stored checkpoints
+3600.0,2.646875,5.0725659765625,128.0,shatter-r2,all-node stored checkpoints
+4500.0,3.328515625,5.0140907890625,128.0,shatter-r2,all-node stored checkpoints
+5400.0,3.876171875,4.920983703125,128.0,shatter-r2,all-node stored checkpoints
+6300.0,4.41484375,4.8350521171875,128.0,shatter-r2,all-node stored checkpoints
+7200.0,5.236328125,4.759458484375,128.0,shatter-r2,all-node stored checkpoints
+8100.0,5.61015625,4.702198734375,128.0,shatter-r2,all-node stored checkpoints
+9000.0,6.28671875,4.6375789765625,128.0,shatter-r2,all-node stored checkpoints
+9900.0,7.160546875,4.52796028125,128.0,shatter-r2,all-node stored checkpoints
+10800.0,7.753125,4.450371609375,128.0,shatter-r2,all-node stored checkpoints
+11700.0,8.2265625,4.4273254375,128.0,shatter-r2,all-node stored checkpoints
+12600.0,8.578515625,4.39021728125,128.0,shatter-r2,all-node stored checkpoints
+13500.0,9.411328125,4.3230021640625,128.0,shatter-r2,all-node stored checkpoints
+14400.0,9.72265625,4.3139728359375,128.0,shatter-r2,all-node stored checkpoints
+15300.0,9.82578125,4.3243037265625,128.0,shatter-r2,all-node stored checkpoints
+16200.0,10.885546875,4.206702046875,128.0,shatter-r2,all-node stored checkpoints
+17100.0,10.865234375,4.2342044140625,128.0,shatter-r2,all-node stored checkpoints
+18000.0,11.409375,4.1876818046875,128.0,shatter-r2,all-node stored checkpoints
+900.0,2.513671875,5.0930360546875,128.0,conflux-v2,all-node stored checkpoints
+1800.0,4.7984374999999995,4.8362347734375,128.0,conflux-v2,all-node stored checkpoints
+2700.0,6.594140625,4.6210055546875,128.0,conflux-v2,all-node stored checkpoints
+3600.0,8.759765625,4.4597797421875,128.0,conflux-v2,all-node stored checkpoints
+4500.0,10.627734375,4.2964341640625,128.0,conflux-v2,all-node stored checkpoints
+5400.0,12.048828125,4.178349015625,128.0,conflux-v2,all-node stored checkpoints
+6300.0,13.1984375,4.07071040625,128.0,conflux-v2,all-node stored checkpoints
+7200.0,15.117578125,3.944538015625,128.0,conflux-v2,all-node stored checkpoints
+8100.0,16.437109375000002,3.8724191796875,128.0,conflux-v2,all-node stored checkpoints
+9000.0,17.5765625,3.7804667109375,128.0,conflux-v2,all-node stored checkpoints
+9900.0,18.7,3.7261974218750002,128.0,conflux-v2,all-node stored checkpoints
+10800.0,19.31875,3.6784457109375,128.0,conflux-v2,all-node stored checkpoints
+11700.0,20.205078125,3.6313657109375,128.0,conflux-v2,all-node stored checkpoints
+12600.0,21.34921875,3.5823046875,128.0,conflux-v2,all-node stored checkpoints
+13500.0,21.9625,3.546372609375,128.0,conflux-v2,all-node stored checkpoints
+14400.0,20.5765625,3.5910031953125,128.0,conflux-v2,all-node stored checkpoints
+15300.0,22.068359375,3.5111768046875,128.0,conflux-v2,all-node stored checkpoints
+16200.0,22.662890625,3.5016421484375,128.0,conflux-v2,all-node stored checkpoints
+17100.0,22.549609375,3.50010590625,128.0,conflux-v2,all-node stored checkpoints
+18000.0,22.975,3.477333703125,128.0,conflux-v2,all-node stored checkpoints
+900.0,3.05,5.062635,,conflux-v2,latest completed sample aggregate
+1800.0,5.25,4.817906,,conflux-v2,latest completed sample aggregate
+2700.0,6.75,4.60031,,conflux-v2,latest completed sample aggregate
+3600.0,8.75,4.482085,,conflux-v2,latest completed sample aggregate
+4500.0,10.25,4.287799,,conflux-v2,latest completed sample aggregate
+5400.0,11.8,4.162723,,conflux-v2,latest completed sample aggregate
+6300.0,13.65,4.038256,,conflux-v2,latest completed sample aggregate
+7200.0,15.6,3.923549,,conflux-v2,latest completed sample aggregate
+8100.0,16.6,3.857503,,conflux-v2,latest completed sample aggregate
+9000.0,17.45,3.785806,,conflux-v2,latest completed sample aggregate
+9900.0,18.35,3.735043,,conflux-v2,latest completed sample aggregate
+10800.0,20.05,3.660989,,conflux-v2,latest completed sample aggregate
+11700.0,20.25,3.624181,,conflux-v2,latest completed sample aggregate
+12600.0,21.2,3.580804,,conflux-v2,latest completed sample aggregate
+13500.0,22.2,3.53627,,conflux-v2,latest completed sample aggregate
+14400.0,20.15,3.600598,,conflux-v2,latest completed sample aggregate
+15300.0,22.6,3.496478,,conflux-v2,latest completed sample aggregate
+16200.0,22.15,3.513186,,conflux-v2,latest completed sample aggregate
+17100.0,22.65,3.509915,,conflux-v2,latest completed sample aggregate
+18000.0,23.1,3.443088,,conflux-v2,latest completed sample aggregate

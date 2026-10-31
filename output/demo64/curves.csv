@@ -1,0 +1,217 @@
+time,accuracy,loss,nodes,bytes_sent,variant,profile,partitioner,seed
+150.0,32.14,1.904518,64,868608000,DeMo H=5,uniform,iid,0
+300.0,36.99,1.745545,64,1737728000,DeMo H=5,uniform,iid,0
+450.0,44.9,1.536574,64,2606336000,DeMo H=5,uniform,iid,0
+600.0,47.55,1.454325,64,3475456000,DeMo H=5,uniform,iid,0
+750.0,51.62,1.351906,64,4344064000,DeMo H=5,uniform,iid,0
+900.0,54.76,1.2683,64,5213184000,DeMo H=5,uniform,iid,0
+150.0,31.84,1.94078,64,868608000,DeMo H=5,uniform,dirichlet,0
+300.0,35.6,1.803872,64,1737728000,DeMo H=5,uniform,dirichlet,0
+450.0,37.72,1.735064,64,2606336000,DeMo H=5,uniform,dirichlet,0
+600.0,40.64,1.654294,64,3475456000,DeMo H=5,uniform,dirichlet,0
+750.0,42.39,1.589293,64,4344064000,DeMo H=5,uniform,dirichlet,0
+900.0,44.3,1.542543,64,5213184000,DeMo H=5,uniform,dirichlet,0
+150.0,26.93,2.020898,64,873728000,DeMo H=1,uniform,iid,0
+300.0,34.84,1.769551,64,1747456000,DeMo H=1,uniform,iid,0
+450.0,40.26,1.675628,64,2621312000,DeMo H=1,uniform,iid,0
+600.0,44.79,1.530146,64,3494912000,DeMo H=1,uniform,iid,0
+750.0,48.47,1.407895,64,4368768000,DeMo H=1,uniform,iid,0
+900.0,54.19,1.276011,64,5242496000,DeMo H=1,uniform,iid,0
+150.0,25.84,2.022603,64,873728000,DeMo H=1,uniform,dirichlet,0
+300.0,35.14,1.802424,64,1747456000,DeMo H=1,uniform,dirichlet,0
+450.0,37.49,1.693568,64,2621312000,DeMo H=1,uniform,dirichlet,0
+600.0,42.25,1.59093,64,3494912000,DeMo H=1,uniform,dirichlet,0
+750.0,44.14,1.530668,64,4368768000,DeMo H=1,uniform,dirichlet,0
+900.0,46.43,1.48098,64,5242496000,DeMo H=1,uniform,dirichlet,0
+150.0,32.89,1.880304,64,868608000,DeMo H=5,uniform,iid,1
+300.0,37.39,1.750826,64,1737728000,DeMo H=5,uniform,iid,1
+450.0,46.9,1.485832,64,2606336000,DeMo H=5,uniform,iid,1
+600.0,50.56,1.38219,64,3475456000,DeMo H=5,uniform,iid,1
+750.0,54.8,1.289734,64,4344064000,DeMo H=5,uniform,iid,1
+900.0,56.63,1.229558,64,5213184000,DeMo H=5,uniform,iid,1
+150.0,29.34,1.971719,64,868608000,DeMo H=5,uniform,dirichlet,1
+300.0,34.86,1.812188,64,1737728000,DeMo H=5,uniform,dirichlet,1
+450.0,39.02,1.700591,64,2606336000,DeMo H=5,uniform,dirichlet,1
+600.0,41.45,1.631204,64,3475456000,DeMo H=5,uniform,dirichlet,1
+750.0,44.12,1.562061,64,4344064000,DeMo H=5,uniform,dirichlet,1
+900.0,44.66,1.54013,64,5213184000,DeMo H=5,uniform,dirichlet,1
+150.0,29.37,1.952246,64,873728000,DeMo H=1,uniform,iid,1
+300.0,37.96,1.736985,64,1747456000,DeMo H=1,uniform,iid,1
+450.0,40.91,1.641346,64,2621312000,DeMo H=1,uniform,iid,1
+600.0,47.62,1.43852,64,3494912000,DeMo H=1,uniform,iid,1
+750.0,50.43,1.368095,64,4368768000,DeMo H=1,uniform,iid,1
+900.0,53.13,1.294499,64,5242496000,DeMo H=1,uniform,iid,1
+150.0,26.51,2.039332,64,873728000,DeMo H=1,uniform,dirichlet,1
+300.0,32.35,1.860321,64,1747456000,DeMo H=1,uniform,dirichlet,1
+450.0,37.85,1.715152,64,2621312000,DeMo H=1,uniform,dirichlet,1
+600.0,42.53,1.60258,64,3494912000,DeMo H=1,uniform,dirichlet,1
+750.0,42.62,1.581217,64,4368768000,DeMo H=1,uniform,dirichlet,1
+900.0,46.05,1.48649,64,5242496000,DeMo H=1,uniform,dirichlet,1
+150.0,29.4,1.992869,64,868608000,DeMo H=5,uniform,iid,2
+300.0,39.25,1.706346,64,1737728000,DeMo H=5,uniform,iid,2
+450.0,45.56,1.551459,64,2606336000,DeMo H=5,uniform,iid,2
+600.0,48.44,1.461877,64,3475456000,DeMo H=5,uniform,iid,2
+750.0,52.41,1.34325,64,4344064000,DeMo H=5,uniform,iid,2
+900.0,53.1,1.3286,64,5213184000,DeMo H=5,uniform,iid,2
+150.0,29.65,1.990057,64,868608000,DeMo H=5,uniform,dirichlet,2
+300.0,34.06,1.858662,64,1737728000,DeMo H=5,uniform,dirichlet,2
+450.0,38.72,1.729895,64,2606336000,DeMo H=5,uniform,dirichlet,2
+600.0,41.14,1.66235,64,3475456000,DeMo H=5,uniform,dirichlet,2
+750.0,42.05,1.63264,64,4344064000,DeMo H=5,uniform,dirichlet,2
+900.0,43.58,1.58506,64,5213184000,DeMo H=5,uniform,dirichlet,2
+150.0,26.43,2.038643,64,873728000,DeMo H=1,uniform,iid,2
+300.0,34.43,1.78987,64,1747456000,DeMo H=1,uniform,iid,2
+450.0,39.88,1.648328,64,2621312000,DeMo H=1,uniform,iid,2
+600.0,45.87,1.473053,64,3494912000,DeMo H=1,uniform,iid,2
+750.0,50.58,1.368497,64,4368768000,DeMo H=1,uniform,iid,2
+900.0,52.39,1.33708,64,5242496000,DeMo H=1,uniform,iid,2
+150.0,26.08,2.044179,64,873728000,DeMo H=1,uniform,dirichlet,2
+300.0,35.97,1.793044,64,1747456000,DeMo H=1,uniform,dirichlet,2
+450.0,38.71,1.681012,64,2621312000,DeMo H=1,uniform,dirichlet,2
+600.0,41.28,1.618345,64,3494912000,DeMo H=1,uniform,dirichlet,2
+750.0,42.36,1.581161,64,4368768000,DeMo H=1,uniform,dirichlet,2
+900.0,45.6,1.500446,64,5242496000,DeMo H=1,uniform,dirichlet,2
+150.0,35.2084375,1.81356059375,64,211254237,Conflux V2 optimized,uniform,iid,0
+300.0,42.89359375,1.575257203125,64,421561074,Conflux V2 optimized,uniform,iid,0
+450.0,47.52765625,1.45836303125,64,627161851,Conflux V2 optimized,uniform,iid,0
+600.0,50.45046875,1.37763315625,64,834154122,Conflux V2 optimized,uniform,iid,0
+750.0,52.6759375,1.314113359375,64,1044183213,Conflux V2 optimized,uniform,iid,0
+900.0,55.343125,1.25102621875,64,1254941372,Conflux V2 optimized,uniform,iid,0
+150.0,36.91671875,1.7848924531250001,64,210677629,Conflux V2 optimized,uniform,iid,1
+300.0,43.35328125,1.59400109375,64,412582113,Conflux V2 optimized,uniform,iid,1
+450.0,47.569375,1.477656375,64,619342903,Conflux V2 optimized,uniform,iid,1
+600.0,50.585,1.398159953125,64,824815998,Conflux V2 optimized,uniform,iid,1
+750.0,52.885625000000005,1.331151375,64,1036989131,Conflux V2 optimized,uniform,iid,1
+900.0,54.97078125,1.2703845625,64,1239077868,Conflux V2 optimized,uniform,iid,1
+150.0,37.068125,1.791330078125,64,211905658,Conflux V2 optimized,uniform,iid,2
+300.0,42.7678125,1.6042775625,64,423274720,Conflux V2 optimized,uniform,iid,2
+450.0,46.80328125,1.491821828125,64,635208818,Conflux V2 optimized,uniform,iid,2
+600.0,49.769999999999996,1.40922078125,64,846794292,Conflux V2 optimized,uniform,iid,2
+750.0,51.87125,1.349180296875,64,1058172383,Conflux V2 optimized,uniform,iid,2
+900.0,54.277812499999996,1.289925046875,64,1265069951,Conflux V2 optimized,uniform,iid,2
+150.0,24.26375,2.023160453125,64,211254237,Conflux V2 optimized,uniform,dirichlet,0
+300.0,30.54328125,1.873579296875,64,421561074,Conflux V2 optimized,uniform,dirichlet,0
+450.0,35.95578125,1.7290236562499999,64,627161851,Conflux V2 optimized,uniform,dirichlet,0
+600.0,38.93453125,1.6448159375,64,834154122,Conflux V2 optimized,uniform,dirichlet,0
+750.0,40.62453125,1.59962425,64,1044183213,Conflux V2 optimized,uniform,dirichlet,0
+900.0,42.86421875,1.544638265625,64,1254941372,Conflux V2 optimized,uniform,dirichlet,0
+150.0,25.134375,2.050052671875,64,210677629,Conflux V2 optimized,uniform,dirichlet,1
+300.0,29.65859375,1.8711805625,64,412582113,Conflux V2 optimized,uniform,dirichlet,1
+450.0,35.01171875,1.73780921875,64,619342903,Conflux V2 optimized,uniform,dirichlet,1
+600.0,37.87703125,1.69165503125,64,824815998,Conflux V2 optimized,uniform,dirichlet,1
+750.0,39.49484375,1.64120184375,64,1036989131,Conflux V2 optimized,uniform,dirichlet,1
+900.0,43.15078125,1.556184671875,64,1239077868,Conflux V2 optimized,uniform,dirichlet,1
+150.0,25.524375,2.05694909375,64,211905658,Conflux V2 optimized,uniform,dirichlet,2
+300.0,29.36171875,1.898652125,64,423274720,Conflux V2 optimized,uniform,dirichlet,2
+450.0,32.4953125,1.818738671875,64,635208818,Conflux V2 optimized,uniform,dirichlet,2
+600.0,38.5021875,1.680416734375,64,846794292,Conflux V2 optimized,uniform,dirichlet,2
+750.0,39.09703125,1.6533541250000001,64,1058172383,Conflux V2 optimized,uniform,dirichlet,2
+900.0,41.5409375,1.583056328125,64,1265069951,Conflux V2 optimized,uniform,dirichlet,2
+150.0,26.33,2.100343,64,346574154,DeMo H=5,heterogeneous,iid,0
+300.0,26.22,2.063261,64,694543708,DeMo H=5,heterogeneous,iid,0
+450.0,34.25,1.830693,64,1042324973,DeMo H=5,heterogeneous,iid,0
+600.0,38.08,1.73157,64,1390211808,DeMo H=5,heterogeneous,iid,0
+750.0,36.99,1.745545,64,1738201979,DeMo H=5,heterogeneous,iid,0
+900.0,41.93,1.604107,64,2085891121,DeMo H=5,heterogeneous,iid,0
+150.0,21.28,2.127391,64,346574154,DeMo H=5,heterogeneous,dirichlet,0
+300.0,30.23,1.985888,64,694543708,DeMo H=5,heterogeneous,dirichlet,0
+450.0,33.28,1.900155,64,1042324973,DeMo H=5,heterogeneous,dirichlet,0
+600.0,34.07,1.863947,64,1390211808,DeMo H=5,heterogeneous,dirichlet,0
+750.0,35.6,1.803872,64,1738201979,DeMo H=5,heterogeneous,dirichlet,0
+900.0,35.54,1.782218,64,2085891121,DeMo H=5,heterogeneous,dirichlet,0
+150.0,18.13,2.215559,64,348243140,DeMo H=1,heterogeneous,iid,0
+300.0,24.36,2.011515,64,697157452,DeMo H=1,heterogeneous,iid,0
+450.0,27.17,2.018118,64,1046150867,DeMo H=1,heterogeneous,iid,0
+600.0,32.03,1.871949,64,1395187727,DeMo H=1,heterogeneous,iid,0
+750.0,34.5228125,1.7808333437500001,64,1744250812,DeMo H=1,heterogeneous,iid,0
+900.0,38.75,1.718963,64,2093325027,DeMo H=1,heterogeneous,iid,0
+150.0,19.76,2.12238,64,348243140,DeMo H=1,heterogeneous,dirichlet,0
+300.0,16.19,2.430638,64,697157452,DeMo H=1,heterogeneous,dirichlet,0
+450.0,27.22,2.034449,64,1046150867,DeMo H=1,heterogeneous,dirichlet,0
+600.0,31.82,1.894434,64,1395187727,DeMo H=1,heterogeneous,dirichlet,0
+750.0,35.02828125,1.80517665625,64,1744250812,DeMo H=1,heterogeneous,dirichlet,0
+900.0,37.2,1.734702,64,2093325027,DeMo H=1,heterogeneous,dirichlet,0
+150.0,24.45,2.087001,64,346211643,DeMo H=5,heterogeneous,iid,1
+300.0,27.5,2.031928,64,693690058,DeMo H=5,heterogeneous,iid,1
+450.0,35.86,1.790733,64,1041423590,DeMo H=5,heterogeneous,iid,1
+600.0,39.82,1.667481,64,1389158469,DeMo H=5,heterogeneous,iid,1
+750.0,37.39,1.750826,64,1736859769,DeMo H=5,heterogeneous,iid,1
+900.0,43.17,1.57755,64,2084283770,DeMo H=5,heterogeneous,iid,1
+150.0,20.41,2.143553,64,346211643,DeMo H=5,heterogeneous,dirichlet,1
+300.0,27.57,2.018885,64,693690058,DeMo H=5,heterogeneous,dirichlet,1
+450.0,30.81,1.9325,64,1041423590,DeMo H=5,heterogeneous,dirichlet,1
+600.0,32.5,1.87242,64,1389158469,DeMo H=5,heterogeneous,dirichlet,1
+750.0,34.86,1.812188,64,1736859769,DeMo H=5,heterogeneous,dirichlet,1
+900.0,36.92,1.764767,64,2084283770,DeMo H=5,heterogeneous,dirichlet,1
+150.0,10.17,2.407954,64,348023948,DeMo H=1,heterogeneous,iid,1
+300.0,23.94,2.053039,64,696783817,DeMo H=1,heterogeneous,iid,1
+450.0,31.06,1.929338,64,1045687273,DeMo H=1,heterogeneous,iid,1
+600.0,32.58,1.843733,64,1394648383,DeMo H=1,heterogeneous,iid,1
+750.0,37.61796875,1.73669453125,64,1743582121,DeMo H=1,heterogeneous,iid,1
+900.0,39.08,1.643216,64,2092569286,DeMo H=1,heterogeneous,iid,1
+150.0,14.37,2.332949,64,348023948,DeMo H=1,heterogeneous,dirichlet,1
+300.0,21.88,2.11682,64,696783817,DeMo H=1,heterogeneous,dirichlet,1
+450.0,27.89,1.974784,64,1045687273,DeMo H=1,heterogeneous,dirichlet,1
+600.0,32.3,1.869537,64,1394648383,DeMo H=1,heterogeneous,dirichlet,1
+750.0,32.671406250000004,1.8511922031249999,64,1743582121,DeMo H=1,heterogeneous,dirichlet,1
+900.0,36.02,1.791192,64,2092569286,DeMo H=1,heterogeneous,dirichlet,1
+150.0,18.05,2.168695,64,346489101,DeMo H=5,heterogeneous,iid,2
+300.0,29.78,1.988989,64,693976879,DeMo H=5,heterogeneous,iid,2
+450.0,34.65,1.850406,64,1041521063,DeMo H=5,heterogeneous,iid,2
+600.0,34.05,1.795917,64,1389123038,DeMo H=5,heterogeneous,iid,2
+750.0,39.25,1.706346,64,1736763134,DeMo H=5,heterogeneous,iid,2
+900.0,42.57,1.587616,64,2083978185,DeMo H=5,heterogeneous,iid,2
+150.0,20.38,2.16856,64,346489101,DeMo H=5,heterogeneous,dirichlet,2
+300.0,27.45,2.035009,64,693976879,DeMo H=5,heterogeneous,dirichlet,2
+450.0,30.85,1.955905,64,1041521063,DeMo H=5,heterogeneous,dirichlet,2
+600.0,33.08,1.902007,64,1389123038,DeMo H=5,heterogeneous,dirichlet,2
+750.0,34.06,1.858662,64,1736763134,DeMo H=5,heterogeneous,dirichlet,2
+900.0,37.16,1.780623,64,2083978185,DeMo H=5,heterogeneous,dirichlet,2
+150.0,14.51,2.338669,64,348174726,DeMo H=1,heterogeneous,iid,2
+300.0,20.0,2.227204,64,697046498,DeMo H=1,heterogeneous,iid,2
+450.0,28.28,2.056169,64,1045971888,DeMo H=1,heterogeneous,iid,2
+600.0,31.16,1.907986,64,1394928809,DeMo H=1,heterogeneous,iid,2
+750.0,34.43,1.78987,64,1743866720,DeMo H=1,heterogeneous,iid,2
+900.0,33.62,1.818971,64,2092856377,DeMo H=1,heterogeneous,iid,2
+150.0,19.32,2.213739,64,348174726,DeMo H=1,heterogeneous,dirichlet,2
+300.0,25.08,2.083072,64,697046498,DeMo H=1,heterogeneous,dirichlet,2
+450.0,28.81,1.984709,64,1045971888,DeMo H=1,heterogeneous,dirichlet,2
+600.0,31.25,1.94903,64,1394928809,DeMo H=1,heterogeneous,dirichlet,2
+750.0,35.97,1.793044,64,1743866720,DeMo H=1,heterogeneous,dirichlet,2
+900.0,35.92,1.767829,64,2092856377,DeMo H=1,heterogeneous,dirichlet,2
+150.0,26.17203125,2.038831859375,64,98360456,Conflux V2 optimized,heterogeneous,iid,0
+300.0,34.58296875,1.8281205625,64,200577897,Conflux V2 optimized,heterogeneous,iid,0
+450.0,39.4403125,1.677888015625,64,308889862,Conflux V2 optimized,heterogeneous,iid,0
+600.0,42.614375,1.582907015625,64,412018603,Conflux V2 optimized,heterogeneous,iid,0
+750.0,45.1746875,1.513312046875,64,523703194,Conflux V2 optimized,heterogeneous,iid,0
+900.0,47.32125,1.46376265625,64,625339581,Conflux V2 optimized,heterogeneous,iid,0
+150.0,28.31796875,1.99269615625,64,107284742,Conflux V2 optimized,heterogeneous,iid,1
+300.0,36.58,1.7976656875,64,209620436,Conflux V2 optimized,heterogeneous,iid,1
+450.0,41.04984375,1.657005640625,64,325016744,Conflux V2 optimized,heterogeneous,iid,1
+600.0,44.23109375,1.572592515625,64,432684922,Conflux V2 optimized,heterogeneous,iid,1
+750.0,45.71671875,1.524355953125,64,535112860,Conflux V2 optimized,heterogeneous,iid,1
+900.0,47.889375,1.466915890625,64,642751954,Conflux V2 optimized,heterogeneous,iid,1
+150.0,28.37078125,2.0240512656250003,64,104811236,Conflux V2 optimized,heterogeneous,iid,2
+300.0,37.068125,1.791330078125,64,212903099,Conflux V2 optimized,heterogeneous,iid,2
+450.0,40.51578125,1.678393875,64,318427396,Conflux V2 optimized,heterogeneous,iid,2
+600.0,42.7678125,1.6042775625,64,421751913,Conflux V2 optimized,heterogeneous,iid,2
+750.0,44.72359375,1.54674384375,64,517521647,Conflux V2 optimized,heterogeneous,iid,2
+900.0,46.789375,1.496511390625,64,621385251,Conflux V2 optimized,heterogeneous,iid,2
+150.0,18.2390625,2.22120871875,64,98360456,Conflux V2 optimized,heterogeneous,dirichlet,0
+300.0,25.21140625,2.02522240625,64,200577897,Conflux V2 optimized,heterogeneous,dirichlet,0
+450.0,28.76890625,1.949584390625,64,308889862,Conflux V2 optimized,heterogeneous,dirichlet,0
+600.0,30.95203125,1.876676765625,64,412018603,Conflux V2 optimized,heterogeneous,dirichlet,0
+750.0,34.03296875,1.79079409375,64,523703194,Conflux V2 optimized,heterogeneous,dirichlet,0
+900.0,36.3725,1.725651359375,64,625339581,Conflux V2 optimized,heterogeneous,dirichlet,0
+150.0,19.17890625,2.216536203125,64,107284742,Conflux V2 optimized,heterogeneous,dirichlet,1
+300.0,24.1046875,2.0742140781250002,64,209620436,Conflux V2 optimized,heterogeneous,dirichlet,1
+450.0,28.4025,1.9293921875,64,325016744,Conflux V2 optimized,heterogeneous,dirichlet,1
+600.0,30.96453125,1.8464478281249999,64,432684922,Conflux V2 optimized,heterogeneous,dirichlet,1
+750.0,33.84765625,1.792808859375,64,535112860,Conflux V2 optimized,heterogeneous,dirichlet,1
+900.0,35.75609375,1.732362578125,64,642751954,Conflux V2 optimized,heterogeneous,dirichlet,1
+150.0,17.89984375,2.2892701875,64,104811236,Conflux V2 optimized,heterogeneous,dirichlet,2
+300.0,25.524375,2.05694909375,64,212903099,Conflux V2 optimized,heterogeneous,dirichlet,2
+450.0,28.19875,1.958611140625,64,318427396,Conflux V2 optimized,heterogeneous,dirichlet,2
+600.0,29.36171875,1.898652125,64,421751913,Conflux V2 optimized,heterogeneous,dirichlet,2
+750.0,30.96703125,1.860107609375,64,517521647,Conflux V2 optimized,heterogeneous,dirichlet,2
+900.0,33.7028125,1.783716765625,64,621385251,Conflux V2 optimized,heterogeneous,dirichlet,2

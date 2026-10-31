@@ -1,0 +1,505 @@
+{
+  "passed": true,
+  "execution_commit": "bd80909",
+  "source_sha256": "9be351fee9cdac4fc49816d87665cabfcef722ba0d0c1161cdd2e22513cbe96c",
+  "main_runs": 72,
+  "exploratory_ablation_runs": 12,
+  "total_per_node_rows": 32256,
+  "all_learning_and_capacity_assignments_exact": true,
+  "all_84_runs_sent_received_and_summary_bytes_exact": true,
+  "ablation_audits": [
+    {
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "uniform",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "uniform",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 0,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 1,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "heterogeneous",
+      "partitioner": "iid",
+      "seed": 2,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 0,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 1,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    },
+    {
+      "profile": "heterogeneous",
+      "partitioner": "dirichlet",
+      "seed": 2,
+      "per_node_rows": 384,
+      "finite_metrics": true,
+      "all_nodes_per_checkpoint": true,
+      "traffic_exact": true,
+      "full_consensus_metric_spreads": [
+        {
+          "time": 150.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 300.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 450.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 600.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 750.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        },
+        {
+          "time": 900.0,
+          "accuracy_spread": 0.0,
+          "loss_spread": 0.0
+        }
+      ]
+    }
+  ],
+  "ablation_note": "Two-phase Moshpit is an exploratory configuration check; both configurations are reported. No test-set winner is selected."
+}

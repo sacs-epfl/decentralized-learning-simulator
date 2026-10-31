@@ -1,0 +1,217 @@
+time,round,accuracy,loss,recipients,mean_staleness_rounds,max_staleness_rounds,variant,profile,partitioner,seed
+150.0,10,32.14,1.904518,64,0.0,0,DeMo H=5,uniform,iid,0
+300.0,20,36.99,1.745545,64,0.0,0,DeMo H=5,uniform,iid,0
+450.0,31,44.9,1.536574,64,0.0,0,DeMo H=5,uniform,iid,0
+600.0,41,47.55,1.454325,64,0.0,0,DeMo H=5,uniform,iid,0
+750.0,52,51.62,1.351906,64,0.0,0,DeMo H=5,uniform,iid,0
+900.0,62,54.76,1.2683,64,0.0,0,DeMo H=5,uniform,iid,0
+150.0,10,31.84,1.94078,64,0.0,0,DeMo H=5,uniform,dirichlet,0
+300.0,20,35.6,1.803872,64,0.0,0,DeMo H=5,uniform,dirichlet,0
+450.0,31,37.72,1.735064,64,0.0,0,DeMo H=5,uniform,dirichlet,0
+600.0,41,40.64,1.654294,64,0.0,0,DeMo H=5,uniform,dirichlet,0
+750.0,52,42.39,1.589293,64,0.0,0,DeMo H=5,uniform,dirichlet,0
+900.0,62,44.3,1.542543,64,0.0,0,DeMo H=5,uniform,dirichlet,0
+150.0,10,26.93,2.020898,64,0.0,0,DeMo H=1,uniform,iid,0
+300.0,21,34.84,1.769551,64,0.0,0,DeMo H=1,uniform,iid,0
+450.0,31,40.26,1.675628,64,0.0,0,DeMo H=1,uniform,iid,0
+600.0,42,44.79,1.530146,64,0.0,0,DeMo H=1,uniform,iid,0
+750.0,52,48.47,1.407895,64,0.0,0,DeMo H=1,uniform,iid,0
+900.0,63,54.19,1.276011,64,0.0,0,DeMo H=1,uniform,iid,0
+150.0,10,25.84,2.022603,64,0.0,0,DeMo H=1,uniform,dirichlet,0
+300.0,21,35.14,1.802424,64,0.0,0,DeMo H=1,uniform,dirichlet,0
+450.0,31,37.49,1.693568,64,0.0,0,DeMo H=1,uniform,dirichlet,0
+600.0,42,42.25,1.59093,64,0.0,0,DeMo H=1,uniform,dirichlet,0
+750.0,52,44.14,1.530668,64,0.0,0,DeMo H=1,uniform,dirichlet,0
+900.0,63,46.43,1.48098,64,0.0,0,DeMo H=1,uniform,dirichlet,0
+150.0,10,32.89,1.880304,64,0.0,0,DeMo H=5,uniform,iid,1
+300.0,20,37.39,1.750826,64,0.0,0,DeMo H=5,uniform,iid,1
+450.0,31,46.9,1.485832,64,0.0,0,DeMo H=5,uniform,iid,1
+600.0,41,50.56,1.38219,64,0.0,0,DeMo H=5,uniform,iid,1
+750.0,52,54.8,1.289734,64,0.0,0,DeMo H=5,uniform,iid,1
+900.0,62,56.63,1.229558,64,0.0,0,DeMo H=5,uniform,iid,1
+150.0,10,29.34,1.971719,64,0.0,0,DeMo H=5,uniform,dirichlet,1
+300.0,20,34.86,1.812188,64,0.0,0,DeMo H=5,uniform,dirichlet,1
+450.0,31,39.02,1.700591,64,0.0,0,DeMo H=5,uniform,dirichlet,1
+600.0,41,41.45,1.631204,64,0.0,0,DeMo H=5,uniform,dirichlet,1
+750.0,52,44.12,1.562061,64,0.0,0,DeMo H=5,uniform,dirichlet,1
+900.0,62,44.66,1.54013,64,0.0,0,DeMo H=5,uniform,dirichlet,1
+150.0,10,29.37,1.952246,64,0.0,0,DeMo H=1,uniform,iid,1
+300.0,21,37.96,1.736985,64,0.0,0,DeMo H=1,uniform,iid,1
+450.0,31,40.91,1.641346,64,0.0,0,DeMo H=1,uniform,iid,1
+600.0,42,47.62,1.43852,64,0.0,0,DeMo H=1,uniform,iid,1
+750.0,52,50.43,1.368095,64,0.0,0,DeMo H=1,uniform,iid,1
+900.0,63,53.13,1.294499,64,0.0,0,DeMo H=1,uniform,iid,1
+150.0,10,26.51,2.039332,64,0.0,0,DeMo H=1,uniform,dirichlet,1
+300.0,21,32.35,1.860321,64,0.0,0,DeMo H=1,uniform,dirichlet,1
+450.0,31,37.85,1.715152,64,0.0,0,DeMo H=1,uniform,dirichlet,1
+600.0,42,42.53,1.60258,64,0.0,0,DeMo H=1,uniform,dirichlet,1
+750.0,52,42.62,1.581217,64,0.0,0,DeMo H=1,uniform,dirichlet,1
+900.0,63,46.05,1.48649,64,0.0,0,DeMo H=1,uniform,dirichlet,1
+150.0,10,29.4,1.992869,64,0.0,0,DeMo H=5,uniform,iid,2
+300.0,20,39.25,1.706346,64,0.0,0,DeMo H=5,uniform,iid,2
+450.0,31,45.56,1.551459,64,0.0,0,DeMo H=5,uniform,iid,2
+600.0,41,48.44,1.461877,64,0.0,0,DeMo H=5,uniform,iid,2
+750.0,52,52.41,1.34325,64,0.0,0,DeMo H=5,uniform,iid,2
+900.0,62,53.1,1.3286,64,0.0,0,DeMo H=5,uniform,iid,2
+150.0,10,29.65,1.990057,64,0.0,0,DeMo H=5,uniform,dirichlet,2
+300.0,20,34.06,1.858662,64,0.0,0,DeMo H=5,uniform,dirichlet,2
+450.0,31,38.72,1.729895,64,0.0,0,DeMo H=5,uniform,dirichlet,2
+600.0,41,41.14,1.66235,64,0.0,0,DeMo H=5,uniform,dirichlet,2
+750.0,52,42.05,1.63264,64,0.0,0,DeMo H=5,uniform,dirichlet,2
+900.0,62,43.58,1.58506,64,0.0,0,DeMo H=5,uniform,dirichlet,2
+150.0,10,26.43,2.038643,64,0.0,0,DeMo H=1,uniform,iid,2
+300.0,21,34.43,1.78987,64,0.0,0,DeMo H=1,uniform,iid,2
+450.0,31,39.88,1.648328,64,0.0,0,DeMo H=1,uniform,iid,2
+600.0,42,45.87,1.473053,64,0.0,0,DeMo H=1,uniform,iid,2
+750.0,52,50.58,1.368497,64,0.0,0,DeMo H=1,uniform,iid,2
+900.0,63,52.39,1.33708,64,0.0,0,DeMo H=1,uniform,iid,2
+150.0,10,26.08,2.044179,64,0.0,0,DeMo H=1,uniform,dirichlet,2
+300.0,21,35.97,1.793044,64,0.0,0,DeMo H=1,uniform,dirichlet,2
+450.0,31,38.71,1.681012,64,0.0,0,DeMo H=1,uniform,dirichlet,2
+600.0,42,41.28,1.618345,64,0.0,0,DeMo H=1,uniform,dirichlet,2
+750.0,52,42.36,1.581161,64,0.0,0,DeMo H=1,uniform,dirichlet,2
+900.0,63,45.6,1.500446,64,0.0,0,DeMo H=1,uniform,dirichlet,2
+150.0,19,38.03,1.745055,16,3.984375,17,Conflux V2 optimized,uniform,iid,0
+300.0,38,44.08,1.544068,16,3.390625,20,Conflux V2 optimized,uniform,iid,0
+450.0,57,48.42,1.435685,16,2.90625,16,Conflux V2 optimized,uniform,iid,0
+600.0,76,50.63,1.367581,16,2.75,14,Conflux V2 optimized,uniform,iid,0
+750.0,95,53.14,1.300911,16,3.8125,20,Conflux V2 optimized,uniform,iid,0
+900.0,114,55.33,1.247293,16,2.71875,14,Conflux V2 optimized,uniform,iid,0
+150.0,19,38.14,1.735066,16,2.96875,14,Conflux V2 optimized,uniform,iid,1
+300.0,37,43.6,1.581621,16,2.71875,14,Conflux V2 optimized,uniform,iid,1
+450.0,56,48.18,1.461003,16,2.96875,16,Conflux V2 optimized,uniform,iid,1
+600.0,75,51.43,1.381165,16,3.46875,11,Conflux V2 optimized,uniform,iid,1
+750.0,94,53.34,1.32415,16,3.25,18,Conflux V2 optimized,uniform,iid,1
+900.0,113,55.28,1.261478,16,2.9375,16,Conflux V2 optimized,uniform,iid,1
+150.0,19,38.63,1.745268,16,2.796875,17,Conflux V2 optimized,uniform,iid,2
+300.0,38,43.01,1.598871,16,2.96875,14,Conflux V2 optimized,uniform,iid,2
+450.0,57,46.94,1.47414,16,3.015625,27,Conflux V2 optimized,uniform,iid,2
+600.0,77,50.44,1.398007,16,2.515625,10,Conflux V2 optimized,uniform,iid,2
+750.0,96,52.24,1.335881,16,3.15625,14,Conflux V2 optimized,uniform,iid,2
+900.0,115,54.19,1.287151,15,2.796875,11,Conflux V2 optimized,uniform,iid,2
+150.0,19,21.87,1.998918,16,3.984375,17,Conflux V2 optimized,uniform,dirichlet,0
+300.0,38,29.47,1.862871,16,3.390625,20,Conflux V2 optimized,uniform,dirichlet,0
+450.0,57,34.06,1.748087,16,2.90625,16,Conflux V2 optimized,uniform,dirichlet,0
+600.0,76,38.85,1.63642,16,2.75,14,Conflux V2 optimized,uniform,dirichlet,0
+750.0,95,40.79,1.578149,16,3.8125,20,Conflux V2 optimized,uniform,dirichlet,0
+900.0,114,41.34,1.562363,16,2.71875,14,Conflux V2 optimized,uniform,dirichlet,0
+150.0,19,28.53,1.95462,16,2.96875,14,Conflux V2 optimized,uniform,dirichlet,1
+300.0,37,28.71,1.85391,16,2.71875,14,Conflux V2 optimized,uniform,dirichlet,1
+450.0,56,34.45,1.719618,16,2.96875,16,Conflux V2 optimized,uniform,dirichlet,1
+600.0,75,36.96,1.723608,16,3.46875,11,Conflux V2 optimized,uniform,dirichlet,1
+750.0,94,38.7,1.622315,16,3.25,18,Conflux V2 optimized,uniform,dirichlet,1
+900.0,113,44.08,1.527464,16,2.9375,16,Conflux V2 optimized,uniform,dirichlet,1
+150.0,19,29.4,1.992251,16,2.796875,17,Conflux V2 optimized,uniform,dirichlet,2
+300.0,38,24.61,1.945055,16,2.96875,14,Conflux V2 optimized,uniform,dirichlet,2
+450.0,57,28.94,1.923146,16,3.015625,27,Conflux V2 optimized,uniform,dirichlet,2
+600.0,77,40.88,1.627544,16,2.515625,10,Conflux V2 optimized,uniform,dirichlet,2
+750.0,96,42.24,1.598776,16,3.15625,14,Conflux V2 optimized,uniform,dirichlet,2
+900.0,115,42.1,1.566248,15,2.796875,11,Conflux V2 optimized,uniform,dirichlet,2
+150.0,4,26.33,2.100343,64,0.0,0,DeMo H=5,heterogeneous,iid,0
+300.0,8,26.22,2.063261,64,0.0,0,DeMo H=5,heterogeneous,iid,0
+450.0,12,34.25,1.830693,64,0.0,0,DeMo H=5,heterogeneous,iid,0
+600.0,16,38.08,1.73157,64,0.0,0,DeMo H=5,heterogeneous,iid,0
+750.0,20,36.99,1.745545,64,0.0,0,DeMo H=5,heterogeneous,iid,0
+900.0,25,41.93,1.604107,64,0.0,0,DeMo H=5,heterogeneous,iid,0
+150.0,4,21.28,2.127391,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,0
+300.0,8,30.23,1.985888,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,0
+450.0,12,33.28,1.900155,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,0
+600.0,16,34.07,1.863947,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,0
+750.0,20,35.6,1.803872,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,0
+900.0,25,35.54,1.782218,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,0
+150.0,4,18.13,2.215559,64,0.0,0,DeMo H=1,heterogeneous,iid,0
+300.0,8,24.36,2.011515,64,0.0,0,DeMo H=1,heterogeneous,iid,0
+450.0,12,27.17,2.018118,64,0.0,0,DeMo H=1,heterogeneous,iid,0
+600.0,16,32.03,1.871949,64,0.0,0,DeMo H=1,heterogeneous,iid,0
+750.0,21,34.84,1.769551,59,0.078125,1,DeMo H=1,heterogeneous,iid,0
+900.0,25,38.75,1.718963,64,0.0,0,DeMo H=1,heterogeneous,iid,0
+150.0,4,19.76,2.12238,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,0
+300.0,8,16.19,2.430638,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,0
+450.0,12,27.22,2.034449,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,0
+600.0,16,31.82,1.894434,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,0
+750.0,21,35.14,1.802424,59,0.078125,1,DeMo H=1,heterogeneous,dirichlet,0
+900.0,25,37.2,1.734702,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,0
+150.0,4,24.45,2.087001,64,0.0,0,DeMo H=5,heterogeneous,iid,1
+300.0,8,27.5,2.031928,64,0.0,0,DeMo H=5,heterogeneous,iid,1
+450.0,12,35.86,1.790733,64,0.0,0,DeMo H=5,heterogeneous,iid,1
+600.0,16,39.82,1.667481,64,0.0,0,DeMo H=5,heterogeneous,iid,1
+750.0,20,37.39,1.750826,64,0.0,0,DeMo H=5,heterogeneous,iid,1
+900.0,25,43.17,1.57755,64,0.0,0,DeMo H=5,heterogeneous,iid,1
+150.0,4,20.41,2.143553,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,1
+300.0,8,27.57,2.018885,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,1
+450.0,12,30.81,1.9325,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,1
+600.0,16,32.5,1.87242,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,1
+750.0,20,34.86,1.812188,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,1
+900.0,25,36.92,1.764767,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,1
+150.0,4,10.17,2.407954,64,0.0,0,DeMo H=1,heterogeneous,iid,1
+300.0,8,23.94,2.053039,64,0.0,0,DeMo H=1,heterogeneous,iid,1
+450.0,12,31.06,1.929338,64,0.0,0,DeMo H=1,heterogeneous,iid,1
+600.0,16,32.58,1.843733,64,0.0,0,DeMo H=1,heterogeneous,iid,1
+750.0,21,37.96,1.736985,53,0.171875,1,DeMo H=1,heterogeneous,iid,1
+900.0,25,39.08,1.643216,64,0.0,0,DeMo H=1,heterogeneous,iid,1
+150.0,4,14.37,2.332949,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,1
+300.0,8,21.88,2.11682,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,1
+450.0,12,27.89,1.974784,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,1
+600.0,16,32.3,1.869537,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,1
+750.0,21,32.35,1.860321,53,0.171875,1,DeMo H=1,heterogeneous,dirichlet,1
+900.0,25,36.02,1.791192,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,1
+150.0,4,18.05,2.168695,64,0.0,0,DeMo H=5,heterogeneous,iid,2
+300.0,8,29.78,1.988989,64,0.0,0,DeMo H=5,heterogeneous,iid,2
+450.0,12,34.65,1.850406,64,0.0,0,DeMo H=5,heterogeneous,iid,2
+600.0,16,34.05,1.795917,64,0.0,0,DeMo H=5,heterogeneous,iid,2
+750.0,20,39.25,1.706346,64,0.0,0,DeMo H=5,heterogeneous,iid,2
+900.0,25,42.57,1.587616,64,0.0,0,DeMo H=5,heterogeneous,iid,2
+150.0,4,20.38,2.16856,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,2
+300.0,8,27.45,2.035009,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,2
+450.0,12,30.85,1.955905,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,2
+600.0,16,33.08,1.902007,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,2
+750.0,20,34.06,1.858662,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,2
+900.0,25,37.16,1.780623,64,0.0,0,DeMo H=5,heterogeneous,dirichlet,2
+150.0,4,14.51,2.338669,64,0.0,0,DeMo H=1,heterogeneous,iid,2
+300.0,8,20.0,2.227204,64,0.0,0,DeMo H=1,heterogeneous,iid,2
+450.0,12,28.28,2.056169,64,0.0,0,DeMo H=1,heterogeneous,iid,2
+600.0,16,31.16,1.907986,64,0.0,0,DeMo H=1,heterogeneous,iid,2
+750.0,21,34.43,1.78987,64,0.0,0,DeMo H=1,heterogeneous,iid,2
+900.0,25,33.62,1.818971,64,0.0,0,DeMo H=1,heterogeneous,iid,2
+150.0,4,19.32,2.213739,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,2
+300.0,8,25.08,2.083072,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,2
+450.0,12,28.81,1.984709,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,2
+600.0,16,31.25,1.94903,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,2
+750.0,21,35.97,1.793044,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,2
+900.0,25,35.92,1.767829,64,0.0,0,DeMo H=1,heterogeneous,dirichlet,2
+150.0,9,31.84,1.907157,2,3.84375,9,Conflux V2 optimized,heterogeneous,iid,0
+300.0,18,37.18,1.759304,16,3.921875,16,Conflux V2 optimized,heterogeneous,iid,0
+450.0,28,40.4,1.634005,5,3.78125,26,Conflux V2 optimized,heterogeneous,iid,0
+600.0,37,43.54,1.560606,16,3.25,19,Conflux V2 optimized,heterogeneous,iid,0
+750.0,47,45.78,1.490242,16,3.21875,16,Conflux V2 optimized,heterogeneous,iid,0
+900.0,57,48.42,1.435685,4,3.625,16,Conflux V2 optimized,heterogeneous,iid,0
+150.0,9,32.0,1.910871,16,2.359375,9,Conflux V2 optimized,heterogeneous,iid,1
+300.0,19,38.14,1.735066,4,3.734375,14,Conflux V2 optimized,heterogeneous,iid,1
+450.0,29,42.77,1.621952,16,2.8125,12,Conflux V2 optimized,heterogeneous,iid,1
+600.0,39,45.34,1.547969,16,2.53125,12,Conflux V2 optimized,heterogeneous,iid,1
+750.0,48,46.57,1.499422,16,2.84375,14,Conflux V2 optimized,heterogeneous,iid,1
+900.0,58,48.81,1.446409,16,3.203125,18,Conflux V2 optimized,heterogeneous,iid,1
+150.0,9,32.14,1.923569,16,2.8125,9,Conflux V2 optimized,heterogeneous,iid,2
+300.0,19,38.63,1.745268,16,2.796875,17,Conflux V2 optimized,heterogeneous,iid,2
+450.0,29,42.23,1.631804,4,3.59375,14,Conflux V2 optimized,heterogeneous,iid,2
+600.0,38,43.01,1.598871,16,2.96875,14,Conflux V2 optimized,heterogeneous,iid,2
+750.0,47,45.8,1.517928,6,3.796875,18,Conflux V2 optimized,heterogeneous,iid,2
+900.0,56,47.65,1.477332,16,2.890625,26,Conflux V2 optimized,heterogeneous,iid,2
+150.0,9,21.62,2.090532,2,3.84375,9,Conflux V2 optimized,heterogeneous,dirichlet,0
+300.0,18,26.03,1.962135,16,3.921875,16,Conflux V2 optimized,heterogeneous,dirichlet,0
+450.0,28,30.13,1.929437,5,3.78125,26,Conflux V2 optimized,heterogeneous,dirichlet,0
+600.0,37,31.4,1.875108,16,3.25,19,Conflux V2 optimized,heterogeneous,dirichlet,0
+750.0,47,37.98,1.759817,16,3.21875,16,Conflux V2 optimized,heterogeneous,dirichlet,0
+900.0,57,34.06,1.748087,4,3.625,16,Conflux V2 optimized,heterogeneous,dirichlet,0
+150.0,9,19.93,2.163603,16,2.359375,9,Conflux V2 optimized,heterogeneous,dirichlet,1
+300.0,19,28.53,1.95462,4,3.734375,14,Conflux V2 optimized,heterogeneous,dirichlet,1
+450.0,29,31.26,1.874385,16,2.8125,12,Conflux V2 optimized,heterogeneous,dirichlet,1
+600.0,39,33.04,1.818771,16,2.53125,12,Conflux V2 optimized,heterogeneous,dirichlet,1
+750.0,48,35.97,1.77198,16,2.84375,14,Conflux V2 optimized,heterogeneous,dirichlet,1
+900.0,58,36.31,1.725361,16,3.203125,18,Conflux V2 optimized,heterogeneous,dirichlet,1
+150.0,9,23.81,2.114254,16,2.8125,9,Conflux V2 optimized,heterogeneous,dirichlet,2
+300.0,19,29.4,1.992251,16,2.796875,17,Conflux V2 optimized,heterogeneous,dirichlet,2
+450.0,29,31.55,1.918095,4,3.59375,14,Conflux V2 optimized,heterogeneous,dirichlet,2
+600.0,38,24.61,1.945055,16,2.96875,14,Conflux V2 optimized,heterogeneous,dirichlet,2
+750.0,47,32.55,1.835653,6,3.796875,18,Conflux V2 optimized,heterogeneous,dirichlet,2
+900.0,56,35.36,1.748387,16,2.890625,26,Conflux V2 optimized,heterogeneous,dirichlet,2

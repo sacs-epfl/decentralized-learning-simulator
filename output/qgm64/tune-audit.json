@@ -1,0 +1,206 @@
+{
+  "passed": true,
+  "jobs": [
+    {
+      "job": "qgm-uniform-iid-s0-lr0.001",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-dirichlet-s0-lr0.001",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-iid-s0-lr0.003",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-dirichlet-s0-lr0.003",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-iid-s0-lr0.01",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-dirichlet-s0-lr0.01",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-iid-s0-lr0.03",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-dirichlet-s0-lr0.03",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-iid-s0-lr0.1",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "qgm-uniform-dirichlet-s0-lr0.1",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-iid-s0-lr0.001",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-dirichlet-s0-lr0.001",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-iid-s0-lr0.003",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-dirichlet-s0-lr0.003",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-iid-s0-lr0.01",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-dirichlet-s0-lr0.01",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-iid-s0-lr0.03",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-dirichlet-s0-lr0.03",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-iid-s0-lr0.1",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgdm-uniform-dirichlet-s0-lr0.1",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-iid-s0-lr0.001",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-dirichlet-s0-lr0.001",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-iid-s0-lr0.003",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-dirichlet-s0-lr0.003",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-iid-s0-lr0.01",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-dirichlet-s0-lr0.01",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-iid-s0-lr0.03",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-dirichlet-s0-lr0.03",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-iid-s0-lr0.1",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "dsgd-uniform-dirichlet-s0-lr0.1",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-iid-s0-lr0.001",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-dirichlet-s0-lr0.001",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-iid-s0-lr0.003",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-dirichlet-s0-lr0.003",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-iid-s0-lr0.01",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-dirichlet-s0-lr0.01",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-iid-s0-lr0.03",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-dirichlet-s0-lr0.03",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-iid-s0-lr0.1",
+      "node_rows": 64,
+      "finite": true
+    },
+    {
+      "job": "conflux-v2-uniform-dirichlet-s0-lr0.1",
+      "node_rows": 64,
+      "finite": true
+    }
+  ],
+  "node_rows": 2560
+}

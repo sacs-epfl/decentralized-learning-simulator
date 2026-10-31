@@ -1,0 +1,7 @@
+{
+  "training_task_s": 0.2509756066525976,
+  "evaluation_2000_s": 0.11174949503038079,
+  "accuracy_after_one_local_update": 0.5499999999999999,
+  "loss": 6.338287822723388,
+  "peak_gpu_bytes": 271703040
+}

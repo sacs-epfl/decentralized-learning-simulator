@@ -1,0 +1,5 @@
+variant,profile,partitioner,seed,learning_rate,final_accuracy,final_loss,model_bytes,bytes_sent,training_tasks,simulated_compute_s,actual_execution_s,tta_40_s,tta_50_s,tta_60_s,tta_70_s,tta_80_s
+shatter-r2,heterogeneous,dirichlet,100,0.002,16.0271875,2.309984515625,346223,459657462,692,69.437925,27.256580087938346,,,,,
+shatter-r4,heterogeneous,dirichlet,100,0.002,14.6178125,2.28568321875,346223,505533658,382,38.249449,21.030270228977315,,,,,
+conflux,heterogeneous,dirichlet,100,0.002,10.3528125,2.49536728125,346223,186450068,66,5.708864,8.325443060020916,,,,,
+conflux-v2,heterogeneous,dirichlet,100,0.002,21.188125,2.116406921875,346223,190217088,288,27.192247,7.117738834931515,,,,,

@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/bloc97/DeMo",
+  "commit": "0e48145d702b25f83055e11d9585a9c11bcfe154",
+  "file": "demo.py",
+  "file_sha256": "578068af51d543477d79af06caa6e3c01d544db0967c8d13b6ba2972d209a8ce",
+  "paper": "https://arxiv.org/abs/2411.19870",
+  "conference": "ICLR 2026",
+  "check": "Three workers, seven steps, random gradients with collision averaging and weight decay",
+  "parameter_max_abs_error": 0.0,
+  "residual_max_abs_error": 4.190951585769653e-09
+}

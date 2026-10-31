@@ -1,0 +1,22 @@
+variant,readout,target_accuracy_2000,reached,first_checkpoint_s,censor_time_s
+conflux-v2,all-node stored checkpoints,2,True,900.0,18000
+conflux-v2,all-node stored checkpoints,5,True,2700.0,18000
+conflux-v2,all-node stored checkpoints,10,True,4500.0,18000
+conflux-v2,all-node stored checkpoints,15,True,7200.0,18000
+conflux-v2,all-node stored checkpoints,20,True,11700.0,18000
+conflux-v2,all-node stored checkpoints,25,False,,18000
+conflux-v2,all-node stored checkpoints,30,False,,18000
+conflux-v2,latest completed sample aggregate,2,True,900.0,18000
+conflux-v2,latest completed sample aggregate,5,True,1800.0,18000
+conflux-v2,latest completed sample aggregate,10,True,4500.0,18000
+conflux-v2,latest completed sample aggregate,15,True,7200.0,18000
+conflux-v2,latest completed sample aggregate,20,True,10800.0,18000
+conflux-v2,latest completed sample aggregate,25,False,,18000
+conflux-v2,latest completed sample aggregate,30,False,,18000
+shatter-r2,all-node stored checkpoints,2,True,2700.0,18000
+shatter-r2,all-node stored checkpoints,5,True,7200.0,18000
+shatter-r2,all-node stored checkpoints,10,True,16200.0,18000
+shatter-r2,all-node stored checkpoints,15,False,,18000
+shatter-r2,all-node stored checkpoints,20,False,,18000
+shatter-r2,all-node stored checkpoints,25,False,,18000
+shatter-r2,all-node stored checkpoints,30,False,,18000

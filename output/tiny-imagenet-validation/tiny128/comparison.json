@@ -1,0 +1,42 @@
+{
+  "seed": 0,
+  "source_commit": "d14b771",
+  "results": {
+    "shatter-r2": {
+      "final_full_accuracy_mean": 1.423203125,
+      "final_full_accuracy_median": 1.46,
+      "final_full_accuracy_min": 0.59,
+      "final_full_accuracy_max": 2.5,
+      "first_observed_subset_target_s": {
+        "1": 1200.0,
+        "2": null,
+        "3": null,
+        "5": null,
+        "10": null,
+        "20": null
+      }
+    },
+    "conflux-v2": {
+      "final_full_accuracy_mean": 4.553203125,
+      "final_full_accuracy_median": 4.62,
+      "final_full_accuracy_min": 3.74,
+      "final_full_accuracy_max": 4.89,
+      "first_observed_subset_target_s": {
+        "1": 600.0,
+        "2": 900.0,
+        "3": 1200.0,
+        "5": null,
+        "10": null,
+        "20": null
+      }
+    }
+  },
+  "v2_traffic_reduction_fraction": 0.5946857032371493,
+  "metric": "Mean individual-node heldout accuracy; 2000-image balanced subset curves, full 10000-image final evaluation",
+  "limitations": [
+    "One seed",
+    "Short training budget",
+    "Stable membership",
+    "Simulated capacities; no measured distributed deployment"
+  ]
+}

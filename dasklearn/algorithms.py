@@ -7,6 +7,7 @@ from importlib import import_module
 
 
 ALGORITHMS = {
+    'conflux-v2': ('conflux_v2', 'ConfluxV2Settings', 'ConfluxV2Simulation'),
     'qgm': ('qgm', 'QGMSettings', 'QGMSimulation'),
     'choco': ('choco', 'ChocoSettings', 'ChocoSimulation'),
     'fl': ('fl', 'FLSettings', 'FLSimulation'),

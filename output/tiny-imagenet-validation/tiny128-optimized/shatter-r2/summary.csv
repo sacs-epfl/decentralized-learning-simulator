@@ -1,0 +1,2 @@
+variant,seed,peers,model_bytes,final_accuracy_2000,final_loss_2000,final_accuracy_10000,final_loss_10000,bytes_sent,training_tasks,actual_execution_s
+shatter-r2,0,128,45195718,1.456640625,5.4065744921875,1.423203125,5.40887384375,505420665247,5660,837.2269428849686

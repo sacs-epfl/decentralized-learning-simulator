@@ -1,0 +1,5 @@
+Collecting einops
+  Downloading einops-0.8.2-py3-none-any.whl.metadata (13 kB)
+Downloading einops-0.8.2-py3-none-any.whl (65 kB)
+Installing collected packages: einops
+Successfully installed einops-0.8.2

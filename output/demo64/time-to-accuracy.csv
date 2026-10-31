@@ -1,0 +1,181 @@
+variant,profile,partitioner,seed,target_accuracy,reached,time_s,bytes_at_checkpoint,censor_time_s
+Conflux V2 optimized,heterogeneous,dirichlet,0,20,True,300.0,200577897.0,900
+Conflux V2 optimized,heterogeneous,dirichlet,0,30,True,600.0,412018603.0,900
+Conflux V2 optimized,heterogeneous,dirichlet,0,40,False,,,900
+Conflux V2 optimized,heterogeneous,dirichlet,0,50,False,,,900
+Conflux V2 optimized,heterogeneous,dirichlet,0,60,False,,,900
+Conflux V2 optimized,heterogeneous,dirichlet,1,20,True,300.0,209620436.0,900
+Conflux V2 optimized,heterogeneous,dirichlet,1,30,True,600.0,432684922.0,900
+Conflux V2 optimized,heterogeneous,dirichlet,1,40,False,,,900
+Conflux V2 optimized,heterogeneous,dirichlet,1,50,False,,,900
+Conflux V2 optimized,heterogeneous,dirichlet,1,60,False,,,900
+Conflux V2 optimized,heterogeneous,dirichlet,2,20,True,300.0,212903099.0,900
+Conflux V2 optimized,heterogeneous,dirichlet,2,30,True,750.0,517521647.0,900
+Conflux V2 optimized,heterogeneous,dirichlet,2,40,False,,,900
+Conflux V2 optimized,heterogeneous,dirichlet,2,50,False,,,900
+Conflux V2 optimized,heterogeneous,dirichlet,2,60,False,,,900
+Conflux V2 optimized,heterogeneous,iid,0,20,True,150.0,98360456.0,900
+Conflux V2 optimized,heterogeneous,iid,0,30,True,300.0,200577897.0,900
+Conflux V2 optimized,heterogeneous,iid,0,40,True,600.0,412018603.0,900
+Conflux V2 optimized,heterogeneous,iid,0,50,False,,,900
+Conflux V2 optimized,heterogeneous,iid,0,60,False,,,900
+Conflux V2 optimized,heterogeneous,iid,1,20,True,150.0,107284742.0,900
+Conflux V2 optimized,heterogeneous,iid,1,30,True,300.0,209620436.0,900
+Conflux V2 optimized,heterogeneous,iid,1,40,True,450.0,325016744.0,900
+Conflux V2 optimized,heterogeneous,iid,1,50,False,,,900
+Conflux V2 optimized,heterogeneous,iid,1,60,False,,,900
+Conflux V2 optimized,heterogeneous,iid,2,20,True,150.0,104811236.0,900
+Conflux V2 optimized,heterogeneous,iid,2,30,True,300.0,212903099.0,900
+Conflux V2 optimized,heterogeneous,iid,2,40,True,450.0,318427396.0,900
+Conflux V2 optimized,heterogeneous,iid,2,50,False,,,900
+Conflux V2 optimized,heterogeneous,iid,2,60,False,,,900
+Conflux V2 optimized,uniform,dirichlet,0,20,True,150.0,211254237.0,900
+Conflux V2 optimized,uniform,dirichlet,0,30,True,300.0,421561074.0,900
+Conflux V2 optimized,uniform,dirichlet,0,40,True,750.0,1044183213.0,900
+Conflux V2 optimized,uniform,dirichlet,0,50,False,,,900
+Conflux V2 optimized,uniform,dirichlet,0,60,False,,,900
+Conflux V2 optimized,uniform,dirichlet,1,20,True,150.0,210677629.0,900
+Conflux V2 optimized,uniform,dirichlet,1,30,True,450.0,619342903.0,900
+Conflux V2 optimized,uniform,dirichlet,1,40,True,900.0,1239077868.0,900
+Conflux V2 optimized,uniform,dirichlet,1,50,False,,,900
+Conflux V2 optimized,uniform,dirichlet,1,60,False,,,900
+Conflux V2 optimized,uniform,dirichlet,2,20,True,150.0,211905658.0,900
+Conflux V2 optimized,uniform,dirichlet,2,30,True,450.0,635208818.0,900
+Conflux V2 optimized,uniform,dirichlet,2,40,True,900.0,1265069951.0,900
+Conflux V2 optimized,uniform,dirichlet,2,50,False,,,900
+Conflux V2 optimized,uniform,dirichlet,2,60,False,,,900
+Conflux V2 optimized,uniform,iid,0,20,True,150.0,211254237.0,900
+Conflux V2 optimized,uniform,iid,0,30,True,150.0,211254237.0,900
+Conflux V2 optimized,uniform,iid,0,40,True,300.0,421561074.0,900
+Conflux V2 optimized,uniform,iid,0,50,True,600.0,834154122.0,900
+Conflux V2 optimized,uniform,iid,0,60,False,,,900
+Conflux V2 optimized,uniform,iid,1,20,True,150.0,210677629.0,900
+Conflux V2 optimized,uniform,iid,1,30,True,150.0,210677629.0,900
+Conflux V2 optimized,uniform,iid,1,40,True,300.0,412582113.0,900
+Conflux V2 optimized,uniform,iid,1,50,True,600.0,824815998.0,900
+Conflux V2 optimized,uniform,iid,1,60,False,,,900
+Conflux V2 optimized,uniform,iid,2,20,True,150.0,211905658.0,900
+Conflux V2 optimized,uniform,iid,2,30,True,150.0,211905658.0,900
+Conflux V2 optimized,uniform,iid,2,40,True,300.0,423274720.0,900
+Conflux V2 optimized,uniform,iid,2,50,True,750.0,1058172383.0,900
+Conflux V2 optimized,uniform,iid,2,60,False,,,900
+DeMo H=1,heterogeneous,dirichlet,0,20,True,450.0,1046150867.0,900
+DeMo H=1,heterogeneous,dirichlet,0,30,True,600.0,1395187727.0,900
+DeMo H=1,heterogeneous,dirichlet,0,40,False,,,900
+DeMo H=1,heterogeneous,dirichlet,0,50,False,,,900
+DeMo H=1,heterogeneous,dirichlet,0,60,False,,,900
+DeMo H=1,heterogeneous,dirichlet,1,20,True,300.0,696783817.0,900
+DeMo H=1,heterogeneous,dirichlet,1,30,True,600.0,1394648383.0,900
+DeMo H=1,heterogeneous,dirichlet,1,40,False,,,900
+DeMo H=1,heterogeneous,dirichlet,1,50,False,,,900
+DeMo H=1,heterogeneous,dirichlet,1,60,False,,,900
+DeMo H=1,heterogeneous,dirichlet,2,20,True,300.0,697046498.0,900
+DeMo H=1,heterogeneous,dirichlet,2,30,True,600.0,1394928809.0,900
+DeMo H=1,heterogeneous,dirichlet,2,40,False,,,900
+DeMo H=1,heterogeneous,dirichlet,2,50,False,,,900
+DeMo H=1,heterogeneous,dirichlet,2,60,False,,,900
+DeMo H=1,heterogeneous,iid,0,20,True,300.0,697157452.0,900
+DeMo H=1,heterogeneous,iid,0,30,True,600.0,1395187727.0,900
+DeMo H=1,heterogeneous,iid,0,40,False,,,900
+DeMo H=1,heterogeneous,iid,0,50,False,,,900
+DeMo H=1,heterogeneous,iid,0,60,False,,,900
+DeMo H=1,heterogeneous,iid,1,20,True,300.0,696783817.0,900
+DeMo H=1,heterogeneous,iid,1,30,True,450.0,1045687273.0,900
+DeMo H=1,heterogeneous,iid,1,40,False,,,900
+DeMo H=1,heterogeneous,iid,1,50,False,,,900
+DeMo H=1,heterogeneous,iid,1,60,False,,,900
+DeMo H=1,heterogeneous,iid,2,20,True,300.0,697046498.0,900
+DeMo H=1,heterogeneous,iid,2,30,True,600.0,1394928809.0,900
+DeMo H=1,heterogeneous,iid,2,40,False,,,900
+DeMo H=1,heterogeneous,iid,2,50,False,,,900
+DeMo H=1,heterogeneous,iid,2,60,False,,,900
+DeMo H=1,uniform,dirichlet,0,20,True,150.0,873728000.0,900
+DeMo H=1,uniform,dirichlet,0,30,True,300.0,1747456000.0,900
+DeMo H=1,uniform,dirichlet,0,40,True,600.0,3494912000.0,900
+DeMo H=1,uniform,dirichlet,0,50,False,,,900
+DeMo H=1,uniform,dirichlet,0,60,False,,,900
+DeMo H=1,uniform,dirichlet,1,20,True,150.0,873728000.0,900
+DeMo H=1,uniform,dirichlet,1,30,True,300.0,1747456000.0,900
+DeMo H=1,uniform,dirichlet,1,40,True,600.0,3494912000.0,900
+DeMo H=1,uniform,dirichlet,1,50,False,,,900
+DeMo H=1,uniform,dirichlet,1,60,False,,,900
+DeMo H=1,uniform,dirichlet,2,20,True,150.0,873728000.0,900
+DeMo H=1,uniform,dirichlet,2,30,True,300.0,1747456000.0,900
+DeMo H=1,uniform,dirichlet,2,40,True,600.0,3494912000.0,900
+DeMo H=1,uniform,dirichlet,2,50,False,,,900
+DeMo H=1,uniform,dirichlet,2,60,False,,,900
+DeMo H=1,uniform,iid,0,20,True,150.0,873728000.0,900
+DeMo H=1,uniform,iid,0,30,True,300.0,1747456000.0,900
+DeMo H=1,uniform,iid,0,40,True,450.0,2621312000.0,900
+DeMo H=1,uniform,iid,0,50,True,900.0,5242496000.0,900
+DeMo H=1,uniform,iid,0,60,False,,,900
+DeMo H=1,uniform,iid,1,20,True,150.0,873728000.0,900
+DeMo H=1,uniform,iid,1,30,True,300.0,1747456000.0,900
+DeMo H=1,uniform,iid,1,40,True,450.0,2621312000.0,900
+DeMo H=1,uniform,iid,1,50,True,750.0,4368768000.0,900
+DeMo H=1,uniform,iid,1,60,False,,,900
+DeMo H=1,uniform,iid,2,20,True,150.0,873728000.0,900
+DeMo H=1,uniform,iid,2,30,True,300.0,1747456000.0,900
+DeMo H=1,uniform,iid,2,40,True,600.0,3494912000.0,900
+DeMo H=1,uniform,iid,2,50,True,750.0,4368768000.0,900
+DeMo H=1,uniform,iid,2,60,False,,,900
+DeMo H=5,heterogeneous,dirichlet,0,20,True,150.0,346574154.0,900
+DeMo H=5,heterogeneous,dirichlet,0,30,True,300.0,694543708.0,900
+DeMo H=5,heterogeneous,dirichlet,0,40,False,,,900
+DeMo H=5,heterogeneous,dirichlet,0,50,False,,,900
+DeMo H=5,heterogeneous,dirichlet,0,60,False,,,900
+DeMo H=5,heterogeneous,dirichlet,1,20,True,150.0,346211643.0,900
+DeMo H=5,heterogeneous,dirichlet,1,30,True,450.0,1041423590.0,900
+DeMo H=5,heterogeneous,dirichlet,1,40,False,,,900
+DeMo H=5,heterogeneous,dirichlet,1,50,False,,,900
+DeMo H=5,heterogeneous,dirichlet,1,60,False,,,900
+DeMo H=5,heterogeneous,dirichlet,2,20,True,150.0,346489101.0,900
+DeMo H=5,heterogeneous,dirichlet,2,30,True,450.0,1041521063.0,900
+DeMo H=5,heterogeneous,dirichlet,2,40,False,,,900
+DeMo H=5,heterogeneous,dirichlet,2,50,False,,,900
+DeMo H=5,heterogeneous,dirichlet,2,60,False,,,900
+DeMo H=5,heterogeneous,iid,0,20,True,150.0,346574154.0,900
+DeMo H=5,heterogeneous,iid,0,30,True,450.0,1042324973.0,900
+DeMo H=5,heterogeneous,iid,0,40,True,900.0,2085891121.0,900
+DeMo H=5,heterogeneous,iid,0,50,False,,,900
+DeMo H=5,heterogeneous,iid,0,60,False,,,900
+DeMo H=5,heterogeneous,iid,1,20,True,150.0,346211643.0,900
+DeMo H=5,heterogeneous,iid,1,30,True,450.0,1041423590.0,900
+DeMo H=5,heterogeneous,iid,1,40,True,900.0,2084283770.0,900
+DeMo H=5,heterogeneous,iid,1,50,False,,,900
+DeMo H=5,heterogeneous,iid,1,60,False,,,900
+DeMo H=5,heterogeneous,iid,2,20,True,300.0,693976879.0,900
+DeMo H=5,heterogeneous,iid,2,30,True,450.0,1041521063.0,900
+DeMo H=5,heterogeneous,iid,2,40,True,900.0,2083978185.0,900
+DeMo H=5,heterogeneous,iid,2,50,False,,,900
+DeMo H=5,heterogeneous,iid,2,60,False,,,900
+DeMo H=5,uniform,dirichlet,0,20,True,150.0,868608000.0,900
+DeMo H=5,uniform,dirichlet,0,30,True,150.0,868608000.0,900
+DeMo H=5,uniform,dirichlet,0,40,True,600.0,3475456000.0,900
+DeMo H=5,uniform,dirichlet,0,50,False,,,900
+DeMo H=5,uniform,dirichlet,0,60,False,,,900
+DeMo H=5,uniform,dirichlet,1,20,True,150.0,868608000.0,900
+DeMo H=5,uniform,dirichlet,1,30,True,300.0,1737728000.0,900
+DeMo H=5,uniform,dirichlet,1,40,True,600.0,3475456000.0,900
+DeMo H=5,uniform,dirichlet,1,50,False,,,900
+DeMo H=5,uniform,dirichlet,1,60,False,,,900
+DeMo H=5,uniform,dirichlet,2,20,True,150.0,868608000.0,900
+DeMo H=5,uniform,dirichlet,2,30,True,300.0,1737728000.0,900
+DeMo H=5,uniform,dirichlet,2,40,True,600.0,3475456000.0,900
+DeMo H=5,uniform,dirichlet,2,50,False,,,900
+DeMo H=5,uniform,dirichlet,2,60,False,,,900
+DeMo H=5,uniform,iid,0,20,True,150.0,868608000.0,900
+DeMo H=5,uniform,iid,0,30,True,150.0,868608000.0,900
+DeMo H=5,uniform,iid,0,40,True,450.0,2606336000.0,900
+DeMo H=5,uniform,iid,0,50,True,750.0,4344064000.0,900
+DeMo H=5,uniform,iid,0,60,False,,,900
+DeMo H=5,uniform,iid,1,20,True,150.0,868608000.0,900
+DeMo H=5,uniform,iid,1,30,True,150.0,868608000.0,900
+DeMo H=5,uniform,iid,1,40,True,450.0,2606336000.0,900
+DeMo H=5,uniform,iid,1,50,True,600.0,3475456000.0,900
+DeMo H=5,uniform,iid,1,60,False,,,900
+DeMo H=5,uniform,iid,2,20,True,150.0,868608000.0,900
+DeMo H=5,uniform,iid,2,30,True,300.0,1737728000.0,900
+DeMo H=5,uniform,iid,2,40,True,450.0,2606336000.0,900
+DeMo H=5,uniform,iid,2,50,True,750.0,4344064000.0,900
+DeMo H=5,uniform,iid,2,60,False,,,900

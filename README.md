@@ -1,4 +1,4 @@
-# Decentralized Learning Simulator
+# Decentralized Learning Simulator — Conflux V2 research
 
 Simulate distributed learning protocols and execute their PyTorch training DAGs.
 The discrete-event simulator models local compute, bandwidth contention, latency
@@ -23,8 +23,9 @@ For implementation steps and a minimal ring protocol, see
 - **`codex/conflux-v2-validation`**: unchanged archive of the original experiments
   and execution-source provenance.
 
-New general improvements and baselines belong on `main`; merge `main` into the
-research branch as it evolves. Conflux V2 is not a dependency of this branch.
+This branch extends `main` with Conflux V2. General improvements and baselines
+belong on `main`; merge `main` into this branch as it evolves.
+See [Conflux V2 protocol and experiments](docs/conflux-v2.md).
 See [repository structure and development workflow](docs/architecture.md).
 
 ## Setup
@@ -68,6 +69,7 @@ brokers. See [LoRA setup, CLI examples, memory model and validation](docs/lora.m
 | DSpodFL | `dspodfl` | [Decentralized Sporadic Federated Learning: A Unified Algorithmic Framework with Convergence Guarantees — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/9521b6e7f33e039e7d92e23f5e37bbf4-Abstract-Conference.html) | One-step rule and explicit local-SGD block extension. | Equation checks |
 | DeMo | `demo` | [DeMo: Decoupled Momentum Optimization — ICLR 2026](https://proceedings.iclr.cc/paper_files/paper/2026/hash/17790fc9b4828206f99a0dea35da3657-Abstract-Conference.html) | Reference Signum optimizer; ring all-gather and CNN adaptation. | Optimizer reference check |
 | Conflux (original) | `conflux` | Unpublished prototype; related sampling work: [Practical Federated Learning without a Server — EuroMLSys 2025](https://euromlsys.eu/pdf/euromlsys25-10.pdf). | Chunked sampling prototype; not an implementation of Plexus. | Legacy |
+| Conflux V2 | `conflux-v2` | [Research protocol documentation](docs/conflux-v2.md); unpublished prototype. | Research branch only. | Protocol checks + research experiments |
 
 [Baseline contracts and sources](docs/peer-baselines.md),
 [DSpodFL semantics](docs/dspodfl.md), [DeMo semantics](docs/demo.md),

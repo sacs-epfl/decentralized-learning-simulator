@@ -1,0 +1,67 @@
+{
+  "output": "/mnt/data/mdevos/conflux/results/dspodfl64/uniform/h5-s1",
+  "dataset_base_path": "/mnt/data/mdevos/conflux/datasets",
+  "variants": [
+    "dspodfl"
+  ],
+  "profiles": [
+    "uniform"
+  ],
+  "partitioners": [
+    "iid",
+    "dirichlet"
+  ],
+  "seeds": [
+    1
+  ],
+  "peers": 64,
+  "sample_size": 16,
+  "chunks": 16,
+  "relay_count": 16,
+  "immediate_uploads": false,
+  "dspod_degree": 4,
+  "dspod_sgd_probability": 0.5,
+  "dspod_communication_probability": 0.5,
+  "dspod_probability_mode": "capacity",
+  "group_size": 8,
+  "averaging_steps": 1,
+  "model_bytes": 346251,
+  "duration": 900.0,
+  "test_period": 150.0,
+  "bandwidth": 100000,
+  "step_ms": 20.0,
+  "latency_ms": 20.0,
+  "learning_rate": 0.01,
+  "local_steps": 5,
+  "batch_size": 32,
+  "alpha": 0.1,
+  "momentum": 0.0,
+  "weight_decay": 0.0,
+  "torch_threads": 4,
+  "evaluation_split": "test",
+  "device": "cuda:0",
+  "gpu_residency": true,
+  "training_batching": true,
+  "training_batch_size": 2,
+  "gpu_state_cache_mb": 256,
+  "dataset": "cifar10",
+  "model": "gnlenet",
+  "success_fraction": 1,
+  "equal_capacity": true,
+  "streaming": true,
+  "python": "3.12.15",
+  "torch": "2.14.1+cu130",
+  "numpy": "2.5.4",
+  "source_sha256": "f3d42e5a990a7014745dc4355aad8925bb77fe7cd6959883441b4ab903d3d33a",
+  "gpu": "NVIDIA RTX 5000 Ada Generation",
+  "cuda_visible_devices": "0",
+  "split": "45000 training / 5000 validation / 10000 test; no augmentation",
+  "capacity": "same mean bandwidth and compute step time across profiles",
+  "dataset_provenance": {
+    "source": "uoft-cs/cifar10",
+    "sha256": {
+      "train": "8428b53a88a11ac374111006708df51469e315a22ac6d66470afd9c78d2ae883",
+      "test": "841389e6f2d64f28bf17310e430aebac20ec3ba611a3c5e231dc93c645ce84de"
+    }
+  }
+}

@@ -1,0 +1,209 @@
+{
+  "peers": 128,
+  "duration": 900,
+  "step_ms": 20,
+  "test_period": 90,
+  "bandwidth": 100000,
+  "selection_rule": "highest mean validation accuracy over final two pilot snapshots; seed 100, Dirichlet alpha=.3",
+  "selection": [
+    {
+      "selected": {
+        "variant": "shatter-r2",
+        "profile": "uniform",
+        "learning_rate": 0.01,
+        "validation_score": 25.55,
+        "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.01"
+      },
+      "candidates": [
+        {
+          "variant": "shatter-r2",
+          "profile": "uniform",
+          "learning_rate": 0.002,
+          "validation_score": 22.3640625,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.002"
+        },
+        {
+          "variant": "shatter-r2",
+          "profile": "uniform",
+          "learning_rate": 0.01,
+          "validation_score": 25.55,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.01"
+        },
+        {
+          "variant": "shatter-r2",
+          "profile": "uniform",
+          "learning_rate": 0.03,
+          "validation_score": 23.4809375,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.03"
+        }
+      ]
+    },
+    {
+      "selected": {
+        "variant": "shatter-r4",
+        "profile": "uniform",
+        "learning_rate": 0.01,
+        "validation_score": 23.49453125,
+        "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.01"
+      },
+      "candidates": [
+        {
+          "variant": "shatter-r4",
+          "profile": "uniform",
+          "learning_rate": 0.002,
+          "validation_score": 20.41796875,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.002"
+        },
+        {
+          "variant": "shatter-r4",
+          "profile": "uniform",
+          "learning_rate": 0.01,
+          "validation_score": 23.49453125,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.01"
+        },
+        {
+          "variant": "shatter-r4",
+          "profile": "uniform",
+          "learning_rate": 0.03,
+          "validation_score": 21.2196875,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.03"
+        }
+      ]
+    },
+    {
+      "selected": {
+        "variant": "conflux-v2",
+        "profile": "uniform",
+        "learning_rate": 0.01,
+        "validation_score": 24.9728125,
+        "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.01"
+      },
+      "candidates": [
+        {
+          "variant": "conflux-v2",
+          "profile": "uniform",
+          "learning_rate": 0.002,
+          "validation_score": 21.72046875,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.002"
+        },
+        {
+          "variant": "conflux-v2",
+          "profile": "uniform",
+          "learning_rate": 0.01,
+          "validation_score": 24.9728125,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.01"
+        },
+        {
+          "variant": "conflux-v2",
+          "profile": "uniform",
+          "learning_rate": 0.03,
+          "validation_score": 22.988125,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-uniform-lr.03"
+        }
+      ]
+    },
+    {
+      "selected": {
+        "variant": "shatter-r2",
+        "profile": "heterogeneous",
+        "learning_rate": 0.01,
+        "validation_score": 17.67671875,
+        "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.01"
+      },
+      "candidates": [
+        {
+          "variant": "shatter-r2",
+          "profile": "heterogeneous",
+          "learning_rate": 0.002,
+          "validation_score": 15.2609375,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.002"
+        },
+        {
+          "variant": "shatter-r2",
+          "profile": "heterogeneous",
+          "learning_rate": 0.01,
+          "validation_score": 17.67671875,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.01"
+        },
+        {
+          "variant": "shatter-r2",
+          "profile": "heterogeneous",
+          "learning_rate": 0.03,
+          "validation_score": 15.623125000000002,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.03"
+        }
+      ]
+    },
+    {
+      "selected": {
+        "variant": "shatter-r4",
+        "profile": "heterogeneous",
+        "learning_rate": 0.01,
+        "validation_score": 14.8003125,
+        "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.01"
+      },
+      "candidates": [
+        {
+          "variant": "shatter-r4",
+          "profile": "heterogeneous",
+          "learning_rate": 0.002,
+          "validation_score": 14.1525,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.002"
+        },
+        {
+          "variant": "shatter-r4",
+          "profile": "heterogeneous",
+          "learning_rate": 0.01,
+          "validation_score": 14.8003125,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.01"
+        },
+        {
+          "variant": "shatter-r4",
+          "profile": "heterogeneous",
+          "learning_rate": 0.03,
+          "validation_score": 12.56015625,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.03"
+        }
+      ]
+    },
+    {
+      "selected": {
+        "variant": "conflux-v2",
+        "profile": "heterogeneous",
+        "learning_rate": 0.01,
+        "validation_score": 24.27390625,
+        "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.01"
+      },
+      "candidates": [
+        {
+          "variant": "conflux-v2",
+          "profile": "heterogeneous",
+          "learning_rate": 0.002,
+          "validation_score": 20.88125,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.002"
+        },
+        {
+          "variant": "conflux-v2",
+          "profile": "heterogeneous",
+          "learning_rate": 0.01,
+          "validation_score": 24.27390625,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.01"
+        },
+        {
+          "variant": "conflux-v2",
+          "profile": "heterogeneous",
+          "learning_rate": 0.03,
+          "validation_score": 22.20703125,
+          "pilot": "/mnt/data/mdevos/conflux/results/pilot64-heterogeneous-lr.03"
+        }
+      ]
+    }
+  ],
+  "variants": [
+    "shatter-r2",
+    "shatter-r4",
+    "conflux-v2"
+  ],
+  "expected_runs": 36,
+  "scope_note": "User requested Shatter vs Conflux V2; original Conflux V1 excluded."
+}

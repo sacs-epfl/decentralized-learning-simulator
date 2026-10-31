@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "execution_commit": "ec3778f",
+  "all_768_per_node_snapshot_rows_exact": true,
+  "all_128_final_full_rows_exact": true,
+  "identical_complete_dag": true,
+  "identical_traffic_and_training_counts": true,
+  "reference_execution_s": 841.231321732048,
+  "first_pass_execution_s": 321.1985280739609,
+  "memoized_execution_s": 241.12498431198765,
+  "final_status": {
+    "completed": 8913,
+    "total": 8913,
+    "live_results": 0,
+    "timings_s": {
+      "initialize": 0.12915154302027076,
+      "train": 181.83222403482068,
+      "chunk": 13.410153077333234,
+      "aggregate_chunk": 19.492685316246934,
+      "reconstruct_from_chunks": 1.4873726872028783,
+      "test": 12.015795274404809
+    },
+    "reconstruction_cache_hits": 2201,
+    "reconstruction_cache_bytes": 0,
+    "reconstruction_cache_peak_bytes": 45155008
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "round": 712,
+  "accuracy_10000": 22.7,
+  "loss_10000": 3.485371,
+  "recipients": 32,
+  "mean_staleness_rounds": 2.625,
+  "max_staleness_rounds": 15
+}

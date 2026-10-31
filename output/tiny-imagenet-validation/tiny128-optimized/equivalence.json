@@ -1,0 +1,36 @@
+{
+  "shatter-r2": {
+    "complete_reference": true,
+    "complete_optimized": true,
+    "exact_all128_node_snapshots_s": [
+      300.0,
+      600.0,
+      900.0,
+      1200.0,
+      1500.0,
+      1800.0
+    ],
+    "final_full_metrics_exact": true,
+    "reference_execution_s": 2069.2229142370634,
+    "optimized_execution_s": 837.2269428849686,
+    "observed_execution_speedup": 2.471519737655368,
+    "full_accuracy": 1.423203125
+  },
+  "conflux-v2": {
+    "complete_reference": true,
+    "complete_optimized": true,
+    "exact_all128_node_snapshots_s": [
+      300.0,
+      600.0,
+      900.0,
+      1200.0,
+      1500.0,
+      1800.0
+    ],
+    "final_full_metrics_exact": true,
+    "reference_execution_s": 841.231321732048,
+    "optimized_execution_s": 321.1985280739609,
+    "observed_execution_speedup": 2.619038532886245,
+    "full_accuracy": 4.553203125
+  }
+}

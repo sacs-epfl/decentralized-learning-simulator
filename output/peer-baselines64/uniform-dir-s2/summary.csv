@@ -1,0 +1,7 @@
+variant,profile,partitioner,seed,learning_rate,final_accuracy,final_loss,model_bytes,bytes_sent,training_tasks,simulated_compute_s,actual_execution_s,tta_40_s,tta_50_s,tta_60_s,tta_70_s,tta_80_s
+conflux-v2,uniform,dirichlet,2,0.01,31.9153125,1.840596515625,346251,652870304,962,96.1,15.85204521601554,,,,,
+shatter-r2,uniform,dirichlet,2,0.01,28.40453125,2.095847765625,346251,3894346042,5714,571.0,94.391741918982,,,,,
+teleportation-ring,uniform,dirichlet,2,0.01,25.00890625,2.1171775,346251,989325905,962,96.2,37.84890266600996,,,,,
+teleportation-hypercube,uniform,dirichlet,2,0.01,23.48453125,2.079116828125,346251,1039430198,606,60.6,30.96538447099738,,,,,
+d-local-sgd-ring,uniform,dirichlet,2,0.01,26.79234375,2.4891693125,346251,4678833298,6786,678.6,104.84271317906678,,,,,
+moshpit,uniform,dirichlet,2,0.01,41.245000000000005,1.587857375,346251,5226112474,8640,864.0,86.27848895906936,900.0,,,,

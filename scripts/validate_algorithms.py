@@ -24,6 +24,8 @@ import torch
 
 from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.conflux.settings import ConfluxSettings
+from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments
+from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.conflux.simulation import ConfluxSimulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
@@ -48,6 +50,11 @@ async def run_one(args, variant, profile, partitioner, seed):
         cls, config, specific = baseline_spec(variant, args.peers, args.sample_size,
             getattr(args, "group_size", 8), getattr(args, "averaging_steps", 1))
         algorithm = variant
+    elif variant == "conflux-v2":
+        cls, config, algorithm = ConfluxV2Simulation, ConfluxV2Settings, variant
+        specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks,
+                    "success_fraction": args.success_fraction, "relay_count": getattr(args, "relay_count", 0),
+                    "immediate_uploads": getattr(args, "immediate_uploads", False)}
     elif variant == "conflux":
         cls, config = ConfluxSimulation, ConfluxSettings
         algorithm = variant
@@ -140,6 +147,18 @@ async def run_one(args, variant, profile, partitioner, seed):
         completions = [{"peer": c.index, "round": r, "time": s["completed_time"] / MICROSECONDS}
             for c in sim.clients for r, s in c.rounds.items() if s["done"]]
         pd.DataFrame(completions).to_csv(Path(sim.data_dir) / "demo-rounds.csv", index=False)
+    if variant == "conflux-v2":
+        aggregate_rows = []
+        for checkpoint, group in frame.groupby("time"):
+            latest_round = int(group["round"].max())
+            latest = group[group["round"] == latest_round]
+            if latest.accuracy.nunique() != 1 or latest.loss.nunique() != 1:
+                raise RuntimeError("Recipients of a V2 aggregate have different metrics")
+            aggregate_rows.append({"time":checkpoint,"round":latest_round,
+                "accuracy":float(latest.accuracy.iloc[0]),"loss":float(latest.loss.iloc[0]),
+                "recipients":len(latest),"mean_staleness_rounds":float((latest_round-group["round"]).mean()),
+                "max_staleness_rounds":int((latest_round-group["round"]).max())})
+        pd.DataFrame(aggregate_rows).to_csv(Path(sim.data_dir)/"latest-aggregate.csv",index=False)
     curve = frame.groupby("time", as_index=False).agg(accuracy=("accuracy", "mean"), loss=("loss", "mean"), nodes=("peer", "nunique"))
     if not curve.nodes.eq(args.peers).all():
         raise RuntimeError("A snapshot omitted participating nodes")
@@ -188,7 +207,7 @@ async def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("output/algorithm-validation"))
     parser.add_argument("--dataset", choices=["synthetic", "digits"], default="synthetic")
-    parser.add_argument("--variants", nargs="+", default=["shatter-r2", "shatter-r4", "moshpit"])
+    parser.add_argument("--variants", nargs="+", default=["shatter-r2", "shatter-r4", "moshpit", "conflux-v2"])
     parser.add_argument("--profiles", nargs="+", choices=["uniform", "heterogeneous"], default=["uniform", "heterogeneous"])
     parser.add_argument("--partitioners", nargs="+", choices=["iid", "dirichlet"], default=["iid", "dirichlet"])
     parser.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
@@ -196,6 +215,8 @@ async def main():
     parser.add_argument("--sample-size", type=int, default=8)
     parser.add_argument("--chunks", type=int, default=4)
     parser.add_argument("--success-fraction", type=float, default=1)
+    add_conflux_v2_arguments(parser)
+    parser.add_argument("--relay-count", type=int, default=0)
     add_dspodfl_arguments(parser)
     add_demo_arguments(parser)
     add_choco_arguments(parser)

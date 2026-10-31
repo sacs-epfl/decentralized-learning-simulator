@@ -16,6 +16,8 @@ import numpy as np
 import pandas as pd
 import torch
 from dasklearn.session_settings import LearningSettings
+from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments
+from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
 from dasklearn.tasks.local import execute_local
@@ -34,10 +36,12 @@ async def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--data", required=True)
-    p.add_argument("--variant", choices=["shatter-r2", *BASELINE_VARIANTS], required=True)
+    p.add_argument("--variant", choices=["shatter-r2", "conflux-v2", *BASELINE_VARIANTS], required=True)
     p.add_argument("--peers", type=int, default=128)
     p.add_argument("--sample-size", type=int, default=32)
     p.add_argument("--chunks", type=int, default=16)
+    add_conflux_v2_arguments(p)
+    p.add_argument("--relay-count", type=int, default=0)
     add_dspodfl_arguments(p)
     add_choco_arguments(p)
     add_qgm_arguments(p)
@@ -72,6 +76,10 @@ async def main():
     Task.COUNTER.clear()
     if args.variant == "shatter-r2":
         cls, config, specific = ShatterSimulation, ShatterSettings, {"k": args.chunks, "r": 2}
+    elif args.variant == "conflux-v2":
+        cls, config = ConfluxV2Simulation, ConfluxV2Settings
+        specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": 1,
+                    "relay_count": args.relay_count, "immediate_uploads": args.immediate_uploads}
     else:
         cls, config, specific = baseline_spec(args.variant, args.peers, args.sample_size,
                                              args.group_size, args.averaging_steps)

@@ -37,6 +37,10 @@ def create_parser():
     parser.add_argument('--feedback-replay', default=None, help='Replay observations from a trusted feedback.pkl')
     parser.add_argument('--dag-checkpoint-interval', type=int, default=0)  # Save the workflow DAG every N seconds
 
+    from dasklearn.simulation.conflux_v2.settings import add_conflux_v2_arguments
+    add_conflux_v2_arguments(parser)
+    parser.add_argument('--relay-count', type=int, default=0)
+
     # Algorithm-specific parameters
     parser.add_argument('--synchronous', action=argparse.BooleanOptionalAction)
     parser.add_argument('--algorithm', default='dpsgd', choices=list(ALGORITHMS))

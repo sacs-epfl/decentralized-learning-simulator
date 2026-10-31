@@ -1,0 +1,24 @@
+{
+  "host": "sacs006",
+  "execution_commit": "03da38a",
+  "source_sha256": "99e4f916043d7a761735f730c0473f7728c49b93b6087a86956dff29eafbcdea",
+  "code_directory": "/mnt/data/mdevos/conflux/gpu-backend-code",
+  "python": "/mnt/data/mdevos/conda/envs/conflux-gpu/bin/python",
+  "environment": "/mnt/data/mdevos/conflux/env.sh",
+  "cuda_visible_devices": "1",
+  "results_directory": "/mnt/data/mdevos/conflux/results/tiny128-gpu-training",
+  "training_benchmark": "python scripts/benchmark_training.py --data /mnt/data/mdevos/conflux/tiny-datasets --output /mnt/data/mdevos/conflux/results/gpu-training-benchmark-final --tasks 32 --repeats 3 --widths 2 4 8",
+  "protocol_commands": [
+    "python scripts/run_tiny.py --data /mnt/data/mdevos/conflux/tiny-datasets --output /mnt/data/mdevos/conflux/results/tiny128-gpu-training/shatter-r2 --variant shatter-r2 --duration 1800 --test-period 300",
+    "python scripts/run_tiny.py --data /mnt/data/mdevos/conflux/tiny-datasets --output /mnt/data/mdevos/conflux/results/tiny128-gpu-training/conflux-v2 --variant conflux-v2 --duration 1800 --test-period 300"
+  ],
+  "logs": [
+    "/mnt/data/mdevos/conflux/logs/gpu-training-benchmark-final.log",
+    "/mnt/data/mdevos/conflux/logs/tiny128-gpu-training-shatter-r2.log",
+    "/mnt/data/mdevos/conflux/logs/tiny128-gpu-training-conflux-v2.log"
+  ],
+  "defaults": {"gpu_residency": true, "training_batching": true, "training_batch_size": 2, "gpu_state_cache_mb": 256},
+  "protocol": "128 nodes, seed 0, heterogeneous, Dirichlet alpha 0.1, Tiny ImageNet/ResNet18, H=5, batch=32, LR=.01, momentum=.9, original pinned model size and capacities",
+  "validation": "Compare complete DAG, every one of 768 per-node curve rows, 128 final full-validation rows, learning/network configuration, traffic and task counts against prior executions.",
+  "timing_limit": "Observed protocol wall times share server CPU/memory with the unchanged long Shatter job on GPU 0. Microbenchmark medians use three repetitions; timing results are specific to this machine/workload."
+}

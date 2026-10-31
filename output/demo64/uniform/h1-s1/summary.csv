@@ -1,0 +1,3 @@
+variant,profile,partitioner,seed,learning_rate,final_accuracy,final_loss,model_bytes,bytes_sent,training_tasks,simulated_compute_s,actual_execution_s,tta_40_s,tta_50_s,tta_60_s,tta_70_s,tta_80_s
+demo,uniform,iid,1,0.003,53.13,1.294499,346251,5242496000,4096,81.92,30.807369792019017,450.0,750.0,,,
+demo,uniform,dirichlet,1,0.003,46.05,1.48649,346251,5242496000,4096,81.92,30.31670534098521,600.0,,,,

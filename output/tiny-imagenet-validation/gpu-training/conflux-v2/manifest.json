@@ -1,0 +1,59 @@
+{
+  "output": "/mnt/data/mdevos/conflux/results/tiny128-gpu-training/conflux-v2",
+  "data": "/mnt/data/mdevos/conflux/tiny-datasets",
+  "variant": "conflux-v2",
+  "peers": 128,
+  "sample_size": 32,
+  "chunks": 16,
+  "duration": 1800,
+  "test_period": 300,
+  "evaluation_examples": 2000,
+  "bandwidth": 10000000,
+  "step_ms": 50,
+  "learning_rate": 0.01,
+  "momentum": 0.9,
+  "local_steps": 5,
+  "seed": 0,
+  "torch_threads": 4,
+  "device": "cuda:0",
+  "release_cuda_cache": false,
+  "model_bytes": 45195718,
+  "calibrate": false,
+  "no_final_full": false,
+  "gpu_residency": true,
+  "training_batching": true,
+  "training_batch_size": 2,
+  "gpu_state_cache_mb": 256,
+  "dataset": "tiny_imagenet",
+  "model": "resnet18",
+  "alpha": 0.1,
+  "torch": "2.14.1+cu130",
+  "python": "3.12.15",
+  "numpy": "2.5.4",
+  "source_sha256": "99e4f916043d7a761735f730c0473f7728c49b93b6087a86956dff29eafbcdea",
+  "gpu": "NVIDIA RTX 5000 Ada Generation",
+  "cuda_visible_devices": "1",
+  "input_size": 64,
+  "pretrained": false,
+  "train_images": 95000,
+  "tuning_images": 5000,
+  "heldout_images": 10000,
+  "curve_examples": 2000,
+  "final_examples": 10000,
+  "network": "quarter fast, 8x spread, 10 MB/s mean by default; independent compute ranking",
+  "provenance": {
+    "source": "zh-plus/tiny-imagenet",
+    "files": {
+      "train": [
+        "train-00000-of-00001-1359597a978bc4fa.parquet",
+        "220fde5ae5e6ad267b513b5cb1442aa97d69bf535da8f4d16910c59a70388cd3",
+        100000
+      ],
+      "valid": [
+        "valid-00000-of-00001-70d52db3c749a935.parquet",
+        "fc85b521b6ee9506df978a65ba46cf869133ae27a3f63e029ffabd78ce268640",
+        10000
+      ]
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "output": "/Users/martijndevos/Documents/decentralized-learning-simulator/output/conflux-validation-digits",
+  "dataset": "digits",
+  "variants": [
+    "shatter-r2",
+    "shatter-r4",
+    "conflux",
+    "conflux-v2"
+  ],
+  "profiles": [
+    "uniform",
+    "heterogeneous"
+  ],
+  "partitioners": [
+    "iid",
+    "dirichlet"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "peers": 24,
+  "sample_size": 8,
+  "chunks": 4,
+  "success_fraction": 1,
+  "duration": 180.0,
+  "test_period": 10.0,
+  "bandwidth": 12000,
+  "latency_ms": 2,
+  "learning_rate": 0.1,
+  "local_steps": 5,
+  "alpha": 0.3,
+  "python": "3.12.15",
+  "torch": "2.14.1",
+  "numpy": "2.5.4",
+  "source_sha256": "e4a34cf4b84d916a3f88e2e20747756dde0367cb47edac16552267ed42d63e15"
+}

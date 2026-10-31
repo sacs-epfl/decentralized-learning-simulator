@@ -1,0 +1,31 @@
+{
+  "device": "cuda:0",
+  "resident": true,
+  "batching_requested": true,
+  "batched_tasks": 142,
+  "serial_tasks": 5516,
+  "batches": 71,
+  "calibration_tasks": 2,
+  "input_cache_hits": 141,
+  "input_cache_peak_bytes": 45155008,
+  "fallback_reasons": [],
+  "calibration": {
+    "serial_s": 0.0897504249587655,
+    "batched_s": 0.06632607302162796,
+    "max_state_abs_error": 0.0,
+    "serial_trials_s": [
+      0.0897504249587655,
+      0.09178406302817166,
+      0.0881420619552955
+    ],
+    "batched_trials_s": [
+      0.06632607302162796,
+      0.06828339002095163,
+      0.06532063998747617
+    ]
+  },
+  "batching_active": true,
+  "strategy": "cuda-streams",
+  "input_cache_bytes": 0,
+  "prefetch_peak_models": 2
+}

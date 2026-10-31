@@ -1,0 +1,7 @@
+time,accuracy,loss,nodes,variant,profile,partitioner,seed
+300.0,0.555859375,5.5049057109375,128,shatter-r2,heterogeneous,dirichlet,0
+600.0,0.619921875,5.5189630703125,128,shatter-r2,heterogeneous,dirichlet,0
+900.0,0.81796875,5.519812734375,128,shatter-r2,heterogeneous,dirichlet,0
+1200.0,1.093359375,5.4742112421875,128,shatter-r2,heterogeneous,dirichlet,0
+1500.0,1.36328125,5.351140453125,128,shatter-r2,heterogeneous,dirichlet,0
+1800.0,1.456640625,5.4065744921875,128,shatter-r2,heterogeneous,dirichlet,0

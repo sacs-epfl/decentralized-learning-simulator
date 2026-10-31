@@ -1,0 +1,225 @@
+{
+  "passed": true,
+  "execution_commit": "03da38a",
+  "source_sha256": "99e4f916043d7a761735f730c0473f7728c49b93b6087a86956dff29eafbcdea",
+  "variants": {
+    "shatter-r2": {
+      "execution_s": 674.9110836170148,
+      "comparisons": [
+        {
+          "reference": "tiny128",
+          "per_node_curve_rows_exact": 768,
+          "full_validation_rows_exact": 128,
+          "complete_dag_exact": true,
+          "manifest_shared_fields_exact": true,
+          "summary_except_wall_time_exact": true,
+          "previous_execution_s": 2069.2229142370634,
+          "speedup_vs_previous": 3.0659192958390724
+        },
+        {
+          "reference": "tiny128-optimized",
+          "per_node_curve_rows_exact": 768,
+          "full_validation_rows_exact": 128,
+          "complete_dag_exact": true,
+          "manifest_shared_fields_exact": true,
+          "summary_except_wall_time_exact": true,
+          "previous_execution_s": 837.2269428849686,
+          "speedup_vs_previous": 1.2404996201841332
+        }
+      ],
+      "final_status": {
+        "completed": 17746,
+        "total": 17746,
+        "live_results": 0,
+        "timings_s": {
+          "initialize": 0.1332186469808221,
+          "train": 323.5353116678307,
+          "chunk": 33.61931411491241,
+          "reconstruct_from_chunks": 173.50512023409829,
+          "test": 115.7402532948181
+        },
+        "reconstruction_cache_hits": 0,
+        "reconstruction_cache_bytes": 0,
+        "reconstruction_cache_peak_bytes": 0,
+        "training_backend": {
+          "device": "cuda:0",
+          "resident": true,
+          "batching_requested": true,
+          "batched_tasks": 142,
+          "serial_tasks": 5516,
+          "batches": 71,
+          "calibration_tasks": 2,
+          "input_cache_hits": 141,
+          "input_cache_peak_bytes": 45155008,
+          "fallback_reasons": [],
+          "calibration": {
+            "serial_s": 0.0897504249587655,
+            "batched_s": 0.06632607302162796,
+            "max_state_abs_error": 0.0,
+            "serial_trials_s": [
+              0.0897504249587655,
+              0.09178406302817166,
+              0.0881420619552955
+            ],
+            "batched_trials_s": [
+              0.06632607302162796,
+              0.06828339002095163,
+              0.06532063998747617
+            ]
+          },
+          "batching_active": true,
+          "strategy": "cuda-streams",
+          "input_cache_bytes": 0
+        }
+      },
+      "training_executor": {
+        "device": "cuda:0",
+        "resident": true,
+        "batching_requested": true,
+        "batched_tasks": 142,
+        "serial_tasks": 5516,
+        "batches": 71,
+        "calibration_tasks": 2,
+        "input_cache_hits": 141,
+        "input_cache_peak_bytes": 45155008,
+        "fallback_reasons": [],
+        "calibration": {
+          "serial_s": 0.0897504249587655,
+          "batched_s": 0.06632607302162796,
+          "max_state_abs_error": 0.0,
+          "serial_trials_s": [
+            0.0897504249587655,
+            0.09178406302817166,
+            0.0881420619552955
+          ],
+          "batched_trials_s": [
+            0.06632607302162796,
+            0.06828339002095163,
+            0.06532063998747617
+          ]
+        },
+        "batching_active": true,
+        "strategy": "cuda-streams",
+        "input_cache_bytes": 0,
+        "prefetch_peak_models": 2
+      }
+    },
+    "conflux-v2": {
+      "execution_s": 156.76774975005537,
+      "comparisons": [
+        {
+          "reference": "tiny128",
+          "per_node_curve_rows_exact": 768,
+          "full_validation_rows_exact": 128,
+          "complete_dag_exact": true,
+          "manifest_shared_fields_exact": true,
+          "summary_except_wall_time_exact": true,
+          "previous_execution_s": 841.231321732048,
+          "speedup_vs_previous": 5.366099360826928
+        },
+        {
+          "reference": "tiny128-optimized",
+          "per_node_curve_rows_exact": 768,
+          "full_validation_rows_exact": 128,
+          "complete_dag_exact": true,
+          "manifest_shared_fields_exact": true,
+          "summary_except_wall_time_exact": true,
+          "previous_execution_s": 321.1985280739609,
+          "speedup_vs_previous": 2.048881409512274
+        },
+        {
+          "reference": "tiny128-memoized",
+          "per_node_curve_rows_exact": 768,
+          "full_validation_rows_exact": 128,
+          "complete_dag_exact": true,
+          "manifest_shared_fields_exact": true,
+          "summary_except_wall_time_exact": true,
+          "previous_execution_s": 241.12498431198765,
+          "speedup_vs_previous": 1.5381032431506372
+        }
+      ],
+      "final_status": {
+        "completed": 8913,
+        "total": 8913,
+        "live_results": 0,
+        "timings_s": {
+          "initialize": 0.12648926698602736,
+          "train": 102.16587392834481,
+          "chunk": 13.25264528603293,
+          "aggregate_chunk": 16.408859910443425,
+          "reconstruct_from_chunks": 1.4611543546197936,
+          "test": 11.796676757745445
+        },
+        "reconstruction_cache_hits": 2201,
+        "reconstruction_cache_bytes": 0,
+        "reconstruction_cache_peak_bytes": 45155008,
+        "training_backend": {
+          "device": "cuda:0",
+          "resident": true,
+          "batching_requested": true,
+          "batched_tasks": 1034,
+          "serial_tasks": 1268,
+          "batches": 517,
+          "calibration_tasks": 2,
+          "input_cache_hits": 2188,
+          "input_cache_peak_bytes": 45155008,
+          "fallback_reasons": [],
+          "calibration": {
+            "serial_s": 0.08969341102056205,
+            "batched_s": 0.06509392010048032,
+            "max_state_abs_error": 0.0,
+            "serial_trials_s": [
+              0.08969341102056205,
+              0.09406492800917476,
+              0.08706699905451387
+            ],
+            "batched_trials_s": [
+              0.06495745095890015,
+              0.06509392010048032,
+              0.06683881604112685
+            ]
+          },
+          "batching_active": true,
+          "strategy": "cuda-streams",
+          "input_cache_bytes": 0
+        }
+      },
+      "training_executor": {
+        "device": "cuda:0",
+        "resident": true,
+        "batching_requested": true,
+        "batched_tasks": 1034,
+        "serial_tasks": 1268,
+        "batches": 517,
+        "calibration_tasks": 2,
+        "input_cache_hits": 2188,
+        "input_cache_peak_bytes": 45155008,
+        "fallback_reasons": [],
+        "calibration": {
+          "serial_s": 0.08969341102056205,
+          "batched_s": 0.06509392010048032,
+          "max_state_abs_error": 0.0,
+          "serial_trials_s": [
+            0.08969341102056205,
+            0.09406492800917476,
+            0.08706699905451387
+          ],
+          "batched_trials_s": [
+            0.06495745095890015,
+            0.06509392010048032,
+            0.06683881604112685
+          ]
+        },
+        "batching_active": true,
+        "strategy": "cuda-streams",
+        "input_cache_bytes": 0,
+        "prefetch_peak_models": 2
+      }
+    }
+  },
+  "tests": {
+    "linux_cuda": "62 passed",
+    "macos_cpu": "56 passed, 6 CUDA checks skipped"
+  },
+  "timing_note": "Observed wall times on separate GPUs sharing the server; not controlled timing trials. Training microbenchmark uses three repetitions on one GPU."
+}
