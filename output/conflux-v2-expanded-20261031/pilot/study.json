@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "name": "conflux-v2-expanded-20261031",
+  "peers": 16,
+  "sample_size": 4,
+  "chunks": 16,
+  "algorithms": [
+    "conflux-v2",
+    "moshpit"
+  ],
+  "profiles": [
+    "uniform",
+    "network",
+    "compute",
+    "heterogeneous"
+  ],
+  "partitioners": [
+    "iid"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "tuning_seed": 10001,
+  "tuning_profile": "heterogeneous",
+  "alpha": 0.1,
+  "local_steps": 5,
+  "batch_size": 32,
+  "workloads": [
+    {
+      "name": "digits-mlp",
+      "dataset": "digits",
+      "model": "mlp",
+      "duration": 60,
+      "test_period": 5,
+      "bandwidth_bytes_per_s": 4000,
+      "compute_step_ms": 20,
+      "evaluation_examples": 0,
+      "learning_rates": [
+        0.03,
+        0.1
+      ],
+      "targets": [
+        50,
+        70,
+        80,
+        90
+      ]
+    },
+    {
+      "name": "cifar10-gnlenet",
+      "dataset": "cifar10",
+      "model": "gnlenet",
+      "duration": 600,
+      "test_period": 50,
+      "bandwidth_bytes_per_s": 100000,
+      "compute_step_ms": 20,
+      "evaluation_examples": 1000,
+      "learning_rates": [
+        0.003,
+        0.01
+      ],
+      "targets": [
+        20,
+        30,
+        40,
+        50
+      ]
+    },
+    {
+      "name": "tiny-mobilenet",
+      "dataset": "tiny_imagenet",
+      "model": "mobilenet_v3_large",
+      "duration": 1800,
+      "test_period": 150,
+      "bandwidth_bytes_per_s": 10000000,
+      "compute_step_ms": 50,
+      "evaluation_examples": 1000,
+      "learning_rates": [
+        0.01,
+        0.03
+      ],
+      "targets": [
+        2,
+        5,
+        10,
+        15
+      ]
+    },
+    {
+      "name": "tiny-resnet18",
+      "dataset": "tiny_imagenet",
+      "model": "resnet18",
+      "duration": 1800,
+      "test_period": 150,
+      "bandwidth_bytes_per_s": 10000000,
+      "compute_step_ms": 50,
+      "evaluation_examples": 1000,
+      "learning_rates": [
+        0.01,
+        0.03
+      ],
+      "targets": [
+        2,
+        5,
+        10,
+        15
+      ]
+    }
+  ]
+}

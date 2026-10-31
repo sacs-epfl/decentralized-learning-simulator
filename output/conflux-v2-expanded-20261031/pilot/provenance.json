@@ -1,0 +1,16 @@
+{
+  "commit": null,
+  "dirty": false,
+  "source_sha256": "f1fb26fe2ba91bed61a44870652b84463a0bd1045ffd3f9a8e04b3da7d7e58f4",
+  "python": "3.12.15",
+  "packages": {
+    "torch": "2.14.1+cu130",
+    "torchvision": "0.29.1+cu130",
+    "numpy": "2.5.4",
+    "datasets": "4.8.5",
+    "flwr-datasets": "0.6.1",
+    "transformers": "5.22.1",
+    "peft": "0.21.2",
+    "PyYAML": "6.0.3"
+  }
+}

@@ -1,0 +1,9 @@
+name,stage,workload,algorithm,profile,partitioner,seed,learning_rate,wall_seconds,final_accuracy,final_loss,validation_auc,model_bytes,model_payload_bytes,training_tasks,bytes_sent_completed,simulated_compute_seconds,peak_cuda_bytes
+pilot-cifar10-gnlenet-conflux-v2-heterogeneous-iid-s10001-lr0.003,pilot,cifar10-gnlenet,conflux-v2,heterogeneous,iid,10001,0.003,12.711806809064,19.08125,2.24451,15.49375,,346251,40,24199501,4.711097,328636416
+pilot-cifar10-gnlenet-moshpit-heterogeneous-iid-s10001-lr0.003,pilot,cifar10-gnlenet,moshpit,heterogeneous,iid,10001,0.003,13.318206131923944,17.625,2.23352375,15.409375,,346251,96,44199290,9.599964,329326592
+pilot-digits-mlp-conflux-v2-heterogeneous-iid-s10001-lr0.03,pilot,digits-mlp,conflux-v2,heterogeneous,iid,10001,0.03,4.227483013877645,7.81250025,2.3306605,7.315341125000001,,11026,8,111716,0.859256,201473024
+pilot-digits-mlp-moshpit-heterogeneous-iid-s10001-lr0.03,pilot,digits-mlp,moshpit,heterogeneous,iid,10001,0.03,4.15507121803239,6.88920475,2.3316081250000003,6.853693375000001,,11034,18,158832,1.748141,268582400
+pilot-tiny-mobilenet-conflux-v2-heterogeneous-iid-s10001-lr0.01,pilot,tiny-mobilenet,conflux-v2,heterogeneous,iid,10001,0.01,45.508143899962306,0.5,5.298322625,0.5,,18040139,208,7061429558,52.888836,284723712
+pilot-tiny-mobilenet-moshpit-heterogeneous-iid-s10001-lr0.01,pilot,tiny-mobilenet,moshpit,heterogeneous,iid,10001,0.01,75.22441090992652,0.5,5.2983192500000005,0.5,,18040763,480,12644637553,119.99988,320747008
+pilot-tiny-resnet18-conflux-v2-heterogeneous-iid-s10001-lr0.01,pilot,tiny-resnet18,conflux-v2,heterogeneous,iid,10001,0.01,30.82181115192361,0.5875,5.30052175,0.609375,,45195718,88,7319577388,23.70368,665953792
+pilot-tiny-resnet18-moshpit-heterogeneous-iid-s10001-lr0.01,pilot,tiny-resnet18,moshpit,heterogeneous,iid,10001,0.01,42.67315039387904,0.43125,5.324835625,0.49375,,45195718,202,13018002207,50.888838,807364096

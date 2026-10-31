@@ -1,0 +1,29 @@
+........................................................................ [ 17%]
+........................................................................ [ 34%]
+........................................................................ [ 51%]
+........................................................................ [ 68%]
+........................................................................ [ 85%]
+..............................................................           [100%]
+=============================== warnings summary ===============================
+tests/test_comparison_edge_cases.py::test_real_digits_partitions_are_disjoint[dirichlet]
+  /mnt/data/mdevos/conda/envs/conflux-gpu/lib/python3.12/site-packages/flwr_datasets/partitioner/dirichlet_partitioner.py:301: UserWarning: The specified min_partition_size (8) was not satisfied for alpha ([np.float64(0.3)]) after 0 attempts at sampling from the Dirichlet distribution. The probability sampling from the Dirichlet distribution will be repeated. Note: This is not a desired behavior. It is recommended to adjust the alpha or min_partition_size instead. Generating partitions by sampling from a list of very wide range of alpha values can be hard to achieve. Try reducing the range between maximum (0.3) and minimum alpha (0.3) values or increasing all the values.
+    warnings.warn(
+
+tests/test_datasets.py::test_flower_partitions_are_complete_disjoint_and_reproducible[shards]
+  /mnt/data/mdevos/conda/envs/conflux-gpu/lib/python3.12/site-packages/pyarrow/compute.py:231: FutureWarning: Specifying null_placement in SortOptions is deprecated as of 25.0.0. Specify null_placement per sort_key instead.
+    return options_class(*args, **kwargs)
+
+tests/test_lora.py::test_causal_lm_shift_mask_and_learning
+  /mnt/data/mdevos/conda/envs/conflux-gpu/lib/python3.12/site-packages/peft/tuners/lora/layer.py:2760: UserWarning: fan_in_fan_out is set to False but the target module is `Conv1D`. Setting fan_in_fan_out to True.
+    warnings.warn(
+
+tests/test_vision_lora.py::test_vision_lora_executes_three_regular_dpsgd_dag[dirichlet]
+  /mnt/data/mdevos/conda/envs/conflux-gpu/lib/python3.12/site-packages/flwr_datasets/partitioner/dirichlet_partitioner.py:301: UserWarning: The specified min_partition_size (1) was not satisfied for alpha ([np.float64(0.1)]) after 0 attempts at sampling from the Dirichlet distribution. The probability sampling from the Dirichlet distribution will be repeated. Note: This is not a desired behavior. It is recommended to adjust the alpha or min_partition_size instead. Generating partitions by sampling from a list of very wide range of alpha values can be hard to achieve. Try reducing the range between maximum (0.1) and minimum alpha (0.1) values or increasing all the values.
+    warnings.warn(
+
+tests/test_vision_lora.py::test_vision_lora_executes_three_regular_dpsgd_dag[dirichlet]
+  /mnt/data/mdevos/conda/envs/conflux-gpu/lib/python3.12/site-packages/flwr_datasets/partitioner/dirichlet_partitioner.py:301: UserWarning: The specified min_partition_size (1) was not satisfied for alpha ([np.float64(0.1)]) after 1 attempts at sampling from the Dirichlet distribution. The probability sampling from the Dirichlet distribution will be repeated. Note: This is not a desired behavior. It is recommended to adjust the alpha or min_partition_size instead. Generating partitions by sampling from a list of very wide range of alpha values can be hard to achieve. Try reducing the range between maximum (0.1) and minimum alpha (0.1) values or increasing all the values.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+422 passed, 5 warnings in 133.81s (0:02:13)

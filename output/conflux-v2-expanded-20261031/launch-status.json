@@ -1,0 +1,20 @@
+{
+  "counts": {
+    "tune/completed": 4,
+    "tune/running": 2
+  },
+  "running": [
+    {
+      "name": "tune-tiny-mobilenet-conflux-v2-heterogeneous-dirichlet-s10001-lr0.01",
+      "gpu": 0,
+      "elapsed_seconds": 24
+    },
+    {
+      "name": "tune-tiny-mobilenet-conflux-v2-heterogeneous-dirichlet-s10001-lr0.03",
+      "gpu": 1,
+      "elapsed_seconds": 24
+    }
+  ],
+  "failed": [],
+  "complete": false
+}
