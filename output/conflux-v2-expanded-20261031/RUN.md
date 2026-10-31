@@ -18,7 +18,9 @@ No recurring monitor or automatic chat follow-up was scheduled.
 The full Linux/CUDA suite passed **422 tests**. Final configuration, capacity,
 heldout and scheduler checks passed **53 tests**; the final frozen driver's
 end-to-end and resume check also passed. All eight short GPU pilots completed.
-Passing logs and compact pilot metrics/configurations are included here.
+Passing logs and compact pilot metrics/configurations are included here;
+per-run pilot records are stored in `pilot/records` to distinguish them from
+server-only raw run directories.
 
 ## Matrix
 
