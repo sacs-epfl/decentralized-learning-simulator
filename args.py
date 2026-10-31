@@ -3,8 +3,11 @@ from dasklearn.algorithms import ALGORITHMS
 from dasklearn.tasks.training import add_training_arguments
 
 
-def get_args():
-    parser = argparse.ArgumentParser()
+def create_parser():
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument('--config', help='YAML/JSON configuration; use run_experiment.py for sweeps')
+    parser.add_argument('--local', action=argparse.BooleanOptionalAction, default=False,
+                        help='Execute the simulator DAG locally without brokers')
 
     # Learning settings
     parser.add_argument('--learning-rate', type=float, default=0.002)
@@ -79,6 +82,10 @@ def get_args():
     parser.add_argument('--test-interval', type=int, default=5)
     parser.add_argument('--test-period', type=int, default=60)
     parser.add_argument('--test-method', type=str, default="individual", choices=["individual", "global", "snapshot"])
+    parser.add_argument('--evaluation-split', choices=['test', 'validation', 'valid'], default='test')
+    parser.add_argument('--evaluation-examples', type=int, default=0, help='Evaluation example limit; 0 uses the full split')
+    parser.add_argument('--model-size-bytes', type=int, default=None, help='Explicit simulated payload size')
+    parser.add_argument('--release-cuda-cache', action=argparse.BooleanOptionalAction, default=False)
 
     # Plots
     parser.add_argument('--compute-graph-plot-size', type=int, default=100)
@@ -94,10 +101,46 @@ def get_args():
     from dasklearn.lora import add_lora_arguments
     add_lora_arguments(parser)
     add_training_arguments(parser)
-    args = parser.parse_args()
+    return parser
+
+
+def get_args(argv=None):
+    import sys
+    from dasklearn.experiments import explicit_options, load_single_options
+    argv = list(sys.argv[1:] if argv is None else argv)
+    parser = create_parser()
+    probe = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    probe.add_argument('--config')
+    selected, _ = probe.parse_known_args(argv)
+    file_values = {}
+    if selected.config:
+        try:
+            file_values = load_single_options(selected.config, parser)
+        except ValueError as exc:
+            parser.error(str(exc))
+        parser.set_defaults(**file_values)
+    args = parser.parse_args(argv)
+    cli_options = explicit_options(parser, argv)
+    supplied = set(file_values) | cli_options
+    if 'local' in cli_options and args.local and 'dry_run' not in cli_options:
+        args.dry_run = False
+    if 'dry_run' in cli_options and args.dry_run and 'local' not in cli_options:
+        args.local = False
     if args.dataset == "femnist":
-        args.learning_rate = 0.004
-        args.momentum = 0
+        if 'learning_rate' not in supplied:
+            args.learning_rate = 0.004
+        if 'momentum' not in supplied:
+            args.momentum = 0
+    if args.local and args.dry_run:
+        parser.error('--local and --dry-run cannot be combined')
+    if args.local and args.from_dir:
+        parser.error('--local does not support --from-dir')
+    if selected.config:
+        from dasklearn.experiments import validate_run
+        try:
+            validate_run(vars(args))
+        except ValueError as exc:
+            parser.error(str(exc))
 
     return args
 

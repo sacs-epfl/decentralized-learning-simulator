@@ -81,6 +81,18 @@ explicit in those documents. Legacy entries have not all been re-audited. PushSu
 
 ## Run a small comparison
 
+For configuration files and parameter sweeps, use the shared experiment runner:
+
+```sh
+python scripts/run_experiment.py experiments/smoke.yaml
+python scripts/run_experiment.py experiments/food101.yaml --plan
+```
+
+YAML/JSON files support shared settings, Cartesian matrices or named runs, and
+CLI overrides. Each run gets its own process, log, resolved configuration and
+manifest. See [experiment configuration](docs/experiments.md) for execution modes,
+output protection, and the pinned Food-101 LoRA comparison.
+
 This runs real protocol-generated DAGs on CPU, with synthetic data and no downloads:
 
 ```sh

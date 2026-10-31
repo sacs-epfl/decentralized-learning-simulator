@@ -1,0 +1,33 @@
+version: 1
+name: food101-lora
+execution: local
+output: ../output/food101-config
+settings:
+  algorithm: dpsgd
+  dataset: vision
+  dataset_name: ethz/food101
+  dataset_revision: 83488de741c1bd1ce27aa6a2b33e19c7bdf92ca9
+  test_split: validation
+  validation_set_fraction: 0.1
+  lora: true
+  lora_task: image-classification
+  base_model: WinKawaks/vit-tiny-patch16-224
+  model_revision: 77d1485af66b34d4ed0fe95dbb0c60c7496f950b
+  num_labels: 101
+  lora_rank: 8
+  lora_alpha: 16
+  device: auto
+  peers: 16
+  topology: kreg
+  k: 3
+  synchronous: true
+  rounds: 20
+  local_steps: 10
+  batch_size: 32
+  learning_rate: 0.01
+  momentum: 0.9
+  alpha: 0.1
+  test_interval: 20
+matrix:
+  partitioner: [iid, dirichlet]
+  seed: [42]

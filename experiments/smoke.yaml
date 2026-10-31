@@ -1,0 +1,23 @@
+version: 1
+name: synthetic-comparison
+execution: local
+output: ../output/config-smoke
+settings:
+  algorithm: dpsgd
+  dataset: synthetic
+  model: mlp
+  device: cpu
+  peers: 4
+  topology: ring
+  synchronous: true
+  rounds: 2
+  local_steps: 2
+  batch_size: 16
+  learning_rate: 0.1
+  momentum: 0
+  alpha: 0.1
+  test_interval: 1
+  torch_threads: 1
+matrix:
+  partitioner: [iid, dirichlet]
+  seed: [0, 1]

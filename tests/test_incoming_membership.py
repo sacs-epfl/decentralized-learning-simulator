@@ -99,8 +99,11 @@ async def test_completed_delivery_audits_preserve_protocol_and_training_and_repl
                          algorithm=algorithm, latency=latency, **extra)
     expected = execute_local(baseline)
     observer = IncomingModelObserver(attackers=[0], rounds=[3], chunk_count=chunk_count)
+    # This is an observer-invariance comparison: hold the modeled wire size
+    # fixed. PyTorch's pickle storage IDs can change serialized lengths with
+    # allocator/test order, even for the same model structure.
     sim = _simulate(config_type, cls, tmp_path / "observed", observer,
-                    algorithm=algorithm, latency=latency, **extra)
+                    algorithm=algorithm, latency=latency, model_size_bytes=baseline.model_size, **extra)
     assert sim.event_trace_hash.hexdigest() == baseline.event_trace_hash.hexdigest()
     assert sim.workflow_dag.serialize() == baseline.workflow_dag.serialize()
     assert [client.bw_scheduler.total_bytes_sent for client in sim.clients] == [
