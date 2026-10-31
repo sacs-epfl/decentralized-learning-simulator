@@ -21,5 +21,6 @@ dependencies:
       - scikit-learn==1.9.1
       - datasets>=3,<5
       - flwr-datasets>=0.6,<0.7
+      - PyYAML>=6,<7
       - librosa~=0.11.0
       - seaborn~=0.13.2

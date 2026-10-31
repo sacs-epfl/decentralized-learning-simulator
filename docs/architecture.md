@@ -10,6 +10,8 @@ or experiment records are deleted by the separation.
 | Path | Responsibility |
 |---|---|
 | `dasklearn/algorithms.py` | Lazy algorithm/settings registration shared by CLI and brokers. |
+| `dasklearn/experiments.py`, `experiment_runner.py` | Configuration validation, sweep expansion, isolated runs and manifests. |
+| `dasklearn/settings_factory.py` | Shared CLI-to-settings conversion for coordinator and local execution. |
 | `dasklearn/simulation/<algorithm>/` | Protocol events, communication and algorithm settings. |
 | `dasklearn/simulation/bandwidth_scheduler.py` | Shared bandwidth/latency accounting. |
 | `dasklearn/tasks/` | DAG references, local execution, memory bounds and CUDA training backend. |

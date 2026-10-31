@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "name": "algorithm-comparison",
+  "execution": "local",
+  "output": "../output/config-algorithms",
+  "settings": {
+    "dataset": "synthetic",
+    "model": "mlp",
+    "device": "cpu",
+    "peers": 4,
+    "rounds": 2,
+    "local_steps": 1,
+    "momentum": 0,
+    "test_interval": 1,
+    "torch_threads": 1
+  },
+  "runs": [
+    {"name": "dpsgd-ring", "settings": {"algorithm": "dpsgd", "topology": "ring"}},
+    {"name": "moshpit", "settings": {"algorithm": "moshpit", "group_size": 2}}
+  ]
+}

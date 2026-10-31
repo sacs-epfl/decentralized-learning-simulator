@@ -28,6 +28,10 @@ The small toy dataset checks the pipeline; its scores are not benchmark results.
 
 ## Vision transformers and Food-101
 
+To run the IID/Dirichlet comparison from one configuration file, use
+`python scripts/run_experiment.py experiments/food101.yaml`. Add `--plan` to
+inspect it without loading data or models. See [experiment configuration](experiments.md).
+
 The generic local runner also supports pretrained image classifiers. This single
 command downloads/caches Food-101 and ViT-Tiny and runs 16 D-PSGD peers on a
 seeded 3-regular graph:
