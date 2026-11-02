@@ -70,7 +70,8 @@ def _execute_local(simulation,retain_results,progress,share_readonly_inputs,
     # Unknown functions retain defensive edge copies. Test/evaluation moves the
     # input model between devices and changes its mode, so it also needs a copy.
     readonly = {"train", "compute_gradient", "gradient_update", "aggregate", "chunk", "choco_prepare", "choco_receive", "qgm_train", "qgm_finish",
-                "aggregate_chunk", "reconstruct_from_chunks", "weighted_reconstruct_from_chunks"}
+                "aggregate_chunk", "reconstruct_from_chunks", "weighted_reconstruct_from_chunks",
+                "conflux_opt_initialize", "conflux_opt_update", "conflux_opt_pack"}
 
     def resolve(value, share=False):
         def output(ref):

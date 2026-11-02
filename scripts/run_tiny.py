@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import torch
 from dasklearn.session_settings import LearningSettings
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments
+from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments, fedopt_options
 from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
 from dasklearn.simulation.shatter.simulation import ShatterSimulation
@@ -79,7 +79,8 @@ async def main():
     elif args.variant == "conflux-v2":
         cls, config = ConfluxV2Simulation, ConfluxV2Settings
         specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks, "success_fraction": 1,
-                    "relay_count": args.relay_count, "immediate_uploads": args.immediate_uploads}
+                    "relay_count": args.relay_count, "immediate_uploads": args.immediate_uploads,
+                    **fedopt_options(args)}
     else:
         cls, config, specific = baseline_spec(args.variant, args.peers, args.sample_size,
                                              args.group_size, args.averaging_steps)

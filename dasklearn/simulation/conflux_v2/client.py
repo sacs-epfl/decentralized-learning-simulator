@@ -53,7 +53,9 @@ class ConfluxV2Client(BaseClient):
     def layout(self, round_nr):
         count = self.simulator.settings.chunks_in_sample
         limit = self.simulator.settings.relay_count or count
-        leader, owners = _layout(round_nr, count, limit, tuple(self.other_nodes_bws.items()))
+        epoch = getattr(self.simulator.settings, "reducer_epoch_rounds", 1)
+        layout_round = 1 if epoch == 0 else (round_nr - 1) // epoch + 1
+        leader, owners = _layout(layout_round, count, limit, tuple(self.other_nodes_bws.items()))
         # Callers receive independent containers, including when plans are stored.
         return leader, list(owners)
 

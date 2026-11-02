@@ -24,7 +24,7 @@ import torch
 
 from dasklearn.session_settings import LearningSettings
 from dasklearn.simulation.conflux.settings import ConfluxSettings
-from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments
+from dasklearn.simulation.conflux_v2.settings import ConfluxV2Settings, add_conflux_v2_arguments, fedopt_options
 from dasklearn.simulation.conflux_v2.simulation import ConfluxV2Simulation
 from dasklearn.simulation.conflux.simulation import ConfluxSimulation
 from dasklearn.simulation.shatter.settings import ShatterSettings
@@ -54,7 +54,7 @@ async def run_one(args, variant, profile, partitioner, seed):
         cls, config, algorithm = ConfluxV2Simulation, ConfluxV2Settings, variant
         specific = {"sample_size": args.sample_size, "chunks_in_sample": args.chunks,
                     "success_fraction": args.success_fraction, "relay_count": getattr(args, "relay_count", 0),
-                    "immediate_uploads": getattr(args, "immediate_uploads", False)}
+                    "immediate_uploads": getattr(args, "immediate_uploads", False), **fedopt_options(args)}
     elif variant == "conflux":
         cls, config = ConfluxSimulation, ConfluxSettings
         algorithm = variant

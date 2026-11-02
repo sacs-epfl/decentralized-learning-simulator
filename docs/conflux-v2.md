@@ -102,3 +102,57 @@ historical records keep their original provenance. V2 settings work with the
 shared YAML/JSON runner, including independent controlled capacity profiles.
 See [the expanded study](experiments/convergence-20261031.md) for the four
 workloads, six algorithms, validation-only tuning, and paired confirmation plan.
+
+## Reducer-side server optimizers (experimental)
+
+The `codex/conflux-v2-fedopt` branch adds `server_optimizer: fedavgm` and
+`server_optimizer: fedadam`. The default remains the original FedAvg protocol.
+Each optimizer shard retains the current base weights and its own moment history;
+trainers continue to use ordinary local SGD. Server pseudo-gradients are the base
+minus the common, uniformly averaged client model. FedAvgM uses unnormalized SGD
+momentum. FedAdam uses EMA first/second moments, `v0 = server_tau**2`, no bias
+correction, and denominator `sqrt(v) + server_tau`, following FedOpt Algorithm 2.
+Non-parameter buffers are averaged rather than optimized; LoRA is unsupported.
+
+`reducer_epoch_rounds: 0` fixes chunk ownership, `1` preserves per-round rotation,
+and larger values retain a layout for that many logical rounds. At an ownership
+change the previous owner sends the base chunk, moments and logical step to the
+new owner through the normal contended network. The new owner waits for that
+state and all contributors before updating. State is never broadcast to trainers.
+
+`state_bits: 8` quantizes moments only on handoff, using independent blocks of
+`state_block_size` elements. First moments use signed symmetric int8 and second
+moments nonnegative uint8, each with FP32 block scales. Owners compute in FP32;
+base weights stay FP32. Wire size includes those arrays, scales, an eight-byte
+step counter, and the shared API's normal header/metadata charge. Every recipient
+still reconstructs the same model even when moments are approximate.
+
+`server_step_ms` charges CPU optimizer time per chunk on a serialized optimizer
+resource; `state_pack_ms` charges quantization time per migrated chunk. Defaults
+are zero, retaining the simulator's original instantaneous aggregation convention.
+The experimental comparison explicitly charges 0.1 ms and 0.05 ms respectively;
+these are controlled costs, not measurements of an edge device.
+
+The regular version-1 configuration in
+`experiments/conflux-v2/fedopt/tuning.json` describes a 64-node, 16-trainer,
+128-chunk/16-reducer CIFAR-10/GNLeNet study, non-IID alpha 0.1, joint network/compute
+heterogeneity and 900 simulated seconds. It gives server SGD (FedAvgM beta1=0),
+server momentum and FedAdam equal twelve-candidate client/server-rate searches on
+validation seed 10011. Rates are selected by validation accuracy area, then frozen
+for seeds 0/1/2. Confirmation compares fixed owners, FP32/8-bit rotating handoffs,
+eight-round ownership epochs, original fixed/rotating FedAvg and Moshpit. Full
+final test scores are never used to select rates. Network and CPU costs are charged
+in protocol time; GPU execution wall time is separate.
+
+```sh
+python scripts/benchmark_conflux_fedopt.py --stage plan --output /path/to/fedopt-results
+python scripts/benchmark_conflux_fedopt.py --output /path/to/fedopt-results --gpus 0 1
+# Repeat an identical command to resume; changed source/settings are rejected.
+python scripts/benchmark_conflux_fedopt.py --stage status --output /path/to/fedopt-results
+```
+
+Tests compare every chunked round to independently calculated full-vector FedOpt,
+check state/round ownership, exact byte savings of actual quantized packets, common
+recipient models, partial participation, charged compute, and validation-only rate
+selection. Scheduled handoff payload totals are separate from actual transmitted
+bytes: a time-limited run can stop while a transfer is still pending or in flight.

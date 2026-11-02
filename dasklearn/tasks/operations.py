@@ -29,6 +29,12 @@ OPERATIONS = {name: Operation(f"dasklearn.functions:{name}", outputs, name in RE
 
 OPERATIONS["membership_inference"] = Operation(
     "dasklearn.privacy.membership:evaluate_membership", 1, True)
+for name, function, count in [
+    ("conflux_opt_initialize", "initialize_state", 1),
+    ("conflux_opt_update", "update_state", 2),
+    ("conflux_opt_pack", "pack_state", 1),
+]:
+    OPERATIONS[name] = Operation(f"dasklearn.simulation.conflux_v2.optimizer:{function}", count, True)
 OPERATIONS["complete_incoming"] = Operation(
     "dasklearn.privacy.incoming:complete_incoming_operation", 1, True)
 
