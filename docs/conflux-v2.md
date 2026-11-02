@@ -206,3 +206,108 @@ configuration; `fedadam-rotating-int8.json` and `fedadam-sticky-int8.json` repro
 the handoff variants. These results support the optional optimizer in this one
 stable-membership regime and horizon; they do not establish general superiority
 across data/models or measured real-device runtimes. FedAvg remains the default.
+
+## Publication direction and next research steps (2 November 2026)
+
+Recorded following discussion with the user. Offline support and churn recovery
+are deferred. Stable membership is an acceptable scope for the next study. The
+user wants to avoid manually tuning chunk counts, reducer counts and placement
+for each deployment.
+
+### Novelty assessment
+
+Static parameter-shard reducers alone are not a defensible main novelty claim.
+P2Sharding already distributes a federated model across independent parameter
+servers, including servers colocated with clients. DeTA partitions federated
+updates among multiple aggregators. ZeRO establishes optimizer-state sharding;
+FedOpt establishes the server optimization rule. These are architectural and
+algorithmic overlaps, not evidence that every detail of Conflux has appeared in
+one prior protocol. This is a targeted literature review, not an exhaustive
+novelty determination.
+
+With a common base model, round, contributor set and aggregation weights, each
+Conflux shard computes the corresponding centralized FedOpt coordinates, apart
+from floating-point ordering. Fixed owners keep moments local without changing
+that rule. Optimizer gains and systems gains must therefore be separated; beating
+Moshpit alone does not isolate a new sharded aggregation contribution.
+
+### Next baseline
+
+Implement a conventional synchronous sharded parameter-server baseline with the
+same trainer samples, contributor sets, local SGD, server optimizer, aggregation
+weights, payload precision, network contention and compute accounting. It should
+support the same reducer budget, including peer-hosted reducers and overlapping
+trainer/reducer roles. Check full-vector optimizer equivalence on a common update
+trace before comparing end-to-end execution.
+
+Use controlled ablations for immediate versus barriered uploads, chunk streaming,
+placement and dissemination to the next sample. Do not handicap the baseline by
+forcing every conventional server to wait for unrelated chunks or to broadcast
+to idle peers; include equivalent optimizations where applicable. Distinguish a
+simple baseline from an optimized matched baseline. Compare equal tuning budgets
+and charge startup profiling, exploration and scheduling overhead to the run.
+
+### Candidate contribution: automatic scheduling under shared peer resources
+
+Research hypothesis, not an established novelty claim: jointly selecting reducer
+resources, shard placement and transport granularity from observed conditions can
+reduce time to target accuracy while preserving the sampled FedOpt trajectory.
+Generic autotuning, transfer prioritization and spare-resource aggregation already
+exist; the proposed distinction must address Conflux's combination of shared
+trainer/reducer NICs, changing source/destination cohorts and persistent optimizer
+ownership. Establish this distinction against relevant schedulers before claiming
+it as new.
+
+Proposed first scope:
+
+1. Keep sample size, sampling distribution, local steps and optimizer settings
+   fixed. Use all selected contributors. Optimize systems choices without adding
+   selection bias when client speed correlates with non-IID data.
+2. Measure training completion times, effective upload/download service rates,
+   per-message overhead and reducer compute using startup probes and observed
+   traffic. Use only causally available measurements; no simulator-future oracle.
+3. Predict when the next cohort has complete input models, accounting for upload
+   release times, inbound and outbound contention, overlapping node roles,
+   serialization and message overhead. Select reducer count, unequal shard loads
+   and transfer sizes jointly rather than choosing the fastest nodes alone.
+4. Initially select owners automatically at startup and keep them fixed. Separate
+   logical optimizer shards from transport packets so packet coalescing/splitting
+   can adapt without moving moments. This is a design proposal, not implemented
+   behavior. Group only compatible data for an owner; receivers must track chunk
+   and round completeness and preserve numerical semantics.
+5. Update predictions from residual errors and make conservative changes with
+   measured benefit. If later allowing owner changes, charge weights, moments,
+   metadata and packing costs, and require predicted savings over a reasonable
+   horizon to exceed those costs. Such an extension is occasional reassignment,
+   not the fixed-owner protocol.
+
+The first objective is elapsed round/pipeline time for fixed statistical work.
+Evaluate final accuracy at fixed time and time to target afterward. Faster rounds
+alone do not establish convergence improvements. Learning rates and other
+statistical hyperparameters remain separate; this proposal does not eliminate
+all training hyperparameters.
+
+Evaluate on held-out capacity profiles, larger models and different bottlenecks,
+including stable slowdowns without membership failures. Compare fixed defaults,
+a capacity-weighted heuristic, a generic online tuner, the proposed scheduler,
+and the best fixed configuration found in an offline sweep as a labelled
+hindsight reference, not an online competitor. Freeze policies before final
+tests. Include controller overhead in the 900-second budget, realistic latency
+and per-message costs, and a real distributed prototype before making practical
+runtime claims. Report cases with little available scheduling headroom as well
+as wins. A cost model, lower bound in a stated resource model, or a characterized
+scheduling tradeoff would strengthen the contribution beyond a parameter search.
+
+### Relevant primary sources
+
+- [P2Sharding: Towards Decentralized Parameter Servers for Secure Federated Learning (DATA 2022)](https://www.scitepress.org/PublishedPapers/2022/111463/111463.pdf).
+- [DeTA (EuroSys 2024)](https://gzs715.github.io/pubs/DETA_EUROSYS24.pdf).
+- [ZeRO (SC 2020)](https://arxiv.org/abs/1910.02054).
+- [Adaptive Federated Optimization (ICLR 2021)](https://arxiv.org/abs/2003.00295).
+- [BytePS (OSDI 2020)](https://www.usenix.net/system/files/osdi20-jiang.pdf): spare CPU/bandwidth resources; its summation servers are not equivalent to FedAdam state owners.
+- [TicTac (MLSys 2019)](https://proceedings.mlsys.org/paper_files/paper/2019/hash/94cb28874a503f34b3c4a41bddcea2bd-Abstract.html): communication scheduling.
+- [Horovod autotuning documentation](https://github.com/horovod/horovod/blob/master/docs/autotune.rst): online search over communication parameters, including fusion size.
+- [Oort (OSDI 2021)](https://www.usenix.org/conference/osdi21/presentation/lai): participant selection for time to accuracy; relevant if later changing trainer selection.
+
+This records a proposed research direction and a baseline to implement next.
+The baseline and automatic scheduler have not been implemented or evaluated.
