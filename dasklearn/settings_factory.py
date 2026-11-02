@@ -98,6 +98,9 @@ def session_options(args, device):
     }
 
     settings_dict.update(algorithm_params.get(algorithm, {}))
+    if algorithm in {'sharded-ps', 'conflux-v3'}:
+        settings_dict.update(algorithm_params['conflux-v2'])
+        settings_dict.update(reducer_epoch_rounds=0, immediate_uploads=True)
     if args.local:
         settings_dict["dry_run"] = True  # The local runner handles numerical execution.
     return settings_dict

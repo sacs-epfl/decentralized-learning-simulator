@@ -7,6 +7,8 @@ from importlib import import_module
 
 
 ALGORITHMS = {
+    'sharded-ps': ('sharded_ps', 'ShardedPSSettings', 'ShardedPSSimulation'),
+    'conflux-v3': ('sharded_ps', 'AutoDirectSettings', 'AutoDirectSimulation'),
     'conflux-v2': ('conflux_v2', 'ConfluxV2Settings', 'ConfluxV2Simulation'),
     'qgm': ('qgm', 'QGMSettings', 'QGMSimulation'),
     'choco': ('choco', 'ChocoSettings', 'ChocoSimulation'),

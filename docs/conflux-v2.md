@@ -311,3 +311,343 @@ scheduling tradeoff would strengthen the contribution beyond a parameter search.
 
 This records a proposed research direction and a baseline to implement next.
 The baseline and automatic scheduler have not been implemented or evaluated.
+
+## Conflux V3 design draft: automatic sharding and scheduling
+
+Design discussion, 2 November 2026. This section is a proposal, not implemented
+behavior or an established novelty claim. The user requested startup profiling,
+shared measurements, few manual parameters, changing training samples, feedback
+under inaccurate predictions and occasional timing hiccups, and stable membership
+for the first version. Churn resilience remains a later extension.
+
+### Scope and statistical contract
+
+Keep the existing public seeded sample sequence: S_t trains from x_(t-1), and
+D_t = S_(t+1) receives x_t. Samples change every round and need not include any
+particular reducer. Preserve sample size, local steps, client/server optimizer
+settings, contributor weights, and all selected contributors. Every coordinate
+uses that same set and base version. Scheduling decisions must not select faster
+contributors or change local work. A recipient trains only after receiving the
+whole common model; recipients may start at different wall-clock times.
+
+The systems objective is the time at which the next cohort can proceed, including
+overlap with training and other rounds. Use per-recipient model-ready times plus
+their predicted local training times when evaluating a short pipeline lookahead;
+do not optimize bytes/second in isolation or insert a new global start barrier.
+Per-round numerical equivalence to reference FedOpt is a correctness requirement,
+not a claim of identical fixed-time accuracy.
+
+### Separate persistent state from aggregation work
+
+Moving a stateful chunk between reducers moves its optimizer history. To permit
+runtime load balancing without repeatedly migrating moments, give each parameter
+range a fixed state home, but permit a different node to execute its aggregation
+job. A home stores base weights, moments and logical step for its ranges. It need
+not hold the full model or belong to either training cohort.
+
+The direct path is unchanged: contributors -> home -> next cohort. A helper path
+for one range is:
+
+```mermaid
+flowchart LR
+    S[Selected trainers] -->|contributions| W[Aggregation worker]
+    W -->|one averaged range| H[Fixed state home]
+    H -->|updated range| W
+    W -->|updated range| D[Next training sample]
+```
+
+The worker collects the common contributors, averages in their agreed order,
+sends one averaged range to its home, receives the optimized range, and fans it
+out. The home executes FedOpt exactly once for that round/range. If worker and
+home are the same node, both internal hops disappear. If a home or worker belongs
+to the destination cohort, reuse its available updated range rather than sending
+it over the network. Moments are neither sent to workers nor synchronized among
+them. Non-parameter buffers retain the reference aggregation semantics.
+
+This is optional offloading selected per job by the scheduler, not a compulsory
+extra path for every chunk. Fixed homes can still bottleneck; they perform at
+least optimizer work and communication with remote workers. This separation does
+not remove a slow or failed home's critical dependency.
+
+For m contributors, d recipients, range size b, worker w and home h, payload wire
+volume is:
+
+    b * (m - 1[w in S] + 2*1[w != h] + d - |D intersect {w,h}|)
+
+Ignore headers only in this accounting identity; include them in scheduling.
+Without endpoint overlap, remote help adds two b-sized transfers to (m+d)*b:
+6.25% at m=d=16. Co-location changes that comparison: if the home is in both
+cohorts and the helper in neither, the increase is 30b -> 33b, or 10%. Additional
+latency can matter more than bytes. A sanity enumeration checked the identity
+against explicit transfers for 8,100 small-cohort configurations; this is not a
+performance experiment. The helper path must demonstrate a net benefit.
+
+### Startup preprocessing
+
+Profile the actual model/local-work configuration on each node, with separate
+warmup and repeated timing observations. Probe effective upload/download service,
+latency, per-message overhead, aggregation/optimizer throughput and available
+buffer/state memory. Interference-controlled pairings and representative fan-in,
+fan-out and overlapping-role tests are more useful than a single isolated link
+measurement. Prefer an endpoint-capacity model initially; validate its residuals.
+If shared links or pair-specific paths dominate, the model needs those constraints.
+Do not infer arbitrary network topology from one scalar rate per node.
+
+Share the compact measured profiles and their variation. Profiles are estimates,
+not reservations or exact simulator capacities. In simulated evaluations obtain
+them from charged probes/observed completion events, not hidden bandwidth limits
+or future finish timestamps. Profiling must not alter the training model, data
+position or RNG stream. Charge its simulated time, traffic and compute; report
+warm-start results separately if useful. Existing prescribed optimizer costs are
+controlled assumptions, not device measurements.
+
+Choose a fixed home layout by balancing predicted optimizer and network loads,
+subject to memory, with a simple fluid allocation as a warm start. For a direct
+layout with x_i model bytes at node i, model size M, sample indicators s_i and d_i,
+and cohort sizes m and d, exact payload loads for a round are:
+
+    outgoing_i = s_i*(M-x_i) + (d-d_i)*x_i
+    incoming_i = (m-s_i)*x_i + d_i*(M-x_i)
+
+Together with sum(x_i)=M, capacity and memory constraints, these give a small
+linear load-balancing relaxation. For uniform sampling use expected indicators
+m/N and d/N to avoid designing homes just for the first cohort. This relaxation
+ignores release times, messages and dependencies; it is not an optimal schedule.
+Evaluate/prune tiny allocations using a predictor that includes those costs.
+The number of nonempty homes emerges from the allocation, rather than a manual
+reducer-count cap. Memory, dtype alignment and measured costs remain constraints.
+
+Separate home ownership boundaries from job and packet boundaries. A home owns
+coordinate intervals; each round splits these intervals into disjoint jobs.
+Choose job sizes from a cost model of message overhead versus pipeline/tail delay,
+and check nearby geometric sizes. In a simplified model T(b)=T_fluid+A/b+B*b,
+the starting size is sqrt(A/B); A and B must come from the measured workload,
+not fitted on final accuracy. This is a heuristic initialization, not a universal
+chunk-size formula. Splitting and coalescing stay within a home and preserve
+coordinate identity and numerical semantics. Job count is then an output.
+
+Choose buffering/concurrency from the same model, transport capabilities and free
+memory, not an arbitrary unlimited request queue. One outstanding job per worker
+can be too restrictive: it may prevent early contributors uploading other ranges
+while a job waits for a late contributor. The predictor must account for partial
+collections and choose enough bounded prefetch to retain that overlap.
+
+### Runtime scheduling
+
+For a first implementation use a temporary control-plane planner, as V2 already
+uses a coordinator. It does not aggregate model data or store all optimizer
+state. Public membership, samples, profile snapshots and home directory can be
+shared; live workers report credits/backlog to the planner. Fully decentralized
+online planning is a separate problem. Stable membership does not itself make
+this control plane failure tolerant.
+
+Before local work finishes, prepare job descriptions and initial assignments so
+immediate uploads can overlap other trainers' computation. A worker advertises
+free receive/buffer capacity and outstanding outbound work. When granting an
+unclaimed job, score candidate workers, always including its home, using predicted
+completion through collection, home update and recipient delivery. Include:
+
+- Actual readiness of contributions; predicted times only for unready inputs.
+- Both endpoints' remaining send/receive loads and transport concurrency.
+- A node's simultaneous trainer, home, worker and next-recipient roles.
+- Both extra helper hops, home optimizer service, headers/control and processing.
+- Recipient model completeness and next-round critical work.
+
+Use a greedy earliest-completion allocation with a resource-respecting event/load
+predictor, deterministic tie breaks and the direct home as the conservative tie
+choice. This is a specified heuristic direction; deriving its precise score and
+validating its prediction accuracy are implementation tasks. It is not an oracle
+or an optimality guarantee. Prefer a helper only when predicted benefit exceeds
+the empirical prediction-error margin for the direct/helper comparison. Initially
+use one residual scale per affected stage; this is a fixed policy convention,
+not a statistical confidence guarantee.
+
+Grants identify round, coordinate interval, home, worker, contributor-set digest
+and plan version. Route instructions reach all contributors before they upload
+that job. A job is pinned once granted; do not redirect its partial collection
+to another worker in the first version. Feed updated conditions into subsequent
+grants. Speculative duplicate collection and timeouts are later extensions.
+
+Dispatch ready transfers whenever real transport credits are available. Predicted
+times guide priorities, not mandatory start times: a late operation must not
+stall unrelated ready work, and a blocked receiver must not reserve idle bandwidth.
+Prefer old unfinished rounds and critical model tails; provide deterministic
+tie-breaking/fairness so later work cannot starve an earlier model. Do not assume
+the existing bandwidth scheduler can preempt transfers or enforce arbitrary rate
+reservations; V3 needs a protocol-level eligibility/dispatch queue.
+
+The active worker count is the number actually receiving jobs. It can vary with
+cohorts and measured conditions, without an exposed R parameter. Homes stay fixed
+in this draft; the worker assignment, job geometry and transfer order adapt.
+
+### Feedback and imperfect predictions
+
+Maintain robust service and prediction-error estimates. A concrete first policy
+is a rolling median and median absolute deviation over the last five endpoint
+summaries, with at most one comparable summary per endpoint per logical round.
+Keep training durations separately. Five is an internal algorithm constant,
+not a claim that the mechanism has no parameters; test sensitivity to this choice.
+Until enough observations exist, retain the startup profile and its uncertainty.
+
+Do not turn every slow flow into a lower endpoint capacity: queueing, the remote
+endpoint and application starvation also reduce flow throughput. Update endpoint
+service estimates from attributable saturated observations, or fit residuals of
+the contention model; keep queueing/readiness as distinct observations. If an
+endpoint has no informative traffic, lack of observations is not proof of failure
+or increased capacity. Start conservatively and collect new probes only when
+their expected benefit justifies their measured cost.
+
+Use live progress/queued bytes for short-term routing and robust summaries for
+longer-term service estimates. An isolated hiccup reduces new work sent to that
+worker without permanently treating it as slow; repeated slow observations
+eventually change its measured service. This is a heuristic response, not a bound
+on latency under arbitrary stalls. Correlated slowdowns and stale measurements
+must be evaluated explicitly. Never keep following an absolute-time plan after
+its assumptions have become false.
+
+Keep queued work bounded so errors affect a limited amount of newly assigned
+work. A granted job can still be delayed by its worker. With all contributors
+required, a delayed selected trainer can still delay every chunk. A delayed home
+can still delay its ranges. Scheduling cannot remove those dependencies while
+preserving the chosen update; replication/retry or changed training semantics
+would be needed to do more.
+
+### Invariants, parameters and future recovery
+
+Homes apply the correct global FedOpt step once per coordinate/round, not once
+per transport packet. They accept only the common contributors' ordered mean
+for a disjoint, authorized interval. Record completion intervals so repartitioning
+cannot double-apply overlapping coordinates. Preserve the previous step's state,
+deduplicate messages, and buffer early later-round messages until dependencies
+are satisfied. Reconstruction checks exact coordinate coverage and model version.
+
+No manual chunk count, active reducer count, home epoch length, timeout or
+speculation fraction is needed for this first version. Model/optimizer settings,
+sample size/distribution and the run budget remain training inputs. Internal
+history length, geometric search factor, tie rules and uncertainty conventions
+are algorithm constants that must be documented and checked for sensitivity;
+they should not become a per-deployment tuning exercise.
+
+The home directory and versioned/idempotent jobs leave a route to later recovery:
+retry a helper job with retained inputs, or redisseminate a committed result.
+Home failure still needs replicated/checkpointed weights, moments, step and
+completion records plus an ownership protocol. This draft provides no churn
+guarantee, deadlines or automatic failover. Do not add moment replication to the
+first experiment without accounting for its costs.
+
+### Implementation and evaluation order
+
+1. Implement the previously recorded matched sharded parameter-server baseline
+   and common-trace FedOpt equivalence check.
+2. Add charged causal profiling, the resource predictor and automatic direct-only
+   home/job layout. This determines whether a simpler scheduler already suffices.
+3. Add helper jobs behind an experimental ablation and compare their additional
+   traffic, latency and home load. Keep the simpler path if offloading adds little.
+4. Add credit dispatch and robust feedback. Use changing samples in every case,
+   including overlapping source/destination/worker roles. Test inaccurate startup
+   profiles, single hiccups, sustained slowdowns and correlated contention without
+   dropping nodes or contributions. Separate changed sample schedules from actual
+   capacity changes.
+
+Compare fixed defaults, the existing capacity-weighted placement, optimized
+matched parameter servers, a generic autotuner, direct-only automatic scheduling,
+and the full helper/feedback proposal. Give comparable profiling/tuning budgets.
+Report cold-start fixed-time accuracy, time to target, round/model-ready tails,
+prediction errors, control/planner overhead, bytes, home utilization and the
+fraction of jobs actually offloaded. Charge planning and communication costs;
+do not claim practical runtime gains from the simulator's zero-latency/default
+instantaneous-operation mode. Include larger models, unseen profiles and a real
+prototype before making a broad systems claim.
+
+Generic dynamic collective construction and communication autotuning already
+exist, including [Blink](https://proceedings.mlsys.org/paper_files/paper/2020/hash/cd3a9a55f7f3723133fa4a13628cdf03-Abstract.html),
+[ByteScheduler](https://doi.org/10.1145/3341301.3359642), and
+[AutoByte](https://arxiv.org/abs/2112.13509). Separating summation and optimizer work
+also has precedent in BytePS, though its state placement differs. The candidate
+research contribution is the measured benefit and characterized tradeoff of
+sample-aware, uncertainty-aware scheduling with persistent sharded FedOpt homes;
+this still requires a deeper novelty review and experimental evidence.
+
+## Direct-only implementation study
+
+Branch `codex/conflux-v3-direct` implements two separately registered protocols:
+
+- `sharded-ps`: an independent streaming parameter-server state machine, sharing
+  the existing pure FedOpt kernels and frozen V2 placement rule. Same peer budget,
+  128 chunks / 16 fixed servers, changing sampled trainers, immediate uploads,
+  per-shard updates and next-sample-only dissemination. It deliberately matches
+  optimized V2 instead of imposing a full-model server barrier or broadcasting
+  to idle peers. Exact equality is an expected and informative result.
+- `conflux-v3`: the experimental automatic direct-only scheduler. Fixed owners;
+  no helpers, state migration, speculative duplication, churn or model compression.
+  Startup selects chunk geometry and the number/workloads of owners automatically.
+  Geometry is then frozen; runtime adapts recipient priorities using local route
+  observations. This first implementation does not dynamically resize/reassign
+  optimizer ranges.
+
+Each V3 node performs discarded local training at round 0 and two-size network
+probes over reproducible disjoint matchings, O(log N) matching rounds. Task-local
+RNG/data sampling keeps calibration separate from the actual training updates.
+Probe reports, instructions and the shared profile/layout are ordinary charged
+messages. The protocol does not read the true capacity map or future events.
+Two-size timing differences estimate service rates; limited partner coverage and
+control contention can bias them. These remain estimates, not exact topology
+reconstruction. Training/model size and the public sample seed are known.
+
+A geometric search evaluates a fluid port-load/pipeline proxy. One candidate
+geometry per resulting owner count is then evaluated by a numerical-free
+one-round event forecast over ceil(N/sample_size) changing cohort pairs. The
+forecast uses independent virtual endpoints parameterized only by the observed
+profiles and the existing transport semantics; it does not inspect live/future
+simulation capacities. This is a heuristic candidate shortlist, not a global
+optimization over arbitrary chunk sizes/layouts. Ownership uses weighted integer
+water filling. The forecast is first-round/stateless and does not fully capture
+longer pipelines or learned route priorities.
+
+Initial chunk order is common to all contributors and accounts for each owner's
+collection/fan-out cost for the actual next sample. Sender-local feedback must
+not give contributors conflicting chunk orders. Next recipients are prioritized
+using predicted download plus training cost and local route-delay feedback.
+Only one transfer per remote destination is active at the protocol layer; other
+destinations can proceed. Transport completion releases the slot without an
+uncharged application ACK. Queued payload references remain until sent; this is
+not a deployment-grade RAM/transport-buffer admission controller.
+
+Feedback is the median of the last five observed local transport-duration ratios
+to the startup route estimate. It is a route/contention signal, not a claimed
+endpoint-capacity update. It affects future priorities, never contributor sets or
+optimizer state. Startup planning charges max(measured local planner wall time,
+100 microseconds per proxy candidate); each remote dispatch additionally charges
+50 microseconds on a serialized local policy resource. The latter and the existing
+0.1-ms optimizer-call cost are controlled assumptions, not measured edge costs.
+The profile and planner timing logs expose these costs. Measured planner wall
+time makes startup timing host-dependent; frozen configurations alone do not
+promise bit-identical timing across machines. Numerical round semantics remain
+deterministic under the same training inputs.
+
+The study freezes the prior validation-selected FedAdam parameters. It uses fresh
+local CPU runs for all three algorithms, seeds 0/1/2, CIFAR-10/GNLeNet, 64 nodes,
+16 trainers, alpha 0.1, the heterogeneous compute/network profile, 900 simulated
+seconds, 50-second validation snapshots and full final tests. Startup is inside
+the budget. Local Torch/dataset versions are recorded; these results must not be
+silently pooled with earlier server/GPU runs. A separate seed-10011 pilot exposed
+the fluid model's missing dependencies before the confirmation policy was frozen;
+final-test scores are not used to choose geometry or optimizer settings.
+
+The normal version-1 configuration is
+`experiments/conflux-v3/direct-study.json`. The audited resumable driver is:
+
+```sh
+python scripts/benchmark_conflux_direct.py --data /path/to/cifar10 \
+  --output output/conflux-v3-direct-new --workers 2
+```
+
+Use `--stage status` or `--stage report` with the same paths for inspection. A
+changed code/configuration hash is rejected on resume. Tests check independent
+full-vector FedOpt, exact baseline/V2 timing/models/bytes, changing samples,
+imperfect profiles and a trainer hiccup, probe matching, robust feedback, common
+chunk order, and CLI/programming-model registration. Confirmation audits require
+all-node snapshots, equal hardware, wire-byte conservation and identical shared
+aggregate metrics. The report checks every V2/baseline checkpoint for exact
+equality and produces curves, final-test error bars and interval-censored target
+times. Faster GPU execution wall time is not simulated protocol speed.

@@ -57,9 +57,15 @@ async def test_dspodfl_same_iteration_mixing_is_doubly_stochastic(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_dspodfl_buffered_arrivals_and_reproducibility_with_skew(tmp_path):
+async def test_dspodfl_buffered_arrivals_and_reproducibility_with_skew(tmp_path, monkeypatch):
+    from collections import Counter
+    from dasklearn.tasks.task import Task
     records=[]
     for iteration in range(2):
+        # Independent experiment processes start with the same task-name
+        # counters. Decimal-width changes otherwise alter serialized control
+        # payload sizes and make this test depend on preceding suite tests.
+        monkeypatch.setattr(Task, 'COUNTER', Counter())
         sim=DSpodFLSimulation(settings(DSpodFLSettings,tmp_path/str(iteration),degree=2,
             sgd_probability=1,communication_probability=1,probability_mode='constant'))
         sim.setup_directories()
