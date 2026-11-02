@@ -1,0 +1,23 @@
+{
+  "completed_runs": 9,
+  "matched_baseline_checks": [
+    {
+      "seed": 0,
+      "all_checkpoint_rows_equal": true
+    },
+    {
+      "seed": 1,
+      "all_checkpoint_rows_equal": true
+    },
+    {
+      "seed": 2,
+      "all_checkpoint_rows_equal": true
+    }
+  ],
+  "paired_hardware": true,
+  "byte_conservation": true,
+  "common_recipient_models": true,
+  "frozen_optimizer": "client=.01, server Adam=.01, beta1=.9, beta2=.99, tau=.001",
+  "selection": "No accuracy tuning; automatic geometry uses only charged startup measurements",
+  "hardware": "Local CPU execution, fresh runs for all variants; simulated capacities unchanged"
+}

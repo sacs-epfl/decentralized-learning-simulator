@@ -1,0 +1,40 @@
+{
+  "source": "Existing local uoft-cs/cifar10 cached Arrow files, exported as DatasetDict",
+  "files": [
+    {
+      "path": "dataset_dict.json",
+      "bytes": 29,
+      "sha256": "65fae6c706b1546da1530d427b62b39df6dd156cce4b92a208091410c52a4362"
+    },
+    {
+      "path": "test/data-00000-of-00001.arrow",
+      "bytes": 22808576,
+      "sha256": "7b3f708ea92c6b17b8beb28c13bcdb3782da70cb0163ef5896682f10201acebb"
+    },
+    {
+      "path": "test/dataset_info.json",
+      "bytes": 384,
+      "sha256": "59c235ce18716abb719760ba5f398d36805f2d35c89d288dba5fbd5cf0eeadd7"
+    },
+    {
+      "path": "test/state.json",
+      "bytes": 247,
+      "sha256": "0074a9e305c2fd384f178820c9881692a87803a601faeb00aa4ee03f4982be40"
+    },
+    {
+      "path": "train/data-00000-of-00001.arrow",
+      "bytes": 114030736,
+      "sha256": "9edc242d8e4e753ea9aef02b2be4222d3740364bb55ebdee77f4fee96f0da47f"
+    },
+    {
+      "path": "train/dataset_info.json",
+      "bytes": 384,
+      "sha256": "59c235ce18716abb719760ba5f398d36805f2d35c89d288dba5fbd5cf0eeadd7"
+    },
+    {
+      "path": "train/state.json",
+      "bytes": 247,
+      "sha256": "605ffa773ce83c25436d12bc3c14020d7ff9c3d86e23603434098bb6fc54973d"
+    }
+  ]
+}

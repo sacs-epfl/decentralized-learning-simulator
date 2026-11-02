@@ -1,0 +1,8 @@
+{
+  "commit": "72c1ccf8fcd29e6b68b548983e95d42f45146b93",
+  "source_sha256": "ce129170de7e478786735d90607ea8df3ef95fcc335f3c5e43ecf3c701a6c518",
+  "archive_matches_run_source": true,
+  "existing_v2_and_shared_kernels_unchanged_from": "8b0e4f6",
+  "archive_sha256": "5d521d1d10b9cfd8b868f2d1dee36f365e90ba22159bf2abdaa513b6a5afa873",
+  "provenance_dirty_note": "The output directory/source archive existed before provenance capture; implementation was committed and the archived source hash matches all run records."
+}

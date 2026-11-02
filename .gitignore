@@ -6,6 +6,7 @@ __pycache__/
 *.py[cod]
 output/**/runs/
 output/**/replays/
+output/**/driver.lock
 
 output/classic-validation/
 output/choco-validation/

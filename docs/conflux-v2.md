@@ -309,8 +309,8 @@ scheduling tradeoff would strengthen the contribution beyond a parameter search.
 - [Horovod autotuning documentation](https://github.com/horovod/horovod/blob/master/docs/autotune.rst): online search over communication parameters, including fusion size.
 - [Oort (OSDI 2021)](https://www.usenix.org/conference/osdi21/presentation/lai): participant selection for time to accuracy; relevant if later changing trainer selection.
 
-This records a proposed research direction and a baseline to implement next.
-The baseline and automatic scheduler have not been implemented or evaluated.
+This records the research direction before implementation. The direct-only
+implementation study below records the subsequent baseline and scheduler tests.
 
 ## Conflux V3 design draft: automatic sharding and scheduling
 
@@ -651,3 +651,61 @@ all-node snapshots, equal hardware, wire-byte conservation and identical shared
 aggregate metrics. The report checks every V2/baseline checkpoint for exact
 equality and produces curves, final-test error bars and interval-censored target
 times. Faster GPU execution wall time is not simulated protocol speed.
+
+### Completed local comparison (2 November 2026)
+
+All nine frozen confirmation jobs completed locally on CPU from implementation
+commit `72c1ccf`. The source archive's hash matches the run provenance; existing
+V2, optimizer, local SGD, capacity and network-engine files are unchanged from
+`8b0e4f6`. The environment used Torch 2.15.0, torchvision 0.29.2, datasets 4.8.5
+and flwr-datasets 0.6.1. These are fresh paired comparisons, not pooled GPU results.
+The full local suite passed 464 tests with 13 platform/optional-feature skips.
+
+Full final 10,000-image test accuracy after 900 simulated seconds. Each seed's
+score averages all 64 stored node checkpoints; the table shows mean +/- sample
+SD across the three paired seeds:
+
+| Algorithm | Test accuracy | Chunks / reducers | Fully delivered rounds |
+| --- | ---: | ---: | ---: |
+| Conflux V2, fixed-owner FedAdam | 43.72 +/- 0.80% | 128 / 16 | 80 in every seed |
+| Matched streaming sharded PS | 43.72 +/- 0.80% | 128 / 16 | 80 in every seed |
+| Automatic direct-only | 42.32 +/- 2.00% | 128 / 2 in every seed | 74 in every seed |
+
+V2 and the matched baseline have identical per-node validation rows at all 18
+checkpoints (3,456 rows per algorithm), final per-node test rows, every recipient
+completion time/contributor set, hardware assignments and per-node wire bytes.
+This confirms architectural equivalence in this specialization; outperforming
+this matched baseline is not established by the existing V2 protocol.
+
+The automatic prototype's mean interval between complete cohorts, after excluding
+startup/first cohort, is 11.92 s versus 11.13 s for V2/baseline (7.1% longer).
+Startup/profile/layout exchange takes 5.41-12.31 s to reach every node. The planner
+itself takes 1.10-1.40 s on this local host and is charged. Reported scheduler CPU
+seconds sum serialized policy work across nodes; they are not additional elapsed
+seconds to add to the horizon. The prototype's lower total traffic mainly reflects
+fewer completed rounds; it is not a demonstrated reduction per equivalent update.
+
+First observed 35% validation crossings are 500/500/450 s for V2/baseline and
+500/550/450 s for automatic scheduling. At 40%, they are 550/600/750 s versus
+600/650/unreached at 900 s. The 50-second checkpoint intervals limit precision.
+Targets are not uniformly ordered: automatic scheduling crosses 45% at a sampled
+checkpoint in two seeds while V2 does not. Curves are nonmonotone and checkpoints
+can mix node model versions. Matching logical-round validation metrics agree
+exactly across V2/automatic scheduling on all commonly observed rounds (74/75/76
+including round 0 across seeds). These target differences are not evidence of a
+new statistical optimizer.
+
+The result does not support replacing the existing V2 configuration. The current
+joint placement/dispatch policy selects two owners and has lower ongoing
+throughput, not just a startup penalty. The one-round forecast, proxy shortlist
+and per-destination queue policy still need component ablations before attributing
+the gap to a specific mechanism. No confirmation scores were used to retune this
+version. Keep it experimental and use the matched baseline for subsequent work.
+
+Artifacts are under `output/conflux-v3-direct-20261102`: `comparison.png/.pdf`,
+`throughput.png/.pdf`, `summary.csv`, `comparison.csv`, `time-to-accuracy.csv`,
+`timing-diagnostics.csv`, `profile-diagnostics.csv`, the normal per-run configs,
+audits, dataset/source manifests, frozen `source.tar.gz` and rerunnable
+`analyze.py`. `results.zip` preserves the per-run configurations, logs, curves,
+per-node scores/statistics and scheduler traces. Raw DAGs/checkpoints remain in
+its ignored `runs/` directories.
