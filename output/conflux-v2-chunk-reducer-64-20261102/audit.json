@@ -1,0 +1,12 @@
+{
+  "completed_runs": 228,
+  "expected_runs": 228,
+  "per_node_checkpoint_rows": 87552,
+  "paired_capacities": true,
+  "finite_metrics": true,
+  "complete_snapshots": true,
+  "byte_conservation": true,
+  "source_sha256": "a48f0b9bed5be9947ded2f3ff37fea9ab6fd595b9d50314ca7daa1c707a32405",
+  "metric": "Mean full-test accuracy across all 64 stored completed node checkpoints at 900 simulated seconds",
+  "selection": "Fixed grid; report all cells. Descriptive test-set comparisons, no independent confirmation of the best cell."
+}

@@ -1,0 +1,24 @@
+{
+  "commit": null,
+  "dirty": false,
+  "source_sha256": "6e70c5f85f00492896b6858daa2219d977fd8fa9023bf390da0fc0bdef8b2b43",
+  "python": "3.12.15",
+  "packages": {
+    "torch": "2.14.1+cu130",
+    "torchvision": "0.29.1+cu130",
+    "numpy": "2.5.4",
+    "datasets": "4.8.5",
+    "flwr-datasets": "0.6.1",
+    "transformers": "5.22.1",
+    "peft": "0.21.2",
+    "PyYAML": "6.0.3"
+  },
+  "source_export": {
+    "commit": "8b54232cd9dad8818802d1d1e7d8975c9f728316",
+    "branch": "conflux-v2",
+    "main_base": "bda202a726dbc506b6ba07201649976d3a30c11d",
+    "original_research_tip": "401c3db98b6edf207ad5f6df531dc15314bddb93",
+    "source_sha256": "6e70c5f85f00492896b6858daa2219d977fd8fa9023bf390da0fc0bdef8b2b43",
+    "dirty": false
+  }
+}

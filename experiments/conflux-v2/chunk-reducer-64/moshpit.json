@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "name": "moshpit",
+  "execution": "local",
+  "output": "../../../output/conflux-v2-chunk-reducer-64/moshpit",
+  "settings": {
+    "dataset": "cifar10",
+    "model": "gnlenet",
+    "device": "cuda:0",
+    "peers": 64,
+    "dataset_base_path": "/mnt/data/mdevos/conflux-v2-20261031/datasets/cifar10",
+    "stop": "duration",
+    "duration": 900,
+    "rounds": 0,
+    "test_period": 150,
+    "test_method": "snapshot",
+    "test_interval": 0,
+    "evaluation_split": "test",
+    "evaluation_examples": 0,
+    "final_heldout": false,
+    "learning_rate": 0.01,
+    "momentum": 0,
+    "weight_decay": 0,
+    "local_steps": 5,
+    "batch_size": 32,
+    "alpha": 0.1,
+    "bandwidth_bytes_per_s": 100000,
+    "compute_step_ms": 20,
+    "network_latency_ms": 20,
+    "model_size_bytes": 346251,
+    "torch_threads": 2,
+    "training_batch_size": 2,
+    "log_level": "WARNING",
+    "traces": "none",
+    "churn": "none",
+    "sample_size": 16,
+    "success_fraction": 1,
+    "immediate_uploads": true,
+    "group_size": 8,
+    "averaging_steps": 1,
+    "algorithm": "moshpit",
+    "chunks_in_sample": 16,
+    "relay_count": 16
+  },
+  "matrix": {
+    "capacity_profile": [
+      "uniform",
+      "heterogeneous"
+    ],
+    "partitioner": [
+      "iid",
+      "dirichlet"
+    ],
+    "seed": [
+      0,
+      1,
+      2
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "commit": "99ee91233a2e934196695ba4ade550c831834d6e",
+  "dirty": true,
+  "source_sha256": "43e191983b6eef46726eea612417c18e8c3b47c0d3205d56cd9ce438d1dfe2ea",
+  "python": "3.12.13",
+  "packages": {
+    "torch": "2.15.0",
+    "torchvision": "0.29.2",
+    "numpy": "2.5.2",
+    "datasets": null,
+    "flwr-datasets": null,
+    "transformers": "5.15.0",
+    "peft": "0.21.2",
+    "PyYAML": "6.0.3"
+  },
+  "note": "Current workspace snapshot; experiment orchestration added, protocol sources unchanged."
+}

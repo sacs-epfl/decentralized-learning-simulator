@@ -1,0 +1,30 @@
+{
+  "numerical_checks": [
+    {
+      "chunks": 16,
+      "mode": "current",
+      "aggregate_checks": 12,
+      "passed": true
+    },
+    {
+      "chunks": 64,
+      "mode": "current",
+      "aggregate_checks": 12,
+      "passed": true
+    },
+    {
+      "chunks": 16,
+      "mode": "upload-order",
+      "aggregate_checks": 12,
+      "passed": true
+    },
+    {
+      "chunks": 16,
+      "mode": "both-orders",
+      "aggregate_checks": 12,
+      "passed": true
+    }
+  ],
+  "numerical_local_steps": 2,
+  "note": "Synthetic numerical smoke check only; no target-accuracy comparison."
+}

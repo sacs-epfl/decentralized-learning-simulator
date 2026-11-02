@@ -106,3 +106,42 @@ def test_immediate_uploads_is_explicit_and_reversible():
     assert not parser.parse_args([]).immediate_uploads
     assert parser.parse_args(["--immediate-uploads"]).immediate_uploads
     assert not parser.parse_args(["--immediate-uploads", "--no-immediate-uploads"]).immediate_uploads
+
+
+@pytest.mark.asyncio
+async def test_cached_public_plans_preserve_protocol_timings_bytes_and_models(tmp_path, monkeypatch):
+    from dasklearn.simulation.conflux_v2 import client as module
+    cached, expected, expected_uploads = run_protocol(tmp_path / "cached", True, 8)
+    monkeypatch.setattr(module, "_layout", module._layout.__wrapped__)
+    monkeypatch.setattr(module, "_sample", module._sample.__wrapped__)
+    reference, actual, uploads = run_protocol(tmp_path / "reference", True, 8)
+    assert cached.completed_rounds == reference.completed_rounds
+    assert cached.contributor_sets == reference.contributor_sets
+    assert expected_uploads == uploads
+    assert [c.bw_scheduler.total_bytes_sent for c in cached.clients] == [
+        c.bw_scheduler.total_bytes_sent for c in reference.clients]
+    for key in expected:
+        assert torch.equal(expected[key], actual[key])
+
+
+def test_public_plan_cache_tracks_settings_capacities_and_returns_private_lists():
+    from types import SimpleNamespace
+    from dasklearn.simulation.conflux_v2.client import ConfluxV2Client
+    client = object.__new__(ConfluxV2Client)
+    client.other_nodes_bws = {0: 100, 1: 100, 2: 100, 3: 100}
+    config = SimpleNamespace(chunks_in_sample=8, relay_count=4, sample_size=2, seed=0)
+    client.simulator = SimpleNamespace(settings=config)
+    _, initial = client.layout(1)
+    initial.clear()
+    assert len(client.layout(1)[1]) == 8
+    sample = client.sample(1)
+    sample.clear()
+    assert len(client.sample(1)) == 2
+    config.chunks_in_sample = 16
+    assert len(client.layout(1)[1]) == 16
+    config.relay_count = 1
+    assert len(set(client.layout(1)[1])) == 1
+    client.other_nodes_bws[3] = 1000
+    assert client.layout(1)[1] == [3] * 16
+    config.sample_size = 4
+    assert client.sample(1) == [0, 1, 2, 3]

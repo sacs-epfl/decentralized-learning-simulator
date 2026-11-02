@@ -7,6 +7,7 @@ With immediate uploads and full participation, that set is known beforehand;
 uploads overlap other contributors' training without coordinator messages.
 """
 from collections import defaultdict
+from functools import lru_cache
 from math import ceil
 
 from dasklearn.simulation.client import BaseClient
@@ -14,6 +15,28 @@ from dasklearn.simulation.conflux.sample_manager import SampleManager
 from dasklearn.simulation.events import Event, START_ROUND, START_TRAIN
 from dasklearn.tasks.task import Task
 from dasklearn.tasks.references import TaskRef
+
+
+@lru_cache(maxsize=256)
+def _sample(round_nr, peers, sample_size, seed):
+    return tuple(SampleManager.get_sample(round_nr, list(peers), sample_size, seed=seed))
+
+
+@lru_cache(maxsize=256)
+def _layout(round_nr, count, limit, capacities):
+    """Cache public placement math, with capacities/settings in the cache key."""
+    bandwidths = dict(capacities)
+    order = SampleManager.get_sample(round_nr, list(bandwidths), len(bandwidths))
+    order = order[round_nr % len(order):] + order[:round_nr % len(order)]
+    order.sort(key=lambda peer: bandwidths[peer], reverse=True)
+    relays = order[:min(limit, len(order))]
+    load = dict.fromkeys(relays, 0)
+    owners = []
+    for chunk in range(count):
+        owner = min(relays, key=lambda peer: (load[peer] + 1) / bandwidths[peer])
+        owners.append(owner)
+        load[owner] += 1
+    return order[0], tuple(owners)
 
 
 class ConfluxV2Client(BaseClient):
@@ -24,25 +47,15 @@ class ConfluxV2Client(BaseClient):
             "reduced": set(), "received": {}, "started": False, "trained": False})
 
     def sample(self, round_nr):
-        return SampleManager.get_sample(round_nr, list(self.other_nodes_bws), self.simulator.settings.sample_size,
-                                        seed=self.simulator.settings.seed)
+        return list(_sample(round_nr, tuple(self.other_nodes_bws), self.simulator.settings.sample_size,
+                            self.simulator.settings.seed))
 
     def layout(self, round_nr):
         count = self.simulator.settings.chunks_in_sample
-        # Public, static capacities, independent of the training sample.
-        order = SampleManager.get_sample(round_nr, list(self.other_nodes_bws), len(self.other_nodes_bws))
-        # get_sample returns sorted IDs; explicitly rotate equal-capacity roles.
-        order = order[round_nr % len(order):] + order[:round_nr % len(order)]
-        order.sort(key=lambda peer: self.other_nodes_bws[peer], reverse=True)
         limit = self.simulator.settings.relay_count or count
-        relays = order[:min(limit, len(order))]
-        load = dict.fromkeys(relays, 0)
-        owners = []
-        for chunk in range(count):
-            owner = min(relays, key=lambda peer: (load[peer] + 1) / self.other_nodes_bws[peer])
-            owners.append(owner)
-            load[owner] += 1
-        return order[0], owners
+        leader, owners = _layout(round_nr, count, limit, tuple(self.other_nodes_bws.items()))
+        # Callers receive independent containers, including when plans are stored.
+        return leader, list(owners)
 
     def init_client(self, event):
         if self.index in self.sample(1):

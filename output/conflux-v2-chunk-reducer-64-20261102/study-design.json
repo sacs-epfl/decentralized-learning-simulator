@@ -1,0 +1,64 @@
+{
+  "dataset": "CIFAR-10",
+  "model": "GNLeNet",
+  "total_nodes": 64,
+  "v2_trainers_per_round": 16,
+  "chunks": [
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "reducer_caps": [
+    8,
+    16,
+    32,
+    64
+  ],
+  "excluded_cells": "reducer cap greater than chunk count",
+  "v2_cells_per_scenario": 18,
+  "hardware_profiles": [
+    "uniform",
+    "heterogeneous"
+  ],
+  "partitioners": [
+    "iid",
+    "dirichlet-alpha-0.1"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "simulated_duration_seconds": 900,
+  "test_period_seconds": 150,
+  "evaluation": "All-node mean stored completed checkpoints, all 10,000 test images",
+  "learning_rate": 0.01,
+  "momentum": 0,
+  "weight_decay": 0,
+  "local_steps": 5,
+  "batch_size": 32,
+  "mean_bandwidth_bytes_per_second": 100000,
+  "mean_compute_step_milliseconds": 20,
+  "network_latency_milliseconds": 20,
+  "model_payload_bytes": 346251,
+  "moshpit_group_size": 8,
+  "moshpit_averaging_steps": 1,
+  "immediate_uploads": true,
+  "total_runs": 228,
+  "selection": "Report every fixed cell; observed best cells are descriptive test-set maxima, not independently confirmed winners.",
+  "remote_root": "/mnt/data/mdevos/conflux-chunk-reducer-20261102",
+  "remote_source": "code-cached",
+  "remote_results": "results-cached",
+  "aggregation_chunking_simulated_compute_cost_seconds": 0,
+  "nominal_payload_bytes_per_chunk": {
+    "8": 43281.375,
+    "16": 21640.6875,
+    "32": 10820.34375,
+    "64": 5410.171875,
+    "128": 2705.0859375,
+    "256": 1352.54296875
+  }
+}

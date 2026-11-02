@@ -1,0 +1,37 @@
+{
+  "commit": null,
+  "dirty": false,
+  "source_sha256": "a48f0b9bed5be9947ded2f3ff37fea9ab6fd595b9d50314ca7daa1c707a32405",
+  "python": "3.12.15",
+  "packages": {
+    "torch": "2.14.1+cu130",
+    "torchvision": "0.29.1+cu130",
+    "numpy": "2.5.4",
+    "datasets": "4.8.5",
+    "flwr-datasets": "0.6.1",
+    "transformers": "5.22.1",
+    "peft": "0.21.2",
+    "PyYAML": "6.0.3"
+  },
+  "source_export": {
+    "commit": "99ee91233a2e934196695ba4ade550c831834d6e",
+    "dirty": true,
+    "source_sha256": "a48f0b9bed5be9947ded2f3ff37fea9ab6fd595b9d50314ca7daa1c707a32405",
+    "python": "3.12.13",
+    "packages": {
+      "torch": "2.15.0",
+      "torchvision": "0.29.2",
+      "numpy": "2.5.2",
+      "datasets": null,
+      "flwr-datasets": null,
+      "transformers": "5.15.0",
+      "peft": "0.21.2",
+      "PyYAML": "6.0.3"
+    },
+    "note": "Deterministic public sample/layout memoization verified against uncached protocol; fresh results only."
+  },
+  "config_hashes": {
+    "/mnt/data/mdevos/conflux-chunk-reducer-20261102/code-cached/experiments/conflux-v2/chunk-reducer-64/v2.json": "d482a4af43bc440e3783b588d02a4d354455c5fdfc2559d3e3a677d2e91af8eb",
+    "/mnt/data/mdevos/conflux-chunk-reducer-20261102/code-cached/experiments/conflux-v2/chunk-reducer-64/moshpit.json": "97fff269879dc466253c26f0d46e79bb8f66b296e023b0c65d63c590eaadd744"
+  }
+}

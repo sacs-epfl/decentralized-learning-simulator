@@ -1,0 +1,57 @@
+{
+  "stopped_at": "2026-10-31T16:52:33.883798+00:00",
+  "reason": "User requested stopping the ongoing experiments and parking further work",
+  "processes": [
+    {
+      "pid": 758120,
+      "ppid": 1,
+      "argv": [
+        "bash",
+        "/mnt/data/mdevos/conflux-v2-20261031/conflux-v2-run-full.sh"
+      ]
+    },
+    {
+      "pid": 758125,
+      "ppid": 758120,
+      "argv": [
+        "python",
+        "scripts/benchmark_convergence.py",
+        "--study",
+        "experiments/conflux-v2/study.json",
+        "--data",
+        "/mnt/data/mdevos/conflux-v2-20261031/datasets",
+        "--output",
+        "/mnt/data/mdevos/conflux-v2-20261031/results/full",
+        "--gpus",
+        "0",
+        "1"
+      ]
+    },
+    {
+      "pid": 763748,
+      "ppid": 758125,
+      "argv": [
+        "/mnt/data/mdevos/conda/envs/conflux-gpu/bin/python",
+        "/mnt/data/mdevos/conflux-v2-20261031/code-study/main.py",
+        "--config",
+        "/mnt/data/mdevos/conflux-v2-20261031/results/full/runs/confirm-tiny-mobilenet-conflux-v2-compute-dirichlet-s0-lr0.03/config.json"
+      ]
+    },
+    {
+      "pid": 763763,
+      "ppid": 758125,
+      "argv": [
+        "/mnt/data/mdevos/conda/envs/conflux-gpu/bin/python",
+        "/mnt/data/mdevos/conflux-v2-20261031/code-study/main.py",
+        "--config",
+        "/mnt/data/mdevos/conflux-v2-20261031/results/full/runs/confirm-tiny-mobilenet-conflux-v2-heterogeneous-dirichlet-s0-lr0.03/config.json"
+      ]
+    }
+  ],
+  "remaining": [],
+  "final_counts": {
+    "tune/completed": 96,
+    "confirm/completed": 8,
+    "confirm/interrupted": 2
+  }
+}

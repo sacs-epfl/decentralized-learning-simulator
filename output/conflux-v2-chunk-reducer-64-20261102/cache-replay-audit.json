@@ -1,0 +1,21 @@
+{
+  "checked_runs": 15,
+  "exact_per_node_metrics_capacities_bytes_and_round_times": true,
+  "runs": [
+    "v2-grid-0142-c128-r16-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0070-c32-r32-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0034-c16-r16-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0094-c64-r16-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0130-c128-r8-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0022-c16-r8-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0166-c128-r64-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0106-c64-r32-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0154-c128-r32-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "moshpit-0010-matrix-moshpit-dirichlet-s0",
+    "v2-grid-0046-c32-r8-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0118-c64-r64-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0082-c64-r8-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0010-c8-r8-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0",
+    "v2-grid-0058-c32-r16-heterogeneous-dirichlet-s0-conflux-v2-dirichlet-s0"
+  ]
+}

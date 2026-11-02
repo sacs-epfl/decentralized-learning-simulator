@@ -1,0 +1,19 @@
+{
+  "description": "Timing-only dry runs, synthetic task graph, no accuracy measurement",
+  "model_size_bytes": 346251,
+  "bandwidth_bytes_per_s": 100000,
+  "network_latency_ms": 20,
+  "local_steps": 5,
+  "compute_step_ms": 20,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "rounds": 20,
+  "source_hashes": {
+    "dasklearn/simulation/conflux_v2/client.py": "daa5825abb62dd54a4fd3b1a3a30256f77e0e83ccfd75714f35205d5d9e7ec88",
+    "dasklearn/simulation/bandwidth_scheduler.py": "b9e1fdcbfcfcbe0c578b8749ec44bacc05b2726a2c7c98126d884300a07781d7",
+    "dasklearn/simulation/client.py": "17679c153950432de26258b8859b266b1c8d97efc9f178e28a73e7708e589ee9"
+  }
+}
