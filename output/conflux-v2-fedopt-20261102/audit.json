@@ -1,0 +1,12 @@
+{
+  "tuning_runs": 36,
+  "confirmation_runs": 27,
+  "paired_hardware": true,
+  "complete_node_snapshots": true,
+  "finite_metrics": true,
+  "byte_conservation": true,
+  "selection": "Validation AUC on seed 10011, then frozen settings on seeds 0/1/2; test scores never used for selection",
+  "server_compute_ms_per_chunk": 0.1,
+  "state_pack_compute_ms_per_migrated_chunk": 0.05,
+  "handoff_accounting": "FP32 base + FP32 or blockwise 8-bit moments + uint64 step + normal header/metadata"
+}

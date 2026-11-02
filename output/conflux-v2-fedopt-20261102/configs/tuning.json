@@ -1,0 +1,450 @@
+{
+  "version": 1,
+  "name": "fedopt-tuning",
+  "execution": "local",
+  "output": "../../../output/conflux-fedopt/tuning",
+  "settings": {
+    "dataset": "cifar10",
+    "model": "gnlenet",
+    "device": "cuda:0",
+    "peers": 64,
+    "dataset_base_path": "/mnt/data/mdevos/conflux-v2-20261031/datasets/cifar10",
+    "stop": "duration",
+    "duration": 900,
+    "rounds": 0,
+    "test_period": 50,
+    "test_method": "snapshot",
+    "test_interval": 0,
+    "evaluation_split": "validation",
+    "evaluation_examples": 1000,
+    "final_heldout": false,
+    "learning_rate": 0.01,
+    "momentum": 0,
+    "weight_decay": 0,
+    "local_steps": 5,
+    "batch_size": 32,
+    "alpha": 0.1,
+    "bandwidth_bytes_per_s": 100000,
+    "compute_step_ms": 20,
+    "network_latency_ms": 20,
+    "model_size_bytes": 346251,
+    "torch_threads": 2,
+    "training_batch_size": 2,
+    "log_level": "WARNING",
+    "traces": "none",
+    "churn": "none",
+    "sample_size": 16,
+    "success_fraction": 1,
+    "immediate_uploads": true,
+    "group_size": 8,
+    "averaging_steps": 1,
+    "algorithm": "conflux-v2",
+    "chunks_in_sample": 128,
+    "relay_count": 16,
+    "capacity_profile": "heterogeneous",
+    "partitioner": "dirichlet",
+    "reducer_epoch_rounds": 0,
+    "state_bits": 32,
+    "server_step_ms": 0.1,
+    "state_pack_ms": 0.05,
+    "seed": 10011
+  },
+  "runs": [
+    {
+      "name": "server-sgd-cl0.003-sl0.1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 0.1
+      }
+    },
+    {
+      "name": "server-sgd-cl0.003-sl0.3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 0.3
+      }
+    },
+    {
+      "name": "server-sgd-cl0.003-sl1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 1.0
+      }
+    },
+    {
+      "name": "server-sgd-cl0.003-sl3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 3.0
+      }
+    },
+    {
+      "name": "server-sgd-cl0.01-sl0.1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 0.1
+      }
+    },
+    {
+      "name": "server-sgd-cl0.01-sl0.3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 0.3
+      }
+    },
+    {
+      "name": "server-sgd-cl0.01-sl1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 1.0
+      }
+    },
+    {
+      "name": "server-sgd-cl0.01-sl3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 3.0
+      }
+    },
+    {
+      "name": "server-sgd-cl0.03-sl0.1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 0.1
+      }
+    },
+    {
+      "name": "server-sgd-cl0.03-sl0.3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 0.3
+      }
+    },
+    {
+      "name": "server-sgd-cl0.03-sl1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 1.0
+      }
+    },
+    {
+      "name": "server-sgd-cl0.03-sl3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 3.0
+      }
+    },
+    {
+      "name": "server-momentum-cl0.003-sl0.1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 0.1
+      }
+    },
+    {
+      "name": "server-momentum-cl0.003-sl0.3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 0.3
+      }
+    },
+    {
+      "name": "server-momentum-cl0.003-sl1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 1.0
+      }
+    },
+    {
+      "name": "server-momentum-cl0.003-sl3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 3.0
+      }
+    },
+    {
+      "name": "server-momentum-cl0.01-sl0.1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 0.1
+      }
+    },
+    {
+      "name": "server-momentum-cl0.01-sl0.3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 0.3
+      }
+    },
+    {
+      "name": "server-momentum-cl0.01-sl1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 1.0
+      }
+    },
+    {
+      "name": "server-momentum-cl0.01-sl3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 3.0
+      }
+    },
+    {
+      "name": "server-momentum-cl0.03-sl0.1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 0.1
+      }
+    },
+    {
+      "name": "server-momentum-cl0.03-sl0.3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 0.3
+      }
+    },
+    {
+      "name": "server-momentum-cl0.03-sl1",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 1.0
+      }
+    },
+    {
+      "name": "server-momentum-cl0.03-sl3",
+      "settings": {
+        "server_optimizer": "fedavgm",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 3.0
+      }
+    },
+    {
+      "name": "server-adam-cl0.003-sl0.003",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 0.003
+      }
+    },
+    {
+      "name": "server-adam-cl0.003-sl0.01",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 0.01
+      }
+    },
+    {
+      "name": "server-adam-cl0.003-sl0.03",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 0.03
+      }
+    },
+    {
+      "name": "server-adam-cl0.003-sl0.1",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.003,
+        "server_learning_rate": 0.1
+      }
+    },
+    {
+      "name": "server-adam-cl0.01-sl0.003",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 0.003
+      }
+    },
+    {
+      "name": "server-adam-cl0.01-sl0.01",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 0.01
+      }
+    },
+    {
+      "name": "server-adam-cl0.01-sl0.03",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 0.03
+      }
+    },
+    {
+      "name": "server-adam-cl0.01-sl0.1",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.01,
+        "server_learning_rate": 0.1
+      }
+    },
+    {
+      "name": "server-adam-cl0.03-sl0.003",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 0.003
+      }
+    },
+    {
+      "name": "server-adam-cl0.03-sl0.01",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 0.01
+      }
+    },
+    {
+      "name": "server-adam-cl0.03-sl0.03",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 0.03
+      }
+    },
+    {
+      "name": "server-adam-cl0.03-sl0.1",
+      "settings": {
+        "server_optimizer": "fedadam",
+        "server_beta1": 0.9,
+        "server_beta2": 0.99,
+        "server_tau": 0.001,
+        "learning_rate": 0.03,
+        "server_learning_rate": 0.1
+      }
+    }
+  ]
+}

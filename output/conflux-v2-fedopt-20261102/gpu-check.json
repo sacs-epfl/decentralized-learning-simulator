@@ -1,0 +1,14 @@
+[
+  {
+    "bits": 32,
+    "common_round_models": true,
+    "batched_training": true,
+    "central_reference": true
+  },
+  {
+    "bits": 8,
+    "common_round_models": true,
+    "batched_training": true,
+    "central_reference": false
+  }
+]

@@ -156,3 +156,53 @@ check state/round ownership, exact byte savings of actual quantized packets, com
 recipient models, partial participation, charged compute, and validation-only rate
 selection. Scheduled handoff payload totals are separate from actual transmitted
 bytes: a time-limited run can stop while a transfer is still pending or in flight.
+
+### First FedOpt study results
+
+The committed implementation `006939a` completed all 36 validation candidates and
+27 confirmation runs on sacs006 under `/mnt/data/mdevos/conflux-fedopt-20261102`.
+All three selected client learning rates were 0.01. Selected server rates were 1
+for SGD, 0.3 for momentum and 0.01 for Adam. Adam used beta1=0.9, beta2=0.99 and
+tau=0.001. The complete server suite passed 455 tests; CUDA reference checks also
+passed. Original rotating FedAvg and Moshpit reproduce all six previous runs'
+final per-node test accuracy/loss and recorded round IDs exactly.
+
+Full final test accuracy after 900 simulated seconds, mean ± sample SD over seeds
+0/1/2, across all 64 stored node checkpoints:
+
+| Variant | Test accuracy |
+| --- | ---: |
+| Original FedAvg, fixed owners | 37.74 ± 1.87% |
+| Original FedAvg, rotating owners | 37.68 ± 1.81% |
+| Validation-tuned server SGD, fixed owners | 37.72 ± 1.88% |
+| FedAvgM, fixed owners | 42.15 ± 1.48% |
+| FedAdam, fixed owners | 43.71 ± 0.85% |
+| FedAdam, rotating FP32 handoffs | 43.63 ± 0.87% |
+| FedAdam, rotating 8-bit handoffs | 43.65 ± 0.87% |
+| FedAdam, eight-round epochs / 8-bit handoffs | 43.63 ± 0.85% |
+| Moshpit, group 8 / one phase | 29.04 ± 2.48% |
+
+At the 35% validation target, original FedAvg's first-observed times are
+600/750/900 seconds, tuned server SGD's 600/700/900, and fixed-owner Adam's
+500/500/450. Adam's median paired observed speedup is 1.5x against original FedAvg
+and 1.4x against tuned SGD; all three first-crossing checkpoint intervals are
+separated. Checkpoints are 50 seconds apart. Adam reaches 40% validation at
+550/600/750 seconds; both non-adaptive baselines are censored at that target.
+These are validation-subset targets, distinct from final full-test scores. Adam
+does not improve every earlier target in every seed.
+
+Rotating 8-bit handoffs schedule 10.22 MB of state payload on average versus
+20.48 MB for FP32, including the uncompressed base weights. Actual total traffic
+at 900 seconds falls from 941.37 MB to 929.57 MB (1.25%). Eight-round epochs reduce
+scheduled handoff payload further to 1.38 MB. Quantization retains similar final
+accuracy here; state movement is a modest share of total traffic, so its speed
+benefit is smaller than the optimizer's convergence benefit. Scheduled payload
+counts and actual transmitted bytes are separate measurements.
+
+Compact curves, per-run metrics, paired speedups, plots, frozen source,
+configuration files and audits are in `output/conflux-v2-fedopt-20261102`.
+`experiments/conflux-v2/fedopt/fedadam.json` reproduces the selected fixed-owner
+configuration; `fedadam-rotating-int8.json` and `fedadam-sticky-int8.json` reproduce
+the handoff variants. These results support the optional optimizer in this one
+stable-membership regime and horizon; they do not establish general superiority
+across data/models or measured real-device runtimes. FedAvg remains the default.

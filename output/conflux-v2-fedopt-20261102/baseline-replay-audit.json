@@ -1,0 +1,38 @@
+[
+  {
+    "algorithm": "moshpit",
+    "seed": 0,
+    "max_accuracy_difference": 0.0,
+    "max_loss_difference": 0.0
+  },
+  {
+    "algorithm": "moshpit",
+    "seed": 1,
+    "max_accuracy_difference": 0.0,
+    "max_loss_difference": 0.0
+  },
+  {
+    "algorithm": "moshpit",
+    "seed": 2,
+    "max_accuracy_difference": 0.0,
+    "max_loss_difference": 0.0
+  },
+  {
+    "algorithm": "conflux-v2",
+    "seed": 0,
+    "max_accuracy_difference": 0.0,
+    "max_loss_difference": 0.0
+  },
+  {
+    "algorithm": "conflux-v2",
+    "seed": 1,
+    "max_accuracy_difference": 0.0,
+    "max_loss_difference": 0.0
+  },
+  {
+    "algorithm": "conflux-v2",
+    "seed": 2,
+    "max_accuracy_difference": 0.0,
+    "max_loss_difference": 0.0
+  }
+]

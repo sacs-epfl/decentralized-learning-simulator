@@ -1,0 +1,8 @@
+{
+  "rotating_fp32_handoff_payload_mb": 20.47792533333333,
+  "rotating_int8_handoff_payload_mb": 10.219402666666666,
+  "epoch8_int8_handoff_payload_mb": 1.376608,
+  "rotating_handoff_payload_reduction_pct": 50.0955174886206,
+  "rotating_total_traffic_reduction_pct": 1.2532426381061779,
+  "note": "Scheduled handoff payload includes FP32 base weights; total traffic includes actual sent bytes, headers and unfinished-transfer progress."
+}
