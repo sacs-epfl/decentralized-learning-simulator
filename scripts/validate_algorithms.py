@@ -36,6 +36,7 @@ from dasklearn.tasks.task import Task
 from dasklearn.simulation.choco.settings import add_choco_arguments, choco_options
 from dasklearn.simulation.qgm.settings import add_qgm_arguments, qgm_options
 from dasklearn.simulation.swift.settings import add_swift_arguments, swift_options
+from dasklearn.simulation.gt_dsgd.settings import add_gt_dsgd_arguments, gt_dsgd_options
 from dasklearn.util import MICROSECONDS
 
 
@@ -61,6 +62,7 @@ async def run_one(args, variant, profile, partitioner, seed):
         algorithm='qgm'
     if variant=='choco':specific.update(choco_options(args))
     if variant=='swift':specific.update(swift_options(args))
+    if variant=='gt-dsgd':specific.update(gt_dsgd_options(args))
     if variant=='demo':specific.update(demo_options(args))
     if variant=='dspodfl':specific.update(dspodfl_options(args))
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
@@ -151,7 +153,7 @@ async def run_one(args, variant, profile, partitioner, seed):
            "learning_rate": args.learning_rate,
            "final_accuracy": float(curve.accuracy.iloc[-1]), "final_loss": float(curve.loss.iloc[-1]),
            "model_bytes": sim.model_size, "bytes_sent": sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
-           "training_tasks": sum(t.func in {"train", "compute_gradient", "demo_prepare", "qgm_train"} for t in sim.workflow_dag.tasks.values()),
+           "training_tasks": sum(t.func in {"train", "compute_gradient", "demo_prepare", "qgm_train", "gt_dsgd_gradient"} for t in sim.workflow_dag.tasks.values()),
            "simulated_compute_s": sum(c.compute_time for c in sim.clients) / MICROSECONDS,
            "actual_execution_s": time.perf_counter() - started}
     if getattr(args,"final_test",False):
@@ -204,6 +206,7 @@ async def main():
     add_choco_arguments(parser)
     add_qgm_arguments(parser)
     add_swift_arguments(parser)
+    add_gt_dsgd_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)
     parser.add_argument("--bandwidth", type=int, default=4000)

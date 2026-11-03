@@ -3,13 +3,14 @@
 | Method | Peer-reviewed source | Why compare it |
 | --- | --- | --- |
 | SWIFT | [ICLR 2023](https://arxiv.org/abs/2210.14026) | Wait-free local training with stale neighbor caches and periodic averaging under compute/network heterogeneity. |
+| GT-DSGD | [IEEE TSP 2021](https://arxiv.org/abs/2008.04195) | Explicit tracking of the average stochastic gradient; isolates data-heterogeneity correction and its extra communication cost. |
 | Moshpit SGD | [NeurIPS 2021](https://papers.neurips.cc/paper_files/paper/2021/hash/97275a23ca44226c9964043c8462be96-Abstract.html) | Small-group chunked all-reduce on heterogeneous devices; the closest collective-communication baseline. |
 | Teleportation | [ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/b3732a13897c4cea145c3bdece80de64-Abstract-Conference.html) | Randomly sampled clients inherit logical model tokens, train, and gossip within the active sample. |
 | D-Local-SGD | [Unified decentralized/local SGD, ICML 2020](https://proceedings.mlr.press/v119/koloskova20a.html); historical [D-PSGD, NeurIPS 2017](https://papers.neurips.cc/paper_files/paper/2017/hash/f75526659f31040afeb61cb7133e4e6d-Abstract.html) | Full-participation sparse mixing; establishes whether sampling and chunked collectives improve on a basic decentralized reference. |
 | Shatter | [PoPETs 2025](https://petsymposium.org/popets/2025/popets-2025-0043.php) | Existing chunked virtual-node baseline, retained in every comparison. |
 
 
-See also [SWIFT's implementation contract](swift.md), [DSpodFL](dspodfl.md) and [DeMo](demo.md).
+See also [GT-DSGD's implementation contract](gt-dsgd.md), [SWIFT](swift.md), [DSpodFL](dspodfl.md) and [DeMo](demo.md).
 
 ## Implemented protocol contracts
 
@@ -67,7 +68,7 @@ Use `scripts/validate_algorithms.py` for synthetic/digits workloads,
 `scripts/run_cifar.py` for native CIFAR-10, and `scripts/run_tiny.py` for
 Tiny ImageNet with compatible models/optimizers. The baseline aliases are
 `moshpit`, `teleportation-ring`, `teleportation-hypercube`, `d-local-sgd-ring`,
-`dspodfl`, `demo` and `swift`. SWIFT requires `--local-steps 1 --momentum 0`;
+`dspodfl`, `demo`, `swift` and `gt-dsgd`. SWIFT and GT-DSGD require `--local-steps 1 --momentum 0`;
 `--swift-averaging-interval H` selects periodic averaging. The coordinator accepts `--algorithm teleportation` with
 `--teleportation-topology ring` or `hypercube` instead of the aliases.
 

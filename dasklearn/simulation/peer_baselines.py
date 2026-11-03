@@ -15,12 +15,16 @@ from dasklearn.simulation.qgm.settings import QGMSettings
 from dasklearn.simulation.qgm.simulation import QGMSimulation
 from dasklearn.simulation.swift.settings import SwiftSettings
 from dasklearn.simulation.swift.simulation import SwiftSimulation
+from dasklearn.simulation.gt_dsgd.settings import GTDSGDSettings
+from dasklearn.simulation.gt_dsgd.simulation import GTDSGDSimulation
 
 
-BASELINE_VARIANTS = ("swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
+BASELINE_VARIANTS = ("gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
 
 
 def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
+    if variant == 'gt-dsgd':
+        return GTDSGDSimulation, GTDSGDSettings, {}
     if variant == 'swift':
         return SwiftSimulation, SwiftSettings, {}
     if variant in {'qgm','dsgdm','dsgd'}:

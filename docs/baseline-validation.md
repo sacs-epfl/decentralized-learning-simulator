@@ -5,6 +5,16 @@ contract. A successful run or registry/settings round-trip does not establish
 algorithmic correctness. These checks cover the stated specialization, not every
 paper option, topology, optimizer, model or failure mode.
 
+## GT-DSGD: 3 November 2026
+
+[GT-DSGD's implementation contract](gt-dsgd.md) follows Algorithm 1 / Eq. (1)
+of Xin, Khan and Kar, with two explicit same-iteration neighbor exchanges.
+Independent multiround references check models, gradient differences and
+trackers, including a changing stochastic oracle; the tracker mean equals
+the current gradient mean. Tests also cover state persistence, exact two-phase
+traffic, causal waiting, early/duplicate packets, local buffers, saved-DAG
+replay, seeded reproducibility and CPU/CUDA equivalence.
+
 ## SWIFT: 3 November 2026
 
 [SWIFT's contract and results](swift.md) document the new wait-free baseline:

@@ -50,6 +50,8 @@ def create_parser():
     add_qgm_arguments(parser)
     from dasklearn.simulation.swift.settings import add_swift_arguments
     add_swift_arguments(parser)
+    from dasklearn.simulation.gt_dsgd.settings import add_gt_dsgd_arguments
+    add_gt_dsgd_arguments(parser)
     parser.add_argument('--group-size', type=int, default=8)
     parser.add_argument('--averaging-steps', type=int, default=1)
     parser.add_argument('--teleportation-topology', choices=['ring', 'hypercube', 'complete'], default='ring')

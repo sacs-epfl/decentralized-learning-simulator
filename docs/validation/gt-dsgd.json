@@ -1,0 +1,479 @@
+{
+  "date": "2026-11-03",
+  "base_commit": "e841bee23d2eddb49a2d5db92b8c86bb100495fe",
+  "swift_commit_pushed_to_origin_main": "e841bee23d2eddb49a2d5db92b8c86bb100495fe",
+  "source_sha256": "cd8522d3b4a06063a74692e65736aef9ee634f5aeec8585ba7b0551461c567b3",
+  "source_hash_method": "Sorted relative path bytes plus content of dasklearn/**/*.py, args.py, main.py, scripts/validate_algorithms.py; same recipe as benchmark manifest",
+  "reference": {
+    "url": "https://arxiv.org/abs/2008.04195v2",
+    "doi": "10.1109/TSP.2021.3062553",
+    "algorithm": "Algorithm 1 / Eq. (1), ATC GT-DSGD",
+    "pdf_sha256": "f9208957909dacfe9e43a4328d5b82f1370833d6a5c545e56526452bd8550852",
+    "updates": [
+      "y_next = W (y + g_current - g_previous)",
+      "x_next = W (x - learning_rate * y_next)"
+    ],
+    "initialization": "y_0=0; g_{-1}=0; one freshly sampled gradient per client per iteration"
+  },
+  "environment": {
+    "conda_prefix": "/mnt/data/mdevos/conda/envs/conflux-gpu",
+    "python": "3.12.15",
+    "torch": "2.14.1+cu130",
+    "numpy": "2.5.4",
+    "device": "cuda:0",
+    "gpu": "NVIDIA RTX 5000 Ada Generation"
+  },
+  "tests": {
+    "command": "python -m pytest -q",
+    "passed": 482,
+    "warnings": 5,
+    "duration_seconds": 105.85,
+    "gt_dsgd_specific_cases": 40,
+    "checks": [
+      "Independent full-batch logistic trajectories, two matrix mixes, and tracker-mean conservation",
+      "Known changing stochastic oracle; exact previous gradient reused",
+      "Explicit persistent tracker/gradient references and initialization without an extra oracle call",
+      "Exact dense-vector traffic for both phases, duplicated/early packets, and delivery causality",
+      "Ring/complete/kreg, single-client SGD, one/two-peer edges, local/global round barriers",
+      "Immutable model/buffer/optimizer inputs, CPU/CUDA model and state agreement",
+      "Fixed-time streaming snapshots, duration stopping, deterministic metrics, saved-DAG replay",
+      "CLI/configuration mapping, baseline alias and broker settings roundtrip",
+      "Full maintained-suite regression checks"
+    ]
+  },
+  "cli_smoke": {
+    "exit_code": 0,
+    "command": "python main.py --local --algorithm gt-dsgd --dataset synthetic --model mlp --peers 4 --local-steps 1 --momentum 0 --learning-rate .05 --rounds 3 --duration 3 --test-method snapshot --test-period 1 --device cuda:0 --torch-threads 1 --work-dir output/gt-dsgd-validation/cli"
+  },
+  "runner_help_checks": [
+    "python scripts/run_cifar.py --help",
+    "python scripts/run_tiny.py --help"
+  ],
+  "screening": {
+    "run_count": 24,
+    "workload": "Offline sklearn digits; 64-32-10 ReLU MLP; 8-node ring; 3 simulated seconds; local-model evaluation on all 445 test examples at 1,2,3 seconds; 3 seeds; IID/Dirichlet alpha=.3; batch 32; LR=.05 fixed in advance; no momentum/decay; one gradient per iteration.",
+    "capacity": "Nominal 100000000 B/s, latency 2ms; uniform gradient time 9ms. Heterogeneous gradients independently selected from 6,15,36,90ms; quarter nodes at 4x nominal bandwidth, remaining at .5x. Exact capacities paired across methods; means differ across profiles.",
+    "wire_layout": "Both methods transmit 9640 parameter bytes plus headers/phase metadata per message. GT-DSGD has two sequential phases; DSGD has one. Includes partial final-horizon traffic.",
+    "limitation": "Short untuned execution screening, not a paper reproduction or performance ranking. Test metrics were not used for tuning. Scalar CUDA executor wall times overlap other validation jobs and are not protocol speed measurements.",
+    "summary": [
+      {
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 22.977528208333336,
+        "accuracy_sample_sd": 12.285785876566784,
+        "loss_mean": 2.1916685,
+        "scheduled_gradients_mean": 394.3333333333333,
+        "completed_updates_mean": 386.3333333333333,
+        "wire_bytes_mean": 7621906.666666667
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 19.850187458333334,
+        "accuracy_sample_sd": 13.167337663915893,
+        "loss_mean": 2.2020227083333332,
+        "scheduled_gradients_mean": 368.0,
+        "completed_updates_mean": 360.0,
+        "wire_bytes_mean": 14185141.333333334
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 33.06179766666666,
+        "accuracy_sample_sd": 17.99586485597322,
+        "loss_mean": 2.1845219583333333,
+        "scheduled_gradients_mean": 394.3333333333333,
+        "completed_updates_mean": 386.3333333333333,
+        "wire_bytes_mean": 7621906.666666667
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 30.51498125,
+        "accuracy_sample_sd": 16.572660861510556,
+        "loss_mean": 2.1951729166666665,
+        "scheduled_gradients_mean": 368.0,
+        "completed_updates_mean": 360.0,
+        "wire_bytes_mean": 14185141.333333334
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 79.28838958333333,
+        "accuracy_sample_sd": 2.118196020108321,
+        "loss_mean": 0.9670385416666667,
+        "scheduled_gradients_mean": 2144.0,
+        "completed_updates_mean": 2136.0,
+        "wire_bytes_mean": 41829648.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 77.55617966666667,
+        "accuracy_sample_sd": 5.3697258297607044,
+        "loss_mean": 1.2156854583333334,
+        "scheduled_gradients_mean": 1798.0,
+        "completed_updates_mean": 1790.0,
+        "wire_bytes_mean": 69866496.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 87.00374533333333,
+        "accuracy_sample_sd": 3.5683372019344484,
+        "loss_mean": 0.9324229583333334,
+        "scheduled_gradients_mean": 2144.0,
+        "completed_updates_mean": 2136.0,
+        "wire_bytes_mean": 41829648.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 83.604869,
+        "accuracy_sample_sd": 4.777786496551195,
+        "loss_mean": 1.1679090833333334,
+        "scheduled_gradients_mean": 1798.0,
+        "completed_updates_mean": 1790.0,
+        "wire_bytes_mean": 69866496.0
+      }
+    ],
+    "paired_capacities": {
+      "uniform-s0": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "uniform-s1": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "uniform-s2": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "heterogeneous-s0": [
+        {
+          "client": 0,
+          "training_speed": 12,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "heterogeneous-s1": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 30,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "heterogeneous-s2": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 4,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        }
+      ]
+    },
+    "manifest": {
+      "output": "/mnt/data/mdevos/conflux/output/gt-dsgd-validation/digits",
+      "dataset": "digits",
+      "device": "cuda:0",
+      "variants": [
+        "gt-dsgd",
+        "dsgd"
+      ],
+      "profiles": [
+        "uniform",
+        "heterogeneous"
+      ],
+      "partitioners": [
+        "iid",
+        "dirichlet"
+      ],
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "peers": 8,
+      "sample_size": 8,
+      "chunks": 4,
+      "success_fraction": 1,
+      "dspod_degree": 4,
+      "dspod_sgd_probability": 0.5,
+      "dspod_communication_probability": 0.5,
+      "dspod_probability_mode": "capacity",
+      "demo_decay": 0.999,
+      "demo_chunk": 64,
+      "demo_topk": 32,
+      "choco_topology": "ring",
+      "choco_degree": 4,
+      "choco_compressor": "topk",
+      "choco_keep_ratio": 0.01,
+      "choco_consensus_stepsize": 0.1,
+      "qgm_topology": "ring",
+      "qgm_degree": 4,
+      "qgm_mode": "quasi",
+      "qgm_beta": 0.9,
+      "qgm_mu": null,
+      "qgm_nesterov": false,
+      "swift_topology": "ring",
+      "swift_degree": 4,
+      "swift_averaging_interval": 1,
+      "swift_influence": null,
+      "gt_dsgd_topology": "ring",
+      "gt_dsgd_degree": 4,
+      "duration": 3.0,
+      "test_period": 1.0,
+      "bandwidth": 100000000,
+      "latency_ms": 2.0,
+      "learning_rate": 0.05,
+      "local_steps": 1,
+      "alpha": 0.3,
+      "gpu_residency": true,
+      "training_batching": true,
+      "training_batch_size": 2,
+      "gpu_state_cache_mb": 256,
+      "python": "3.12.15",
+      "torch": "2.14.1+cu130",
+      "numpy": "2.5.4",
+      "source_sha256": "cd8522d3b4a06063a74692e65736aef9ee634f5aeec8585ba7b0551461c567b3"
+    },
+    "summary_csv": "gt-dsgd-digits-summary.csv",
+    "curves_csv": "gt-dsgd-digits-curves.csv",
+    "reproduction_command": "python scripts/validate_algorithms.py --variants gt-dsgd dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --bandwidth 100000000 --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --partitioners iid dirichlet --seeds 0 1 2 --device cuda:0 --output output/gt-dsgd-validation/digits"
+  }
+}

@@ -31,6 +31,9 @@ OPERATIONS["membership_inference"] = Operation(
     "dasklearn.privacy.membership:evaluate_membership", 1, True)
 OPERATIONS["swift_update"] = Operation("dasklearn.optimizer.swift:update", 1, True)
 OPERATIONS["swift_pack"] = Operation("dasklearn.optimizer.swift:pack", 1, True)
+OPERATIONS["gt_dsgd_gradient"] = Operation("dasklearn.optimizer.gt_dsgd:gradient", 3, True)
+OPERATIONS["gt_dsgd_track"] = Operation("dasklearn.optimizer.gt_dsgd:track", 2, True)
+OPERATIONS["gt_dsgd_mix"] = Operation("dasklearn.optimizer.gt_dsgd:mix", 1, True)
 OPERATIONS["complete_incoming"] = Operation(
     "dasklearn.privacy.incoming:complete_incoming_operation", 1, True)
 

@@ -21,6 +21,7 @@ from dasklearn.simulation.demo.settings import add_demo_arguments
 from dasklearn.simulation.choco.settings import add_choco_arguments, choco_options
 from dasklearn.simulation.qgm.settings import add_qgm_arguments, qgm_options
 from dasklearn.simulation.swift.settings import add_swift_arguments
+from dasklearn.simulation.gt_dsgd.settings import add_gt_dsgd_arguments
 
 
 async def main():
@@ -39,6 +40,7 @@ async def main():
     add_choco_arguments(p)
     add_qgm_arguments(p)
     add_swift_arguments(p)
+    add_gt_dsgd_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--model-bytes", type=int)
