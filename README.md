@@ -68,6 +68,7 @@ brokers. See [LoRA setup, CLI examples, memory model and validation](docs/lora.m
 | GT-DSGD | `gt-dsgd` | [An improved convergence analysis for decentralized online stochastic non-convex optimization — IEEE TSP 2021](https://arxiv.org/abs/2008.04195) | Algorithm 1: stochastic gradient tracking with two explicit adapt-then-combine exchanges per iteration. | [Reference equations, timing and CUDA checks](docs/gt-dsgd.md#validation) |
 | DeTAG | `detag` | [Optimal Complexity in Decentralized Training — ICML 2021](https://proceedings.mlr.press/v139/lu21a.html); [journal extension — JMLR 2023](https://jmlr.org/papers/v24/22-0044.html) | Phase-based accelerated gossip, fixed-parameter gradient averaging and explicit compute/network overlap. | [Phase, overlap and CUDA checks](docs/detag.md#validation) |
 | RelaySGD | `relaysgd` | [RelaySum for Decentralized Deep Learning on Heterogeneous Data — NeurIPS 2021](https://arxiv.org/abs/2110.04175) | Explicit tree relaying of model sums and population counts, with bounded hop delay. | [Delayed-origin, reference-code and CUDA checks](docs/relaysgd.md#validation) |
+| Stochastic Gradient Push | `sgp` | [Stochastic Gradient Push for Distributed Deep Learning — ICML 2019](https://proceedings.mlr.press/v97/assran19a.html) | Algorithm 1: numerator SGD and scalar-mass debiasing on directed, optionally time-varying graphs. | [Mass conservation, reference-code and CUDA checks](docs/sgp.md#validation) |
 | CHOCO-SGD | `choco` | [Decentralized Stochastic Optimization and Gossip Algorithms with Compressed Communication — ICML 2019](https://proceedings.mlr.press/v97/koloskova19a.html); [deep-learning extension — ICLR 2020](https://arxiv.org/abs/1907.09356) | Persistent public estimates; Top-k/random-k compression; explicit local-SGD block extension. | Equation + compressor reference checks |
 | DSpodFL | `dspodfl` | [Decentralized Sporadic Federated Learning: A Unified Algorithmic Framework with Convergence Guarantees — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/9521b6e7f33e039e7d92e23f5e37bbf4-Abstract-Conference.html) | One-step rule and explicit local-SGD block extension. | Equation checks |
 | DeMo | `demo` | [DeMo: Decoupled Momentum Optimization — ICLR 2026](https://proceedings.iclr.cc/paper_files/paper/2026/hash/17790fc9b4828206f99a0dea35da3657-Abstract-Conference.html) | Reference Signum optimizer; ring all-gather and CNN adaptation. | Optimizer reference check |
@@ -76,12 +77,14 @@ brokers. See [LoRA setup, CLI examples, memory model and validation](docs/lora.m
 [Baseline contracts and sources](docs/peer-baselines.md),
 [DSpodFL semantics](docs/dspodfl.md), [DeMo semantics](docs/demo.md),
 [CHOCO-SGD semantics and usage](docs/choco.md),
-[Quasi-Global Momentum](docs/qgm.md), [SWIFT](docs/swift.md), [GT-DSGD](docs/gt-dsgd.md), [DeTAG](docs/detag.md), [RelaySGD](docs/relaysgd.md).
+[Quasi-Global Momentum](docs/qgm.md), [SWIFT](docs/swift.md), [GT-DSGD](docs/gt-dsgd.md), [DeTAG](docs/detag.md), [RelaySGD](docs/relaysgd.md), [SGP](docs/sgp.md).
 Paper links identify the source algorithms, not a claim of exact paper reproduction.
 Validation labels describe specific checks, not a certification of every option.
 [Validation contracts, evidence and remaining gaps](docs/baseline-validation.md).
 Stable-membership restrictions, optimizer assumptions and adaptations are
-explicit in those documents. Legacy entries have not all been re-audited. PushSum remains on its existing experimental branch.
+explicit in those documents. Legacy entries have not all been re-audited.
+The historical `pushsum` branch is a separate experimental protocol; the maintained
+SGP implementation follows the published algorithm and authors' reference.
 
 ## Run a small comparison
 

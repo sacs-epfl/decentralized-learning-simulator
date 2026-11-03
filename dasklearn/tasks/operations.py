@@ -40,6 +40,8 @@ OPERATIONS["detag_gossip"] = Operation("dasklearn.optimizer.detag:gossip", 1, Tr
 OPERATIONS["detag_finish"] = Operation("dasklearn.optimizer.detag:finish", 2, True)
 OPERATIONS["relaysgd_forward"] = Operation("dasklearn.optimizer.relaysgd:forward", 1, True)
 OPERATIONS["relaysgd_finish"] = Operation("dasklearn.optimizer.relaysgd:finish", 1, True)
+OPERATIONS["sgp_gradient"] = Operation("dasklearn.optimizer.sgp:gradient", 2, True)
+OPERATIONS["sgp_mix"] = Operation("dasklearn.optimizer.sgp:mix", 2, True)
 OPERATIONS["complete_incoming"] = Operation(
     "dasklearn.privacy.incoming:complete_incoming_operation", 1, True)
 

@@ -21,12 +21,16 @@ from dasklearn.simulation.detag.settings import DeTAGSettings
 from dasklearn.simulation.detag.simulation import DeTAGSimulation
 from dasklearn.simulation.relaysgd.settings import RelaySGDSettings
 from dasklearn.simulation.relaysgd.simulation import RelaySGDSimulation
+from dasklearn.simulation.sgp.settings import SGPSettings
+from dasklearn.simulation.sgp.simulation import SGPSimulation
 
 
-BASELINE_VARIANTS = ("relaysgd", "detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
+BASELINE_VARIANTS = ("sgp", "relaysgd", "detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
 
 
 def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
+    if variant == 'sgp':
+        return SGPSimulation, SGPSettings, {}
     if variant == 'relaysgd':
         return RelaySGDSimulation, RelaySGDSettings, {}
     if variant == 'detag':

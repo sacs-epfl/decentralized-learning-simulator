@@ -24,6 +24,7 @@ from dasklearn.simulation.swift.settings import add_swift_arguments
 from dasklearn.simulation.gt_dsgd.settings import add_gt_dsgd_arguments
 from dasklearn.simulation.detag.settings import add_detag_arguments
 from dasklearn.simulation.relaysgd.settings import add_relaysgd_arguments
+from dasklearn.simulation.sgp.settings import add_sgp_arguments
 
 
 async def main():
@@ -45,6 +46,7 @@ async def main():
     add_gt_dsgd_arguments(p)
     add_detag_arguments(p)
     add_relaysgd_arguments(p)
+    add_sgp_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--model-bytes", type=int)

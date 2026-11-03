@@ -1,0 +1,1044 @@
+{
+  "date": "2026-11-03",
+  "base_commit": "f7af9b819b82e532852550f216ccbb2522801fc9",
+  "source_sha256": "6078ee49ee3498a3ed80c26739d53869f35bb721ab8fd2401d690556219fad88",
+  "source_hash_method": "Sorted relative path bytes plus content of dasklearn/**/*.py, args.py, main.py, scripts/validate_algorithms.py; matches shared runner manifest",
+  "references": {
+    "paper": "https://proceedings.mlr.press/v97/assran19a.html",
+    "supplement": "https://proceedings.mlr.press/v97/assran19a/assran19a-supp.pdf",
+    "pdf_sha256": {
+      "paper": "e1a6b0d596a9421aed49bc1602fafaeef4db573b1f39354d9f4b7607495f612d",
+      "supplement": "95fa7941bc2d5c8a4656fa2047f0cc4041202e712345475435fe7d5f3cfc4472"
+    },
+    "repository": "https://github.com/facebookresearch/stochastic_gradient_push",
+    "commit": "e682064d3f0a6216868f8528f804afe091af19b8",
+    "contract": "Plain SGP Algorithm 1: evaluate gradient at z=x/w; x_half=x-lr*g(z); mix numerator and scalar mass using sender-column weights; recover z=x/w. One gradient and one blocking directed neighbor exchange per iteration.",
+    "scope": "Stable membership; fully trainable parameters; local_steps=1; momentum=0; local buffers. Default forward one-peer exponential schedule from Appendix A; additional directed ring, irregular ring+0to2, and complete controls. No Overlap SGP, momentum/Adam, multiple exponential peers, losses, churn or LoRA.",
+    "weight_decay": "Optional objective gradient correction weight_decay*z. Reference comparison and screening use zero decay.",
+    "historical_branch": "origin/pushsum inspected as historical context only; a separate user experimental protocol, not used as the SGP implementation."
+  },
+  "environment": {
+    "conda_prefix": "/mnt/data/mdevos/conda/envs/conflux-gpu",
+    "python": "3.12.15",
+    "torch": "2.14.1+cu130",
+    "numpy": "2.5.4",
+    "device": "cuda:0",
+    "gpu": "NVIDIA RTX 5000 Ada Generation"
+  },
+  "tests": {
+    "command": "python -m pytest -q",
+    "passed": 656,
+    "warnings": 5,
+    "duration_seconds": 116.87,
+    "sgp_specific_cases": 63,
+    "checks": [
+      "Independent sender-column matrices and every model/numerator/weighted packet/mass for four schedules, weight decay on/off, compute skew and global barriers",
+      "Mass and numerator conservation at common logical iterations; no receiver-side renormalization",
+      "Known changing stochastic oracle evaluated at z, updates applied to x without multiplying gradients by w",
+      "Static irregular-graph averaging converges to the uniform origin average after debiasing despite nonuniform numerator limit",
+      "Complete graph matches centralized equal-client-weight minibatch SGD; one client matches plain SGD",
+      "Exact fused dense-numerator + 8-byte float64 mass traffic with header and round metadata",
+      "Directed causal waiting: incoming peers required; slow outgoing recipient does not block unrelated incoming completion",
+      "Small/arbitrary-size graphs, exponential finite-step averaging at powers of two, phase-specific incoming validation, duplicate guards",
+      "Immutable inputs/local buffers, snapshots, duration stopping, seeded reproducibility, streaming and saved-DAG replay",
+      "CPU/CUDA agreement for all model and numerator states; registry/settings/CLI and full maintained regressions"
+    ]
+  },
+  "reference_check": {
+    "command": "python tests/check_sgp_reference.py /tmp/conflux-sgp-reference",
+    "passed": true,
+    "reference_commit": "e682064d3f0a6216868f8528f804afe091af19b8",
+    "workers": 4,
+    "steps": 8,
+    "topologies": [
+      "exponential",
+      "ring",
+      "irregular",
+      "complete"
+    ],
+    "dtype": "float64",
+    "max_parameter_error": 2.220446049250313e-16,
+    "max_mass_error": 2.220446049250313e-16,
+    "source_sha256": {
+      "gossip/mixing_manager.py": "f4eae7fcf91bdfd348808246148e60f44a5fbea56d0231af48d6bb9f28d9708b",
+      "gossip/gossiper.py": "8c9b5aaba43886195f9db54356629ac0ae70de8f5cbb18ed0b58a8d1117eba4b",
+      "gossip/distributed.py": "162e1d8060dcbbcf22ee895283e8c1477f8f4bb45cebe19b374ddf36dbf6e15f"
+    },
+    "scope": "Actual UniformMixing, PushSum.mix, ps_numerator and unbias; non-IID quadratic gradients and plain PyTorch SGD; mocked broadcast transport and graph discovery; scalar optimization disabled; no overlap, momentum or decay"
+  },
+  "cli_smoke": {
+    "exit_code": 0,
+    "command": "python main.py --local --algorithm sgp --dataset synthetic --model mlp --peers 4 --local-steps 1 --momentum 0 --learning-rate .05 --sgp-topology irregular --rounds 6 --duration 5 --test-method snapshot --test-period 1 --device cuda:0 --torch-threads 1 --work-dir output/sgp-validation/cli"
+  },
+  "runner_help_checks": [
+    "python scripts/run_cifar.py --help",
+    "python scripts/run_tiny.py --help"
+  ],
+  "screening": {
+    "run_count": 48,
+    "summary": [
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "dsgd-ring",
+        "seeds": 3,
+        "accuracy_mean": 22.977528208333336,
+        "accuracy_sample_sd": 12.285785876566784,
+        "loss_mean": 2.1916685,
+        "scheduled_gradient_tasks_mean": 394.3333333333333,
+        "completed_model_updates_mean": 386.3333333333333,
+        "wire_bytes_mean": 7621906.666666667
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "sgp-exponential",
+        "seeds": 3,
+        "accuracy_mean": 22.54681666666667,
+        "accuracy_sample_sd": 13.536566859657551,
+        "loss_mean": 2.1849625416666663,
+        "scheduled_gradient_tasks_mean": 407.6666666666667,
+        "completed_model_updates_mean": 399.6666666666667,
+        "wire_bytes_mean": 3933748.0
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "sgp-irregular",
+        "seeds": 3,
+        "accuracy_mean": 22.200374666666665,
+        "accuracy_sample_sd": 13.308955827814517,
+        "loss_mean": 2.187825333333333,
+        "scheduled_gradient_tasks_mean": 408.3333333333333,
+        "completed_model_updates_mean": 400.3333333333333,
+        "wire_bytes_mean": 4420598.0
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "configuration": "dsgd-ring",
+        "seeds": 3,
+        "accuracy_mean": 33.06179766666666,
+        "accuracy_sample_sd": 17.99586485597322,
+        "loss_mean": 2.1845219583333333,
+        "scheduled_gradient_tasks_mean": 394.3333333333333,
+        "completed_model_updates_mean": 386.3333333333333,
+        "wire_bytes_mean": 7621906.666666667
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "configuration": "sgp-exponential",
+        "seeds": 3,
+        "accuracy_mean": 34.41011233333333,
+        "accuracy_sample_sd": 19.096765137521313,
+        "loss_mean": 2.1786927499999997,
+        "scheduled_gradient_tasks_mean": 407.6666666666667,
+        "completed_model_updates_mean": 399.6666666666667,
+        "wire_bytes_mean": 3933748.0
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "configuration": "sgp-irregular",
+        "seeds": 3,
+        "accuracy_mean": 33.764044875,
+        "accuracy_sample_sd": 19.545859302321073,
+        "loss_mean": 2.1782899166666665,
+        "scheduled_gradient_tasks_mean": 408.3333333333333,
+        "completed_model_updates_mean": 400.3333333333333,
+        "wire_bytes_mean": 4420598.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "dsgd-ring",
+        "seeds": 3,
+        "accuracy_mean": 79.28838958333333,
+        "accuracy_sample_sd": 2.118196020108321,
+        "loss_mean": 0.9670385416666667,
+        "scheduled_gradient_tasks_mean": 2144.0,
+        "completed_model_updates_mean": 2136.0,
+        "wire_bytes_mean": 41829648.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "sgp-exponential",
+        "seeds": 3,
+        "accuracy_mean": 80.89887641666665,
+        "accuracy_sample_sd": 2.9615854227046174,
+        "loss_mean": 0.9558045833333333,
+        "scheduled_gradient_tasks_mean": 2168.0,
+        "completed_model_updates_mean": 2160.0,
+        "wire_bytes_mean": 21032040.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "sgp-irregular",
+        "seeds": 3,
+        "accuracy_mean": 78.64232208333334,
+        "accuracy_sample_sd": 2.9496165697247627,
+        "loss_mean": 0.99656475,
+        "scheduled_gradient_tasks_mean": 2160.0,
+        "completed_model_updates_mean": 2152.0,
+        "wire_bytes_mean": 23661045.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "configuration": "dsgd-ring",
+        "seeds": 3,
+        "accuracy_mean": 87.00374533333333,
+        "accuracy_sample_sd": 3.5683372019344484,
+        "loss_mean": 0.9324229583333334,
+        "scheduled_gradient_tasks_mean": 2144.0,
+        "completed_model_updates_mean": 2136.0,
+        "wire_bytes_mean": 41829648.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "configuration": "sgp-exponential",
+        "seeds": 3,
+        "accuracy_mean": 87.05992516666667,
+        "accuracy_sample_sd": 3.529205102486997,
+        "loss_mean": 0.9200609166666668,
+        "scheduled_gradient_tasks_mean": 2168.0,
+        "completed_model_updates_mean": 2160.0,
+        "wire_bytes_mean": 21032040.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "configuration": "sgp-irregular",
+        "seeds": 3,
+        "accuracy_mean": 86.947565625,
+        "accuracy_sample_sd": 3.5261854818505283,
+        "loss_mean": 0.9257797499999999,
+        "scheduled_gradient_tasks_mean": 2160.0,
+        "completed_model_updates_mean": 2152.0,
+        "wire_bytes_mean": 23661045.0
+      },
+      {
+        "condition": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "dsgd-ring",
+        "seeds": 3,
+        "accuracy_mean": 10.870786625,
+        "accuracy_sample_sd": 0.4641209046808451,
+        "loss_mean": 2.290325125,
+        "scheduled_gradient_tasks_mean": 101.0,
+        "completed_model_updates_mean": 93.0,
+        "wire_bytes_mean": 1877660.0
+      },
+      {
+        "condition": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "sgp-exponential",
+        "seeds": 3,
+        "accuracy_mean": 13.988764166666668,
+        "accuracy_sample_sd": 5.022672765524151,
+        "loss_mean": 2.2641277499999997,
+        "scheduled_gradient_tasks_mean": 182.0,
+        "completed_model_updates_mean": 174.0,
+        "wire_bytes_mean": 1734961.6666666667
+      },
+      {
+        "condition": "congested",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "dsgd-ring",
+        "seeds": 3,
+        "accuracy_mean": 14.681648041666667,
+        "accuracy_sample_sd": 3.9237794566166455,
+        "loss_mean": 2.2617835833333335,
+        "scheduled_gradient_tasks_mean": 198.0,
+        "completed_model_updates_mean": 190.0,
+        "wire_bytes_mean": 3749850.0
+      },
+      {
+        "condition": "congested",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "sgp-exponential",
+        "seeds": 3,
+        "accuracy_mean": 24.363295875000002,
+        "accuracy_sample_sd": 9.85832339652379,
+        "loss_mean": 2.185549958333333,
+        "scheduled_gradient_tasks_mean": 408.0,
+        "completed_model_updates_mean": 400.0,
+        "wire_bytes_mean": 3905600.0
+      }
+    ],
+    "paired_capacities": {
+      "ample-uniform-s0": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-uniform-s1": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-uniform-s2": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-heterogeneous-s0": [
+        {
+          "client": 0,
+          "training_speed": 12,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "ample-heterogeneous-s1": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 30,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "ample-heterogeneous-s2": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 4,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        }
+      ],
+      "congested-uniform-s0": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 200000
+        }
+      ],
+      "congested-uniform-s1": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 200000
+        }
+      ],
+      "congested-uniform-s2": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 200000
+        }
+      ],
+      "congested-heterogeneous-s0": [
+        {
+          "client": 0,
+          "training_speed": 12,
+          "bandwidth": 800000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 2,
+          "training_speed": 12,
+          "bandwidth": 100000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 4,
+          "training_speed": 5,
+          "bandwidth": 800000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 100000
+        }
+      ],
+      "congested-heterogeneous-s1": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 800000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 100000
+        },
+        {
+          "client": 3,
+          "training_speed": 30,
+          "bandwidth": 100000
+        },
+        {
+          "client": 4,
+          "training_speed": 12,
+          "bandwidth": 100000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 6,
+          "training_speed": 30,
+          "bandwidth": 800000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 100000
+        }
+      ],
+      "congested-heterogeneous-s2": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 800000
+        },
+        {
+          "client": 1,
+          "training_speed": 2,
+          "bandwidth": 100000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 100000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 800000
+        },
+        {
+          "client": 4,
+          "training_speed": 30,
+          "bandwidth": 100000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 7,
+          "training_speed": 30,
+          "bandwidth": 100000
+        }
+      ]
+    },
+    "manifests": {
+      "digits-default": {
+        "output": "/mnt/data/mdevos/conflux/output/sgp-validation/digits-default",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "sgp",
+          "dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "6078ee49ee3498a3ed80c26739d53869f35bb721ab8fd2401d690556219fad88"
+      },
+      "digits-irregular": {
+        "output": "/mnt/data/mdevos/conflux/output/sgp-validation/digits-irregular",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "sgp"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "irregular",
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "6078ee49ee3498a3ed80c26739d53869f35bb721ab8fd2401d690556219fad88"
+      },
+      "digits-congested": {
+        "output": "/mnt/data/mdevos/conflux/output/sgp-validation/digits-congested",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "sgp",
+          "dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 200000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "6078ee49ee3498a3ed80c26739d53869f35bb721ab8fd2401d690556219fad88"
+      }
+    },
+    "workload": "Offline sklearn digits; 64-32-10 ReLU MLP; 8 clients; 3 simulated seconds; all 8 local models evaluated on all 445 test examples at 1, 2 and 3 seconds; batch32; LR=.05 fixed before execution; zero momentum/decay; one fresh gradient per iteration.",
+    "configurations": [
+      "Ample bandwidth: default exponential SGP and plain ring DSGD across IID/Dirichlet alpha=.3, two capacity profiles, seeds0/1/2 (24 runs)",
+      "Ample bandwidth: irregular directed SGP across the same data/capacities/seeds (12 runs)",
+      "Congested bandwidth: default exponential SGP and plain ring DSGD on Dirichlet alpha=.3, both capacity profiles, seeds0/1/2 (12 runs)"
+    ],
+    "capacity": "Nominal 100 MB/s ample or 200 kB/s congested; 2ms latency. Uniform 9ms gradient. Heterogeneous independently selects 6/15/36/90ms gradients, quarter clients at4x nominal bandwidth and remainder .5x. Exact paired data settings and capacities within condition/profile/seed. Mean capacity differs across profiles.",
+    "wire_layout": "Dense parameters 9640 bytes. SGP numerator+float64 mass packet9648 bytes, header+round metadata; plain DSGD packet9640 bytes plus header/metadata. Default SGP8 directed sends/full iteration vs ring DSGD16; irregular SGP9. Partial horizon transfers included.",
+    "verified": [
+      "48 finite summaries; all8 local models at all3 fixed checkpoints for every run",
+      "Paired capacities across algorithms/topologies/data conditions within condition/profile/seed",
+      "Global bytes sent=received=summary",
+      "Every SGP phase matrix column-stochastic and periodic union strongly connected",
+      "Each completed SGP iteration waits for its gradient, is within horizon, and has the independently predicted scalar mass",
+      "All manifests match the implementation source hash"
+    ],
+    "limitations": [
+      "Short screening, no paper reproduction or larger-model ranking.",
+      "All configurations and common learning rate declared before execution; test metrics did not select configurations or learning rates.",
+      "SGP and ring DSGD use different graph schedules and message counts; performance differences cannot isolate scalar debiasing.",
+      "Default exponential schedule is regular and keeps mass1; irregular runs and independent tests exercise nontrivial correction.",
+      "No Overlap SGP, message loss, churn or optimizer momentum.",
+      "Zero simulated vector/setup cost; scalar compute durations; custom SGP gradients use scalar executor rather than generic train batching.",
+      "Executor wall times overlap tests/other runs and are not simulated protocol speeds."
+    ],
+    "summary_csv": "sgp-digits-summary.csv",
+    "curves_csv": "sgp-digits-curves.csv",
+    "reproduction_commands": [
+      "python scripts/validate_algorithms.py --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --seeds 0 1 2 --device cuda:0 --variants sgp dsgd --partitioners iid dirichlet --bandwidth 100000000 --output output/sgp-validation/digits-default",
+      "python scripts/validate_algorithms.py --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --seeds 0 1 2 --device cuda:0 --variants sgp --sgp-topology irregular --partitioners iid dirichlet --bandwidth 100000000 --output output/sgp-validation/digits-irregular",
+      "python scripts/validate_algorithms.py --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --seeds 0 1 2 --device cuda:0 --variants sgp dsgd --partitioners dirichlet --bandwidth 200000 --output output/sgp-validation/digits-congested"
+    ]
+  }
+}

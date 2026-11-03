@@ -5,6 +5,18 @@ contract. A successful run or registry/settings round-trip does not establish
 algorithmic correctness. These checks cover the stated specialization, not every
 paper option, topology, optimizer, model or failure mode.
 
+## SGP: 3 November 2026
+
+[SGP's contract](sgp.md) implements Algorithm 1 with explicit weighted parameter
+numerators and scalar mass transfers. Independent multi-step trajectories cover
+four directed graph schedules, nontrivial irregular-graph masses, stochastic
+oracles and column-mass conservation. Tests also check bias correction, complete
+graph centralized-SGD equivalence, directed causal waiting, exact traffic,
+small graphs, replay and CPU/CUDA agreement. A standalone pinned-reference
+comparison executes the authors' PushSum and numerator/ratio conversions with
+mocked transport, agreeing within `2.22e-16` in float64. The
+[validation record](validation/sgp.json) preserves screening evidence.
+
 ## RelaySGD: 3 November 2026
 
 [RelaySGD's contract](relaysgd.md) implements Algorithm 1 with explicit tree
