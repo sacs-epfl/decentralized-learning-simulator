@@ -107,6 +107,18 @@ def validate_options(parser, options, base):
         boolean = isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction, argparse.BooleanOptionalAction))
         if value is None and action.default is None:
             pass
+        elif action.nargs in ('+', '*'):
+            if not isinstance(value, list) or (action.nargs == '+' and not value):
+                raise ValueError(f"{key} must be a {'nonempty ' if action.nargs == '+' else ''}list")
+            if action.type is float:
+                if any(type(item) not in (int, float) or not math.isfinite(item) for item in value):
+                    raise ValueError(f"{key} must contain finite numbers")
+                value = [float(item) for item in value]
+            elif action.type is int:
+                if any(type(item) is not int for item in value):
+                    raise ValueError(f"{key} must contain integers")
+            elif any(not isinstance(item, str) for item in value):
+                raise ValueError(f"{key} must contain strings")
         elif boolean:
             if type(value) is not bool:
                 raise ValueError(f"{key} must be true or false")
@@ -124,7 +136,8 @@ def validate_options(parser, options, base):
                 raise ValueError("dataset_data_files must map split names to file paths or lists of paths")
         elif not isinstance(value, str):
             raise ValueError(f"{key} must be a string")
-        if value is not None and action.choices is not None and value not in action.choices:
+        candidates = value if action.nargs in ('+', '*') and value is not None else [value]
+        if value is not None and action.choices is not None and any(item not in action.choices for item in candidates):
             raise ValueError(f"Invalid {key}: {value!r}; expected one of {list(action.choices)}")
         if value is not None and field in PATH_OPTIONS:
             value = _path(value, base)

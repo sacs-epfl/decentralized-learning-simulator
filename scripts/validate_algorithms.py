@@ -35,6 +35,7 @@ from dasklearn.simulation.demo.settings import add_demo_arguments, demo_options
 from dasklearn.tasks.task import Task
 from dasklearn.simulation.choco.settings import add_choco_arguments, choco_options
 from dasklearn.simulation.qgm.settings import add_qgm_arguments, qgm_options
+from dasklearn.simulation.swift.settings import add_swift_arguments, swift_options
 from dasklearn.util import MICROSECONDS
 
 
@@ -59,6 +60,7 @@ async def run_one(args, variant, profile, partitioner, seed):
         if variant!='qgm':specific['mode']=mode
         algorithm='qgm'
     if variant=='choco':specific.update(choco_options(args))
+    if variant=='swift':specific.update(swift_options(args))
     if variant=='demo':specific.update(demo_options(args))
     if variant=='dspodfl':specific.update(dspodfl_options(args))
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
@@ -149,7 +151,7 @@ async def run_one(args, variant, profile, partitioner, seed):
            "learning_rate": args.learning_rate,
            "final_accuracy": float(curve.accuracy.iloc[-1]), "final_loss": float(curve.loss.iloc[-1]),
            "model_bytes": sim.model_size, "bytes_sent": sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
-           "training_tasks": sum(t.func in {"train", "demo_prepare", "qgm_train"} for t in sim.workflow_dag.tasks.values()),
+           "training_tasks": sum(t.func in {"train", "compute_gradient", "demo_prepare", "qgm_train"} for t in sim.workflow_dag.tasks.values()),
            "simulated_compute_s": sum(c.compute_time for c in sim.clients) / MICROSECONDS,
            "actual_execution_s": time.perf_counter() - started}
     if getattr(args,"final_test",False):
@@ -188,6 +190,7 @@ async def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("output/algorithm-validation"))
     parser.add_argument("--dataset", choices=["synthetic", "digits"], default="synthetic")
+    parser.add_argument("--device", default="cpu", help="Numerical execution device, e.g. cpu or cuda:0")
     parser.add_argument("--variants", nargs="+", default=["shatter-r2", "shatter-r4", "moshpit"])
     parser.add_argument("--profiles", nargs="+", choices=["uniform", "heterogeneous"], default=["uniform", "heterogeneous"])
     parser.add_argument("--partitioners", nargs="+", choices=["iid", "dirichlet"], default=["iid", "dirichlet"])
@@ -200,6 +203,7 @@ async def main():
     add_demo_arguments(parser)
     add_choco_arguments(parser)
     add_qgm_arguments(parser)
+    add_swift_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)
     parser.add_argument("--bandwidth", type=int, default=4000)

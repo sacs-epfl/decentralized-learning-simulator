@@ -71,7 +71,9 @@ def session_options(args, device):
     from dasklearn.simulation.demo.settings import demo_options
     from dasklearn.simulation.choco.settings import choco_options
     from dasklearn.simulation.qgm.settings import qgm_options
+    from dasklearn.simulation.swift.settings import swift_options
     algorithm_params = {
+        "swift": swift_options(args),
         "qgm": qgm_options(args),
         "choco": choco_options(args),
         "demo": demo_options(args),

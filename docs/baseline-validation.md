@@ -5,6 +5,16 @@ contract. A successful run or registry/settings round-trip does not establish
 algorithmic correctness. These checks cover the stated specialization, not every
 paper option, topology, optimizer, model or failure mode.
 
+## SWIFT: 3 November 2026
+
+[SWIFT's contract and results](swift.md) document the new wait-free baseline:
+one-minibatch pre-average gradients, persistent versioned neighbor caches,
+periodic averaging, and regular-graph CCS. Independent numerical/causal tests
+also cover network congestion, CPU/CUDA equivalence, saved-DAG replay and
+fixed-time evaluation. The [validation record](validation/swift.json) and
+[48-run digits screening](validation/swift-digits-summary.csv) include both
+ample-bandwidth gains and the stale-cache accuracy failure under congestion.
+
 ## First maintenance audit: 19 October 2026
 
 The maintained tests in `tests/test_classic_baselines.py` now execute the older

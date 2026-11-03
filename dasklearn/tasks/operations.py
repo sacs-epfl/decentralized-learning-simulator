@@ -29,6 +29,8 @@ OPERATIONS = {name: Operation(f"dasklearn.functions:{name}", outputs, name in RE
 
 OPERATIONS["membership_inference"] = Operation(
     "dasklearn.privacy.membership:evaluate_membership", 1, True)
+OPERATIONS["swift_update"] = Operation("dasklearn.optimizer.swift:update", 1, True)
+OPERATIONS["swift_pack"] = Operation("dasklearn.optimizer.swift:pack", 1, True)
 OPERATIONS["complete_incoming"] = Operation(
     "dasklearn.privacy.incoming:complete_incoming_operation", 1, True)
 

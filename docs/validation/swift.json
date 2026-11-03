@@ -1,0 +1,941 @@
+{
+  "date": "2026-11-03",
+  "base_commit": "bda202a726dbc506b6ba07201649976d3a30c11d",
+  "benchmark_source_sha256": "ccfa7476975fcc7cad832a432f43c45ded2e60b8eb784b391bb902eb77093aa8",
+  "validated_source_sha256": "f9307228ddccc5264764d1b97c26b1af85ba4a215aba12061350eeae6725e320",
+  "source_hash_method": "SHA256 of relative path bytes plus content, sorted dasklearn/**/*.py, args.py, main.py, scripts/validate_algorithms.py; matches shared runner manifest recipe",
+  "post_benchmark_code_change": "Only dasklearn/experiments.py: accept and validate list-valued JSON/YAML settings for swift_influence. Benchmark CLI configuration and all numerical/protocol code are unchanged; replacing this file with HEAD exactly reproduces the benchmark digest.",
+  "environment": {
+    "python": "3.12.15",
+    "torch": "2.14.1+cu130",
+    "numpy": "2.5.4",
+    "conda_prefix": "/mnt/data/mdevos/conda/envs/conflux-gpu",
+    "device": "cuda:0",
+    "gpu": "NVIDIA RTX 5000 Ada Generation"
+  },
+  "references": [
+    "https://arxiv.org/abs/2210.14026",
+    "https://github.com/umd-huang-lab/SWIFT"
+  ],
+  "scope": "SWIFT Algorithm 1 with persistent neighbor caches; regular-graph CCS; stable membership; no momentum; one gradient per step; broadcasts every step and averages every H steps.",
+  "benchmark": {
+    "workload": "Offline sklearn digits; 64-32-10 ReLU MLP; 8 clients in a ring; alpha=.3; batch size 32; LR=.05 fixed in advance; zero momentum/decay; one minibatch per update; uniform CIS; averaging_interval=1; 3 simulated seconds; local-model snapshots at 1,2,3 seconds; all 445 test examples; 3 seeds.",
+    "run_count": 48,
+    "payload": "Both algorithms send 9640 dense parameter bytes per neighbor plus their respective headers/metadata; generic serialized model_size is not the vector wire size.",
+    "capacities": "Uniform clients: 9ms per gradient and nominal bandwidth. Heterogeneous: independent seeded compute/network rankings, quarter clients at 4x nominal bandwidth and remainder at .5x; gradient durations 6,15,36,90ms. Mean capacity is not matched between uniform and heterogeneous profiles. Exact paired capacities are recorded below.",
+    "nominal_bandwidth_bytes_per_second": {
+      "congested": 1000000,
+      "ample": 100000000
+    },
+    "wire_accounting": "Includes partially transmitted bytes at the final horizon, even for models not yet delivered.",
+    "summaries": [
+      {
+        "regime": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 22.977528208333336,
+        "accuracy_sample_sd": 12.285785876566784,
+        "loss_mean": 2.1916685,
+        "scheduled_gradient_tasks_mean": 394.3333333333333,
+        "completed_updates_mean": 386.3333333333333,
+        "wire_bytes_mean": 7621906.666666667,
+        "time_to_40pct_reached_seeds": 0,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "swift",
+        "seeds": 3,
+        "accuracy_mean": 46.142322166666666,
+        "accuracy_sample_sd": 8.30056577321004,
+        "loss_mean": 1.8025746666666667,
+        "scheduled_gradient_tasks_mean": 1485.3333333333333,
+        "completed_updates_mean": 1477.3333333333333,
+        "wire_bytes_mean": 28908045.333333332,
+        "time_to_40pct_reached_seeds": 2,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 33.06179766666666,
+        "accuracy_sample_sd": 17.99586485597322,
+        "loss_mean": 2.1845219583333333,
+        "scheduled_gradient_tasks_mean": 394.3333333333333,
+        "completed_updates_mean": 386.3333333333333,
+        "wire_bytes_mean": 7621906.666666667,
+        "time_to_40pct_reached_seeds": 1,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "swift",
+        "seeds": 3,
+        "accuracy_mean": 70.26217224999999,
+        "accuracy_sample_sd": 9.275038063902446,
+        "loss_mean": 1.835753875,
+        "scheduled_gradient_tasks_mean": 1485.3333333333333,
+        "completed_updates_mean": 1477.3333333333333,
+        "wire_bytes_mean": 28908045.333333332,
+        "time_to_40pct_reached_seeds": 3,
+        "time_to_80pct_reached_seeds": 1
+      },
+      {
+        "regime": "ample",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 79.28838958333333,
+        "accuracy_sample_sd": 2.118196020108321,
+        "loss_mean": 0.9670385416666667,
+        "scheduled_gradient_tasks_mean": 2144.0,
+        "completed_updates_mean": 2136.0,
+        "wire_bytes_mean": 41829648.0,
+        "time_to_40pct_reached_seeds": 3,
+        "time_to_80pct_reached_seeds": 2
+      },
+      {
+        "regime": "ample",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "swift",
+        "seeds": 3,
+        "accuracy_mean": 83.44569295833334,
+        "accuracy_sample_sd": 0.5894415736086049,
+        "loss_mean": 0.7528030416666667,
+        "scheduled_gradient_tasks_mean": 2672.0,
+        "completed_updates_mean": 2664.0,
+        "wire_bytes_mean": 52003712.0,
+        "time_to_40pct_reached_seeds": 3,
+        "time_to_80pct_reached_seeds": 3
+      },
+      {
+        "regime": "ample",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 87.00374533333333,
+        "accuracy_sample_sd": 3.5683372019344484,
+        "loss_mean": 0.9324229583333334,
+        "scheduled_gradient_tasks_mean": 2144.0,
+        "completed_updates_mean": 2136.0,
+        "wire_bytes_mean": 41829648.0,
+        "time_to_40pct_reached_seeds": 3,
+        "time_to_80pct_reached_seeds": 3
+      },
+      {
+        "regime": "ample",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "swift",
+        "seeds": 3,
+        "accuracy_mean": 89.69101129166665,
+        "accuracy_sample_sd": 2.7975892793305737,
+        "loss_mean": 0.6933193750000001,
+        "scheduled_gradient_tasks_mean": 2672.0,
+        "completed_updates_mean": 2664.0,
+        "wire_bytes_mean": 52003712.0,
+        "time_to_40pct_reached_seeds": 3,
+        "time_to_80pct_reached_seeds": 3
+      },
+      {
+        "regime": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 18.857678,
+        "accuracy_sample_sd": 7.139493082241825,
+        "loss_mean": 2.2310836666666667,
+        "scheduled_gradient_tasks_mean": 295.3333333333333,
+        "completed_updates_mean": 287.3333333333333,
+        "wire_bytes_mean": 5668751.666666667,
+        "time_to_40pct_reached_seeds": 0,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "swift",
+        "seeds": 3,
+        "accuracy_mean": 10.252809125,
+        "accuracy_sample_sd": 0.42507715279003,
+        "loss_mean": 2.30022125,
+        "scheduled_gradient_tasks_mean": 1485.3333333333333,
+        "completed_updates_mean": 1477.3333333333333,
+        "wire_bytes_mean": 11524166.333333334,
+        "time_to_40pct_reached_seeds": 0,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 24.09176033333333,
+        "accuracy_sample_sd": 4.4138083561601205,
+        "loss_mean": 2.2223272916666668,
+        "scheduled_gradient_tasks_mean": 295.3333333333333,
+        "completed_updates_mean": 287.3333333333333,
+        "wire_bytes_mean": 5668751.666666667,
+        "time_to_40pct_reached_seeds": 0,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "swift",
+        "seeds": 3,
+        "accuracy_mean": 10.000000166666666,
+        "accuracy_sample_sd": 0.340571995591753,
+        "loss_mean": 2.2939963333333337,
+        "scheduled_gradient_tasks_mean": 1485.3333333333333,
+        "completed_updates_mean": 1477.3333333333333,
+        "wire_bytes_mean": 11524166.333333334,
+        "time_to_40pct_reached_seeds": 0,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "congested",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 42.11610483333333,
+        "accuracy_sample_sd": 8.421643115279425,
+        "loss_mean": 1.9880417083333333,
+        "scheduled_gradient_tasks_mean": 788.0,
+        "completed_updates_mean": 780.0,
+        "wire_bytes_mean": 15257145.0,
+        "time_to_40pct_reached_seeds": 2,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "congested",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "swift",
+        "seeds": 3,
+        "accuracy_mean": 9.288389458333333,
+        "accuracy_sample_sd": 1.2105841308629455,
+        "loss_mean": 2.3124627083333333,
+        "scheduled_gradient_tasks_mean": 2672.0,
+        "completed_updates_mean": 2664.0,
+        "wire_bytes_mean": 24000000.0,
+        "time_to_40pct_reached_seeds": 0,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "congested",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 63.47378279166667,
+        "accuracy_sample_sd": 1.590079281252423,
+        "loss_mean": 1.9931132083333332,
+        "scheduled_gradient_tasks_mean": 788.0,
+        "completed_updates_mean": 780.0,
+        "wire_bytes_mean": 15257145.0,
+        "time_to_40pct_reached_seeds": 3,
+        "time_to_80pct_reached_seeds": 0
+      },
+      {
+        "regime": "congested",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "swift",
+        "seeds": 3,
+        "accuracy_mean": 8.754681750000001,
+        "accuracy_sample_sd": 1.9081148255990943,
+        "loss_mean": 2.3093011249999997,
+        "scheduled_gradient_tasks_mean": 2672.0,
+        "completed_updates_mean": 2664.0,
+        "wire_bytes_mean": 24000000.0,
+        "time_to_40pct_reached_seeds": 0,
+        "time_to_80pct_reached_seeds": 0
+      }
+    ],
+    "paired_capacities": {
+      "ample-uniform-s0": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-uniform-s1": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-uniform-s2": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-heterogeneous-s0": [
+        {
+          "client": 0,
+          "training_speed": 12,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "ample-heterogeneous-s1": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 30,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "ample-heterogeneous-s2": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 4,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        }
+      ],
+      "congested-uniform-s0": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        }
+      ],
+      "congested-uniform-s1": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        }
+      ],
+      "congested-uniform-s2": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 1000000
+        }
+      ],
+      "congested-heterogeneous-s0": [
+        {
+          "client": 0,
+          "training_speed": 12,
+          "bandwidth": 4000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 500000
+        },
+        {
+          "client": 2,
+          "training_speed": 12,
+          "bandwidth": 500000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 500000
+        },
+        {
+          "client": 4,
+          "training_speed": 5,
+          "bandwidth": 4000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 500000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 500000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 500000
+        }
+      ],
+      "congested-heterogeneous-s1": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 500000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 4000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 500000
+        },
+        {
+          "client": 3,
+          "training_speed": 30,
+          "bandwidth": 500000
+        },
+        {
+          "client": 4,
+          "training_speed": 12,
+          "bandwidth": 500000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 500000
+        },
+        {
+          "client": 6,
+          "training_speed": 30,
+          "bandwidth": 4000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 500000
+        }
+      ],
+      "congested-heterogeneous-s2": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 4000000
+        },
+        {
+          "client": 1,
+          "training_speed": 2,
+          "bandwidth": 500000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 500000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 4000000
+        },
+        {
+          "client": 4,
+          "training_speed": 30,
+          "bandwidth": 500000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 500000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 500000
+        },
+        {
+          "client": 7,
+          "training_speed": 30,
+          "bandwidth": 500000
+        }
+      ]
+    },
+    "manifests": {
+      "ample": {
+        "output": "/mnt/data/mdevos/conflux/output/swift-validation/digits-ample",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "swift",
+          "dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "ccfa7476975fcc7cad832a432f43c45ded2e60b8eb784b391bb902eb77093aa8"
+      },
+      "congested": {
+        "output": "/mnt/data/mdevos/conflux/output/swift-validation/digits-congested",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "swift",
+          "dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 1000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "ccfa7476975fcc7cad832a432f43c45ded2e60b8eb784b391bb902eb77093aa8"
+      }
+    },
+    "summary_csv": "swift-digits-summary.csv",
+    "curves_csv": "swift-digits-curves.csv",
+    "limitations": [
+      "Short screening; no CIFAR/ImageNet reproduction or hyperparameter tuning.",
+      "Digits has only a test split; no metric from this screening was used to select the fixed learning rate.",
+      "Uniform CIS do not ensure equal-client optimization when empirical activation frequencies differ.",
+      "Zero simulated aggregation/setup cost, constant step durations, stable membership, unconstrained send queues.",
+      "Scalar CUDA gradients; concurrent benchmark/test jobs make measured executor wall time unsuitable for performance comparisons."
+    ],
+    "reproduction_command": "python scripts/validate_algorithms.py --variants swift dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --bandwidth BANDWIDTH --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --partitioners iid dirichlet --seeds 0 1 2 --device cuda:0 --output OUTPUT"
+  },
+  "cli_smoke": {
+    "command": "python main.py --local --algorithm swift --dataset synthetic --model mlp --peers 4 --local-steps 1 --momentum 0 --learning-rate .05 --swift-averaging-interval 2 --rounds 3 --duration 3 --test-method snapshot --test-period 1 --device cuda:0 --torch-threads 1 --work-dir output/swift-validation/cli",
+    "exit_code": 0
+  },
+  "tests": {
+    "command": "python -m pytest -q",
+    "passed": 439,
+    "warnings": 5,
+    "duration_seconds": 103.01,
+    "swift_specific_cases": 45,
+    "coverage": [
+      "Independent multistep logistic reference with causal mailbox traces and exact traffic",
+      "Uniform/nonuniform regular-graph CCS expected-matrix invariants",
+      "Wait-free progress despite slow compute and no completed transfers",
+      "Monotonic versions, duplicate/stale/non-neighbor rejection",
+      "Periodic averaging, ring/complete/kreg and one/two-peer edge cases",
+      "Fixed-time snapshots, immutable models/gradients/local buffers",
+      "Seeded DAG/metric reproducibility and saved-DAG custom-operation replay",
+      "CPU/CUDA equivalence with training backend enabled",
+      "CLI, baseline aliases, settings serialization, JSON/YAML vector input validation",
+      "Full maintained-suite regression checks"
+    ]
+  }
+}

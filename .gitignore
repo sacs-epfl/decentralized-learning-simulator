@@ -10,3 +10,4 @@ output/**/replays/
 output/classic-validation/
 output/choco-validation/
 output/qgm-validation/
+output/swift-validation/

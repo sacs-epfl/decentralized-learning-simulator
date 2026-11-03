@@ -7,6 +7,7 @@ from importlib import import_module
 
 
 ALGORITHMS = {
+    'swift': ('swift', 'SwiftSettings', 'SwiftSimulation'),
     'qgm': ('qgm', 'QGMSettings', 'QGMSimulation'),
     'choco': ('choco', 'ChocoSettings', 'ChocoSimulation'),
     'fl': ('fl', 'FLSettings', 'FLSimulation'),
