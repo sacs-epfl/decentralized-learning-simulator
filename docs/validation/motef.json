@@ -1,0 +1,1014 @@
+{
+  "date": "2026-11-03",
+  "base_commit": "ba38fde4a2b978890274248efee036b936d3187b",
+  "source_sha256": "f66ca65f5096f8ee9463e329eafd82625b98197205be40d587adbfa2b848d6f7",
+  "source_hash_method": "Sorted relative path bytes plus content of dasklearn/**/*.py, args.py, main.py, scripts/validate_algorithms.py; matches shared runner manifests",
+  "references": {
+    "paper": "https://proceedings.iclr.cc/paper_files/paper/2025/hash/39b77b5e422b4e070e2811b73ea9bcf7-Abstract-Conference.html",
+    "paper_pdf_sha256": "b582ea1b51af22c394fb6639fa1c57a6258da3587eba2ae6443071be4907d04c",
+    "repository": "https://github.com/mlolab/MoTEF",
+    "commit": "10919bd38e093897329d1b096ba037701084d635",
+    "contract": "Base Algorithm1; x step uses old tracker and OLD compressed model estimates; fresh gradient evaluated at next x; EMA momentum difference and OLD compressed tracker correction update v; compress model/tracker residuals and persist both weighted memories.",
+    "initialization": "H0=G0=weighted memories0; V0=M0=one charged local minibatch gradient. Matches synthetic solver consistent initialization, with minibatch instead of full gradient.",
+    "reference_differences": [
+      "Main optimizer init has V0=gradient and M0=0; we preserve V0=M0 as required by the paper tracking invariant.",
+      "Main top helper partitions signed values; we use magnitude-Top-k from the paper and actual synthetic helper.",
+      "Cold estimates differ from appendix warm initialization for its simplified initial Lyapunov bound. No free neighbor state/initial full-gradient oracle."
+    ],
+    "scope": "One fresh gradient per iteration plus charged bootstrap, shared momentum0, fixed symmetric ring/complete/connected regular graphs, stable membership, fully trainable common-dtype parameters, local buffers. Fused two-channel send after gradient; no transfer/compute overlap, MoTEF-VR, local-SGD blocks, loss/recovery, churn or LoRA."
+  },
+  "environment": {
+    "conda_prefix": "/mnt/data/mdevos/conda/envs/conflux-gpu",
+    "python": "3.12.15",
+    "torch": "2.14.1+cu130",
+    "numpy": "2.5.4",
+    "device": "cuda:0",
+    "gpu": "NVIDIA RTX 5000 Ada Generation"
+  },
+  "tests": {
+    "command": "python -m pytest -q",
+    "passed": 724,
+    "warnings": 5,
+    "duration_seconds": 115.95,
+    "motef_specific_cases": 65,
+    "checks": [
+      "Independent full trajectories for model, EMA momentum, tracker, own compressed estimates and weighted memories, three compressors, two graphs, lambda.2/1, skew and global barriers",
+      "Mean tracker equals mean EMA momentum; model mean uses previous momentum mean",
+      "Known changing oracle at next model and exact previous momentum retention",
+      "Global magnitude-Top-k/unscaled random-k/identity layout, exact coordinates/value payload and ceil keep count",
+      "Charged bootstrap, all same-iteration deliveries, duplicate/early guards and exact fused-packet traffic",
+      "One-client EMA-SGD, small/regular graphs, immutable inputs/local buffers, duration stopping and fixed-time snapshots",
+      "Seeded stochastic reproducibility, streaming, saved-DAG replay and CPU/CUDA agreement across all states and packets",
+      "Registry/settings/CLI/comparison aliases and full maintained regressions"
+    ]
+  },
+  "reference_check": {
+    "command": "python tests/check_motef_reference.py /tmp/conflux-motef-reference",
+    "passed": true,
+    "reference_commit": "10919bd38e093897329d1b096ba037701084d635",
+    "workers": 4,
+    "iterations": 8,
+    "topologies": [
+      "ring",
+      "complete"
+    ],
+    "compressors": [
+      "identity",
+      "magnitude-topk"
+    ],
+    "momentum_weights": [
+      0.2,
+      1.0
+    ],
+    "max_state_or_packet_error": 1.9984014443252818e-15,
+    "max_synthetic_solver_parameter_error": 3.3306690738754696e-16,
+    "source_sha256": {
+      "MoTEF.py": "5b2f8d8c5ce6d4c329eca5dc7f40338e26f114329f935136c35d565043531f70",
+      "synthetic/solvers.py": "daa116b8476c437ffb1a2b1f746cb460e6fb7cec509b839fd33ee9f997431ba5",
+      "synthetic/utils.py": "00eec06c97a0491c65d059dc6eeebf3a11428ea6b62fc2778ddf5461e13a8e83"
+    },
+    "scope": "Actual BEER_Momentum.update recurrence, actual synthetic topK, and actual synthetic beerM solver; H0=G0=0, V0=M0=local gradient; deterministic non-IID quadratics; excludes main optimizer init, signed-order main compressor and deployment"
+  },
+  "cli_smoke": {
+    "exit_code": 0,
+    "command": "python main.py --local --algorithm motef --dataset synthetic --model mlp --peers 4 --local-steps 1 --momentum 0 --learning-rate .05 --rounds 6 --duration 5 --test-method snapshot --test-period 1 --device cuda:0 --torch-threads 1 --work-dir output/motef-validation/cli"
+  },
+  "runner_help_checks": [
+    "python scripts/run_cifar.py --help",
+    "python scripts/run_tiny.py --help"
+  ],
+  "screening": {
+    "run_count": 54,
+    "summary": [
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "choco",
+        "seeds": 3,
+        "accuracy_mean": 15.177902666666668,
+        "accuracy_sample_sd": 5.156949331203439,
+        "loss_mean": 2.4179590416666668,
+        "scheduled_gradient_tasks_mean": 394.6666666666667,
+        "completed_model_updates_mean": 386.6666666666667,
+        "wire_bytes_mean": 322458.6666666667
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 19.850187458333334,
+        "accuracy_sample_sd": 13.167337663915893,
+        "loss_mean": 2.2020227083333332,
+        "scheduled_gradient_tasks_mean": 368.0,
+        "completed_model_updates_mean": 360.0,
+        "wire_bytes_mean": 14185141.333333334
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "motef",
+        "seeds": 3,
+        "accuracy_mean": 17.0411985,
+        "accuracy_sample_sd": 4.801344245074714,
+        "loss_mean": 2.289185125,
+        "scheduled_gradient_tasks_mean": 394.6666666666667,
+        "completed_model_updates_mean": 378.6666666666667,
+        "wire_bytes_mean": 529152.0
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "choco",
+        "seeds": 3,
+        "accuracy_mean": 31.928838916666667,
+        "accuracy_sample_sd": 14.463546453172174,
+        "loss_mean": 2.1856907916666666,
+        "scheduled_gradient_tasks_mean": 394.6666666666667,
+        "completed_model_updates_mean": 386.6666666666667,
+        "wire_bytes_mean": 322458.6666666667
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 30.51498125,
+        "accuracy_sample_sd": 16.572660861510556,
+        "loss_mean": 2.1951729166666665,
+        "scheduled_gradient_tasks_mean": 368.0,
+        "completed_model_updates_mean": 360.0,
+        "wire_bytes_mean": 14185141.333333334
+      },
+      {
+        "condition": "ample",
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "variant": "motef",
+        "seeds": 3,
+        "accuracy_mean": 31.825842791666663,
+        "accuracy_sample_sd": 15.648563511281907,
+        "loss_mean": 2.19791975,
+        "scheduled_gradient_tasks_mean": 394.6666666666667,
+        "completed_model_updates_mean": 378.6666666666667,
+        "wire_bytes_mean": 529152.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "choco",
+        "seeds": 3,
+        "accuracy_mean": 51.57303366666667,
+        "accuracy_sample_sd": 3.2868771077641497,
+        "loss_mean": 1.3699196666666669,
+        "scheduled_gradient_tasks_mean": 2184.0,
+        "completed_model_updates_mean": 2176.0,
+        "wire_bytes_mean": 1793296.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 77.55617966666667,
+        "accuracy_sample_sd": 5.3697258297607044,
+        "loss_mean": 1.2156854583333334,
+        "scheduled_gradient_tasks_mean": 1798.0,
+        "completed_model_updates_mean": 1790.0,
+        "wire_bytes_mean": 69866496.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "motef",
+        "seeds": 3,
+        "accuracy_mean": 78.52996258333333,
+        "accuracy_sample_sd": 1.277806929084303,
+        "loss_mean": 0.9323889583333335,
+        "scheduled_gradient_tasks_mean": 2184.0,
+        "completed_model_updates_mean": 2168.0,
+        "wire_bytes_mean": 2987760.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "choco",
+        "seeds": 3,
+        "accuracy_mean": 85.29026220833335,
+        "accuracy_sample_sd": 4.398766391809212,
+        "loss_mean": 0.9138578333333333,
+        "scheduled_gradient_tasks_mean": 2184.0,
+        "completed_model_updates_mean": 2176.0,
+        "wire_bytes_mean": 1793296.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 83.604869,
+        "accuracy_sample_sd": 4.777786496551195,
+        "loss_mean": 1.1679090833333334,
+        "scheduled_gradient_tasks_mean": 1798.0,
+        "completed_model_updates_mean": 1790.0,
+        "wire_bytes_mean": 69866496.0
+      },
+      {
+        "condition": "ample",
+        "profile": "uniform",
+        "partitioner": "iid",
+        "variant": "motef",
+        "seeds": 3,
+        "accuracy_mean": 85.92696629166666,
+        "accuracy_sample_sd": 4.009185724757743,
+        "loss_mean": 0.9559787083333333,
+        "scheduled_gradient_tasks_mean": 2184.0,
+        "completed_model_updates_mean": 2168.0,
+        "wire_bytes_mean": 2987760.0
+      },
+      {
+        "condition": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "choco",
+        "seeds": 3,
+        "accuracy_mean": 14.850187333333333,
+        "accuracy_sample_sd": 4.608311307817469,
+        "loss_mean": 2.4302243333333333,
+        "scheduled_gradient_tasks_mean": 374.3333333333333,
+        "completed_model_updates_mean": 366.3333333333333,
+        "wire_bytes_mean": 304340.0
+      },
+      {
+        "condition": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 8.867041541666667,
+        "accuracy_sample_sd": 2.2057867964256768,
+        "loss_mean": 2.303109791666667,
+        "scheduled_gradient_tasks_mean": 53.666666666666664,
+        "completed_model_updates_mean": 45.666666666666664,
+        "wire_bytes_mean": 1922786.0
+      },
+      {
+        "condition": "congested",
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "variant": "motef",
+        "seeds": 3,
+        "accuracy_mean": 16.10486895833333,
+        "accuracy_sample_sd": 3.1057219889169003,
+        "loss_mean": 2.3026006666666667,
+        "scheduled_gradient_tasks_mean": 362.6666666666667,
+        "completed_model_updates_mean": 346.6666666666667,
+        "wire_bytes_mean": 481372.3333333333
+      },
+      {
+        "condition": "congested",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "choco",
+        "seeds": 3,
+        "accuracy_mean": 39.269662875,
+        "accuracy_sample_sd": 6.615213360695863,
+        "loss_mean": 1.7370180416666667,
+        "scheduled_gradient_tasks_mean": 1592.0,
+        "completed_model_updates_mean": 1584.0,
+        "wire_bytes_mean": 1305216.0
+      },
+      {
+        "condition": "congested",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 10.411985083333333,
+        "accuracy_sample_sd": 0.7223707906530903,
+        "loss_mean": 2.287233666666667,
+        "scheduled_gradient_tasks_mean": 104.0,
+        "completed_model_updates_mean": 96.0,
+        "wire_bytes_mean": 3854357.0
+      },
+      {
+        "condition": "congested",
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "variant": "motef",
+        "seeds": 3,
+        "accuracy_mean": 54.80337083333333,
+        "accuracy_sample_sd": 2.460872911004668,
+        "loss_mean": 1.5881322083333334,
+        "scheduled_gradient_tasks_mean": 1346.0,
+        "completed_model_updates_mean": 1330.0,
+        "wire_bytes_mean": 1840400.0
+      }
+    ],
+    "paired_capacities": {
+      "ample-uniform-s0": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-uniform-s1": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-uniform-s2": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "ample-heterogeneous-s0": [
+        {
+          "client": 0,
+          "training_speed": 12,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "ample-heterogeneous-s1": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 30,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "ample-heterogeneous-s2": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 4,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        }
+      ],
+      "congested-uniform-s0": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 200000
+        }
+      ],
+      "congested-uniform-s1": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 200000
+        }
+      ],
+      "congested-uniform-s2": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 200000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 200000
+        }
+      ],
+      "congested-heterogeneous-s0": [
+        {
+          "client": 0,
+          "training_speed": 12,
+          "bandwidth": 800000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 2,
+          "training_speed": 12,
+          "bandwidth": 100000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 4,
+          "training_speed": 5,
+          "bandwidth": 800000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 100000
+        }
+      ],
+      "congested-heterogeneous-s1": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 800000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 100000
+        },
+        {
+          "client": 3,
+          "training_speed": 30,
+          "bandwidth": 100000
+        },
+        {
+          "client": 4,
+          "training_speed": 12,
+          "bandwidth": 100000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 6,
+          "training_speed": 30,
+          "bandwidth": 800000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 100000
+        }
+      ],
+      "congested-heterogeneous-s2": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 800000
+        },
+        {
+          "client": 1,
+          "training_speed": 2,
+          "bandwidth": 100000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 100000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 800000
+        },
+        {
+          "client": 4,
+          "training_speed": 30,
+          "bandwidth": 100000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 100000
+        },
+        {
+          "client": 7,
+          "training_speed": 30,
+          "bandwidth": 100000
+        }
+      ]
+    },
+    "manifests": {
+      "digits-ample": {
+        "output": "/mnt/data/mdevos/conflux/output/motef-validation/digits-ample",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "motef",
+          "choco",
+          "gt-dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "f66ca65f5096f8ee9463e329eafd82625b98197205be40d587adbfa2b848d6f7"
+      },
+      "digits-congested": {
+        "output": "/mnt/data/mdevos/conflux/output/motef-validation/digits-congested",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "motef",
+          "choco",
+          "gt-dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 200000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "f66ca65f5096f8ee9463e329eafd82625b98197205be40d587adbfa2b848d6f7"
+      }
+    },
+    "workload": "Offline sklearn digits, 64-32-10 ReLU MLP,8 clients on ring,3 simulated seconds, all8 local models on all445 test examples at1/2/3 seconds. Seeds0/1/2, batch32, fixed LR.05, shared momentum0 and decay0, one fresh gradient per iteration.",
+    "configurations": [
+      "Ample nominal bandwidth100 MB/s: base MoTEF, CHOCO-SGD and GT-DSGD, both capacity profiles, IID/Dirichlet alpha.3 (36 runs)",
+      "Congested nominal bandwidth200 kB/s: same algorithms/profiles/seeds on Dirichlet alpha.3 (18 runs)"
+    ],
+    "hyperparameters": "MoTEF default magnitude-Top-k keep.01 over whole vector, gamma.1, lambda.1; CHOCO default Top-k keep.01 per tensor, gamma.1; GT-DSGD default ring. All parameters fixed before execution; test metrics did not select settings.",
+    "capacity": "Latency2ms. Uniform gradients9ms; heterogeneous independently selects6/15/36/90ms, quarter clients at4x nominal bandwidth and rest.5x. Exact paired capacities within condition/profile/seed; means differ across profiles.",
+    "wire_layout": "Dense parameters9640 bytes. MoTEF fused packet600 bytes for two global Top-k residuals, k25 each with int64 indices+float32 values. CHOCO per-tensor Top-k packet300 bytes. Both add one header/metadata per neighbor. GT-DSGD two sequential9640-byte vectors per neighbor with phase metadata. All use same8-node ring/Metropolis W; partial final-horizon traffic included.",
+    "verified": [
+      "54 finite summaries; all8 local models at all3 checkpoints in every run",
+      "Exact paired capacities across algorithms/data settings within condition/profile/seed",
+      "Global bytes sent=received=summary",
+      "MoTEF W symmetric/doubly stochastic; eight charged bootstrap completions per run",
+      "Completed MoTEF iterations contiguous per client, after gradient readiness and bootstrap, within horizon",
+      "All manifests match implementation source hash"
+    ],
+    "limitations": [
+      "Short untuned screening, no larger-model ranking or paper reproduction.",
+      "Top-k granularity differs: global MoTEF versus per-tensor CHOCO. Counts happen to be25 each on this model; channels and update ordering differ.",
+      "MoTEF has an extra charged initial gradient, cold estimates and persistent EMA momentum; controls use their own documented startup.",
+      "No dense MoTEF compression ablation or MoTEF-VR in this screening.",
+      "Scalar CUDA executor wall time overlaps other validation work and does not feed back into protocol time.",
+      "Zero simulated compression/vector/setup cost, stable clients and constant gradient durations."
+    ],
+    "summary_csv": "motef-digits-summary.csv",
+    "curves_csv": "motef-digits-curves.csv",
+    "reproduction_commands": [
+      "python scripts/validate_algorithms.py --variants motef choco gt-dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --seeds 0 1 2 --device cuda:0 --partitioners iid dirichlet --bandwidth 100000000 --output output/motef-validation/digits-ample",
+      "python scripts/validate_algorithms.py --variants motef choco gt-dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --seeds 0 1 2 --device cuda:0 --partitioners dirichlet --bandwidth 200000 --output output/motef-validation/digits-congested"
+    ]
+  }
+}

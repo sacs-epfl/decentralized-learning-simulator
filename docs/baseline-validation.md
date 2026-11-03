@@ -5,6 +5,19 @@ contract. A successful run or registry/settings round-trip does not establish
 algorithmic correctness. These checks cover the stated specialization, not every
 paper option, topology, optimizer, model or failure mode.
 
+## MoTEF: 3 November 2026
+
+[MoTEF's contract](motef.md) implements base Algorithm 1, with one charged
+startup gradient, equal initial momentum/tracker, and zero compressed estimates.
+Independent multi-step trajectories check all six state vectors, model and
+compressed deltas, including changing gradients, mean invariants and exact fused
+traffic. Startup, causal waiting, replay, snapshots and CPU/CUDA agreement are
+covered. The pinned main reference update, with declared initial state and the
+synthetic magnitude-Top-k helper, agrees within `2.00e-15` across states/packets;
+the actual synthetic solver agrees within `3.33e-16` on final models. The
+[validation record](validation/motef.json) preserves the precise scope and short
+screening results; reference initializer/compressor differences are explicit.
+
 ## SGP: 3 November 2026
 
 [SGP's contract](sgp.md) implements Algorithm 1 with explicit weighted parameter

@@ -58,6 +58,8 @@ def create_parser():
     add_relaysgd_arguments(parser)
     from dasklearn.simulation.sgp.settings import add_sgp_arguments
     add_sgp_arguments(parser)
+    from dasklearn.simulation.motef.settings import add_motef_arguments
+    add_motef_arguments(parser)
     parser.add_argument('--group-size', type=int, default=8)
     parser.add_argument('--averaging-steps', type=int, default=1)
     parser.add_argument('--teleportation-topology', choices=['ring', 'hypercube', 'complete'], default='ring')

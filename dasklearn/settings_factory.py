@@ -76,7 +76,9 @@ def session_options(args, device):
     from dasklearn.simulation.detag.settings import detag_options
     from dasklearn.simulation.relaysgd.settings import relaysgd_options
     from dasklearn.simulation.sgp.settings import sgp_options
+    from dasklearn.simulation.motef.settings import motef_options
     algorithm_params = {
+        "motef": motef_options(args),
         "sgp": sgp_options(args),
         "relaysgd": relaysgd_options(args),
         "detag": detag_options(args),

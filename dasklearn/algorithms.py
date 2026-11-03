@@ -7,6 +7,7 @@ from importlib import import_module
 
 
 ALGORITHMS = {
+    'motef': ('motef', 'MoTEFSettings', 'MoTEFSimulation'),
     'sgp': ('sgp', 'SGPSettings', 'SGPSimulation'),
     'relaysgd': ('relaysgd', 'RelaySGDSettings', 'RelaySGDSimulation'),
     'detag': ('detag', 'DeTAGSettings', 'DeTAGSimulation'),

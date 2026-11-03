@@ -42,6 +42,10 @@ OPERATIONS["relaysgd_forward"] = Operation("dasklearn.optimizer.relaysgd:forward
 OPERATIONS["relaysgd_finish"] = Operation("dasklearn.optimizer.relaysgd:finish", 1, True)
 OPERATIONS["sgp_gradient"] = Operation("dasklearn.optimizer.sgp:gradient", 2, True)
 OPERATIONS["sgp_mix"] = Operation("dasklearn.optimizer.sgp:mix", 2, True)
+OPERATIONS["motef_bootstrap"] = Operation("dasklearn.optimizer.motef:bootstrap", 2, True)
+OPERATIONS["motef_propose"] = Operation("dasklearn.optimizer.motef:propose", 2, True)
+OPERATIONS["motef_gradient"] = Operation("dasklearn.optimizer.motef:gradient", 3, True)
+OPERATIONS["motef_receive"] = Operation("dasklearn.optimizer.motef:receive", 1, True)
 OPERATIONS["complete_incoming"] = Operation(
     "dasklearn.privacy.incoming:complete_incoming_operation", 1, True)
 
