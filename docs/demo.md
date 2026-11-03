@@ -10,6 +10,8 @@ A decentralized ring all-gather forwards each worker's packet over `N-1` hops. E
 
 `--algorithm demo` and `scripts/run_cifar.py --variants demo` expose `--demo-decay`, `--demo-chunk`, `--demo-topk`. `learning.local_steps` is the number of microbatch gradients accumulated at **fixed** parameters before a DeMo optimizer step. Thus H=1 is the canonical one-batch algorithm; H=5 matches the other algorithms' five-batch compute block but does not mean five uncommunicated sign updates. Mean microbatch gradients are used. Batch size and simulated per-microbatch compute cost retain their existing meanings. GPU residency/batching optimizations for ordinary SGD tasks do not apply to these custom tasks; this affects execution speed only.
 
+## Validation
+
 `tests/test_demo.py` checks independent SciPy DCT values, collision means, residual conservation/persistence, the dense SignSGD limit, fixed-weight gradient accumulation, exact wire-byte accounting, single-node and multi-node ring causality, skewed arrivals, and retained/streaming execution equivalence. `tests/check_demo_reference.py PATH_TO_OFFICIAL_DEMO_PY` additionally runs seven steps with three workers against the pinned official optimizer: zero parameter difference and maximum residual difference `4.19e-9` on CPU.
 
 ## CIFAR evaluation

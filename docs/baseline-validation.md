@@ -193,13 +193,45 @@ recorded local/server output directories.
 
 ## Meaning of the README labels and remaining work
 
+The README uses these independent categories in the order shown below. They
+describe existing evidence, not a hierarchy or a claim that every algorithm
+received the same checks. An omitted category is not claimed. Each row's
+evidence and limitations links define the actual components, configurations,
+execution modes and source revisions covered.
+
 | Label | Evidence | Remaining limitations |
 |---|---|---|
-| Equation / update checks | Small numerical oracles check specific updates; graph, ordering and state invariants are tested. | Not an assertion of full paper reproduction or all settings. |
-| Integration checks | Real training DAG execution; for AD-PSGD, D-PSGD and FL, real broker/worker replay matches serial metrics. | Multi-host networking and failures remain untested. |
-| Protocol checks | Training/exchange dependencies, chunk reconstruction, traffic and snapshots are checked. | Not a separate complete reference implementation of the paper. |
-| Optimizer reference check | DeMo's optimizer has a separate multi-step check against its source reference; DCT and residual identities are tested. | Simulator transport, CNN adaptation and all model architectures are not established by that optimizer check. |
-| Legacy | Source is present and import/settings checks exist; some shared execution tests may apply. | No maintained independent algorithm-level oracle sufficient for trusted comparisons. |
+| Numerical | Independent calculations check specified updates, mixing rules or numerical components. This includes the previous equation/update/mixing labels. | Scope can be a component, one step or multiple iterations; the linked evidence specifies which. This does not establish full paper reproduction. |
+| Protocol | Tests check selected message dependencies, causal ordering, reconstruction or traffic accounting. | These checks do not establish every transport behavior, failure mode or the paper's full protocol. |
+| Reference | A separate check executes selected authors' code and compares numerical outputs. This includes optimizer, compressor and relay reference checks. | The linked record identifies the source pin and substituted transport/helpers. This does not imply reference MPI/deployment equivalence. A paper-equation comparison alone is Numerical. |
+| Integration | Real protocol-generated training DAGs execute and their outputs are checked. | Local execution, CPU/CUDA comparisons and broker/worker replay are different scopes, specified in the linked evidence. This label alone does not claim all three, multi-host execution or failures. |
+| Legacy | Independent algorithm-level validation remains incomplete; import/settings or shared execution checks may exist. | A successful run does not establish mathematical or paper equivalence. Legacy can coexist with Integration when shared end-to-end checks exist. |
+
+Reference checks can be standalone optional scripts, outside the default pytest
+suite. Benchmark screening is separate evidence: neither these categories nor a
+passing suite establish comparative accuracy, speed or a paper reproduction.
+
+### Shatter
+
+[Protocol execution tests](../tests/test_protocol_execution.py) and
+[chunk/exchange edge cases](../tests/test_comparison_edge_cases.py) cover the
+real-node chunked-exchange specialization, executable training DAGs, selected
+dependencies, reconstruction, traffic and fixed-time snapshots. These are
+Protocol and Integration evidence. They do not establish complete numerical
+equivalence to the paper or its privacy guarantees.
+
+### Legacy implementations
+
+Gossip Learning, Super Gossip Learning, HGL (`lubor`) and the original Conflux
+prototype lack a maintained independent algorithm-level numerical oracle.
+The [registry checks](../tests/test_algorithm_registry.py) cover imports and
+settings. [Historical Gossip/Super-Gossip tests](../tests/legacy/README.md) use
+obsolete APIs and are excluded from default discovery. Conflux additionally has
+shared [training-DAG execution checks](../tests/test_protocol_execution.py), so
+its README row records Integration alongside Legacy. This does not validate
+its unpublished algorithm or make it an implementation of Plexus.
+
+### Remaining work from the first maintenance audit
 
 Moshpit and Teleportation have numerical collective/mixing checks; DSpodFL has
 one-step/block-update and mixing-matrix tests; DeMo has DCT, residual, collision
