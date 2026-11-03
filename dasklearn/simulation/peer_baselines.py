@@ -17,12 +17,16 @@ from dasklearn.simulation.swift.settings import SwiftSettings
 from dasklearn.simulation.swift.simulation import SwiftSimulation
 from dasklearn.simulation.gt_dsgd.settings import GTDSGDSettings
 from dasklearn.simulation.gt_dsgd.simulation import GTDSGDSimulation
+from dasklearn.simulation.detag.settings import DeTAGSettings
+from dasklearn.simulation.detag.simulation import DeTAGSimulation
 
 
-BASELINE_VARIANTS = ("gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
+BASELINE_VARIANTS = ("detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
 
 
 def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
+    if variant == 'detag':
+        return DeTAGSimulation, DeTAGSettings, {}
     if variant == 'gt-dsgd':
         return GTDSGDSimulation, GTDSGDSettings, {}
     if variant == 'swift':

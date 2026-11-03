@@ -5,6 +5,16 @@ contract. A successful run or registry/settings round-trip does not establish
 algorithmic correctness. These checks cover the stated specialization, not every
 paper option, topology, optimizer, model or failure mode.
 
+## DeTAG: 3 November 2026
+
+[DeTAG's contract](detag.md) implements Algorithms 2/3 with the normalized
+phase gradient buffer from the JMLR extension. Independent trajectories check
+every accelerated gossip step, phase-end model/tracker updates, and mean
+conservation. A changing oracle checks averaging of distinct draws at fixed
+parameters. Timing tests require each inner iteration to take the maximum of
+its compute and charged gossip completion times. Replay, immutable state,
+CPU/CUDA agreement, topology cases and message guards are also covered.
+
 ## GT-DSGD: 3 November 2026
 
 [GT-DSGD's implementation contract](gt-dsgd.md) follows Algorithm 1 / Eq. (1)

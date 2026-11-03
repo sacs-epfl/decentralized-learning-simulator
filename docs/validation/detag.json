@@ -1,0 +1,675 @@
+{
+  "date": "2026-11-03",
+  "base_commit": "6d6a9f3843b0afdae54f40d9005149f8a0458f7b",
+  "gt_dsgd_commit_pushed_to_origin_main": "6d6a9f3",
+  "source_sha256": "02c4e4931994eb49b54a79ff4406feb03bac500b8d44ad764bdcac1b74b65b04",
+  "source_hash_method": "Sorted relative path bytes plus content of dasklearn/**/*.py, args.py, main.py, scripts/validate_algorithms.py; matches shared runner manifest",
+  "references": {
+    "conference": "https://proceedings.mlr.press/v139/lu21a.html",
+    "corrected_conference": "https://arxiv.org/abs/2006.08085v4",
+    "journal": "https://jmlr.org/papers/v24/22-0044.html",
+    "erratum": "https://www.yucheng-lu.me/files/DeTAG_errata.pdf",
+    "pdf_sha256": {
+      "conference": "2286970f51a0d29b4dcec9ee811e75cf2bad48e48e6ae0488678344aa6b4aabd",
+      "corrected": "720a7e94166b0472cb105059d7edde5f49706d6a5fed16d23748ea5cfce6a363",
+      "journal": "d67e93827002bff487cd53afcf37bb5e463b6ca133d720b8eca38195028bf25e",
+      "erratum": "1f7df8d4550342b3eb59376bec178aec47671c6ad85b07c0acad8be09aa61c39"
+    },
+    "contract": "Algorithms 2/3; mean phase gradient (journal convention); zero tracker startup; phase-end model update uses mixed tracker before gradient injection; reset AG memory each phase.",
+    "phase_equations": [
+      "G_current = mean of R fixed-parameter minibatch gradients",
+      "mixed_x, mixed_y = AG_R(x, y)",
+      "x_next = mixed_x - learning_rate * mixed_y",
+      "y_next = mixed_y + G_current - G_previous"
+    ],
+    "restriction": "Plain constant-step SGD, stable fixed undirected topology, no momentum/LoRA. Not DeTAGM, DeTAG*, local-SGD or dynamic-phase experimental modifications."
+  },
+  "environment": {
+    "conda_prefix": "/mnt/data/mdevos/conda/envs/conflux-gpu",
+    "python": "3.12.15",
+    "torch": "2.14.1+cu130",
+    "numpy": "2.5.4",
+    "device": "cuda:0",
+    "gpu": "NVIDIA RTX 5000 Ada Generation"
+  },
+  "tests": {
+    "command": "python -m pytest -q",
+    "passed": 537,
+    "warnings": 5,
+    "duration_seconds": 108.62,
+    "detag_specific_cases": 52,
+    "checks": [
+      "Every accelerated step and phase output against independent logistic references for R=1/2/3, eta=0/.2, two graphs, and both phase barrier modes",
+      "Fixed parameters across phase gradients, normalized gradient means, recurrence resets and charged zero-tracker startup",
+      "Known changing noisy oracle, exact previous phase mean and phase-mean conservation",
+      "Maximum of gradient/gossip completion time in both network-bound and compute-bound cases",
+      "Exact fused two-vector traffic and accepted-message counts",
+      "Immutable inputs/local buffers, phase/step message guards, duration stopping and snapshots",
+      "One/two-client topology cases, spectrum-derived eta, saved-DAG replay and seeded reproducibility",
+      "CPU/CUDA agreement across all explicit model/gradient/tracker/recurrence states",
+      "Algorithm registry, settings roundtrip, CLI/baseline alias and full maintained regressions"
+    ]
+  },
+  "cli_smoke": {
+    "exit_code": 0,
+    "command": "python main.py --local --algorithm detag --dataset synthetic --model mlp --peers 4 --local-steps 1 --momentum 0 --learning-rate .05 --rounds 3 --duration 5 --test-method snapshot --test-period 1 --detag-phase-length 2 --device cuda:0 --torch-threads 1 --work-dir output/detag-validation/cli"
+  },
+  "runner_help_checks": [
+    "python scripts/run_cifar.py --help",
+    "python scripts/run_tiny.py --help"
+  ],
+  "screening": {
+    "run_count": 48,
+    "summary": [
+      {
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "detag-r1-eta0",
+        "seeds": 3,
+        "accuracy_mean": 21.61985025,
+        "accuracy_sample_sd": 13.448936143088048,
+        "loss_mean": 2.1884071666666665,
+        "scheduled_oracle_tasks_mean": 413.0,
+        "completed_model_updates_mean": 405.0,
+        "wire_bytes_mean": 16007054.0
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "detag-r2-auto",
+        "seeds": 3,
+        "accuracy_mean": 15.720974041666665,
+        "accuracy_sample_sd": 8.947250236947998,
+        "loss_mean": 2.2598016666666667,
+        "scheduled_oracle_tasks_mean": 413.0,
+        "completed_model_updates_mean": 200.33333333333334,
+        "wire_bytes_mean": 16007054.0
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 22.977528208333336,
+        "accuracy_sample_sd": 12.285785876566784,
+        "loss_mean": 2.1916685,
+        "scheduled_oracle_tasks_mean": 394.3333333333333,
+        "completed_model_updates_mean": 386.3333333333333,
+        "wire_bytes_mean": 7621906.666666667
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "configuration": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 19.850187458333334,
+        "accuracy_sample_sd": 13.167337663915893,
+        "loss_mean": 2.2020227083333332,
+        "scheduled_oracle_tasks_mean": 368.0,
+        "completed_model_updates_mean": 360.0,
+        "wire_bytes_mean": 14185141.333333334
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "configuration": "detag-r1-eta0",
+        "seeds": 3,
+        "accuracy_mean": 33.72659170833333,
+        "accuracy_sample_sd": 19.30168445510287,
+        "loss_mean": 2.181171125,
+        "scheduled_oracle_tasks_mean": 413.0,
+        "completed_model_updates_mean": 405.0,
+        "wire_bytes_mean": 16007054.0
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "configuration": "detag-r2-auto",
+        "seeds": 3,
+        "accuracy_mean": 16.591760291666667,
+        "accuracy_sample_sd": 8.183290409719003,
+        "loss_mean": 2.255311875,
+        "scheduled_oracle_tasks_mean": 413.0,
+        "completed_model_updates_mean": 200.33333333333334,
+        "wire_bytes_mean": 16007054.0
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "configuration": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 33.06179766666666,
+        "accuracy_sample_sd": 17.99586485597322,
+        "loss_mean": 2.1845219583333333,
+        "scheduled_oracle_tasks_mean": 394.3333333333333,
+        "completed_model_updates_mean": 386.3333333333333,
+        "wire_bytes_mean": 7621906.666666667
+      },
+      {
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "configuration": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 30.51498125,
+        "accuracy_sample_sd": 16.572660861510556,
+        "loss_mean": 2.1951729166666665,
+        "scheduled_oracle_tasks_mean": 368.0,
+        "completed_model_updates_mean": 360.0,
+        "wire_bytes_mean": 14185141.333333334
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "detag-r1-eta0",
+        "seeds": 3,
+        "accuracy_mean": 86.17977520833334,
+        "accuracy_sample_sd": 1.6615824917819617,
+        "loss_mean": 0.7448904166666667,
+        "scheduled_oracle_tasks_mean": 2672.0,
+        "completed_model_updates_mean": 2664.0,
+        "wire_bytes_mean": 103562640.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "detag-r2-auto",
+        "seeds": 3,
+        "accuracy_mean": 65.82396983333334,
+        "accuracy_sample_sd": 3.3808761154322,
+        "loss_mean": 1.6218826666666668,
+        "scheduled_oracle_tasks_mean": 2672.0,
+        "completed_model_updates_mean": 1328.0,
+        "wire_bytes_mean": 103561376.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 79.28838958333333,
+        "accuracy_sample_sd": 2.118196020108321,
+        "loss_mean": 0.9670385416666667,
+        "scheduled_oracle_tasks_mean": 2144.0,
+        "completed_model_updates_mean": 2136.0,
+        "wire_bytes_mean": 41829648.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "configuration": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 77.55617966666667,
+        "accuracy_sample_sd": 5.3697258297607044,
+        "loss_mean": 1.2156854583333334,
+        "scheduled_oracle_tasks_mean": 1798.0,
+        "completed_model_updates_mean": 1790.0,
+        "wire_bytes_mean": 69866496.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "iid",
+        "configuration": "detag-r1-eta0",
+        "seeds": 3,
+        "accuracy_mean": 89.81273395833334,
+        "accuracy_sample_sd": 2.879224981526783,
+        "loss_mean": 0.6995552083333333,
+        "scheduled_oracle_tasks_mean": 2672.0,
+        "completed_model_updates_mean": 2664.0,
+        "wire_bytes_mean": 103562640.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "iid",
+        "configuration": "detag-r2-auto",
+        "seeds": 3,
+        "accuracy_mean": 75.99250941666666,
+        "accuracy_sample_sd": 8.901673037809221,
+        "loss_mean": 1.5838372083333334,
+        "scheduled_oracle_tasks_mean": 2672.0,
+        "completed_model_updates_mean": 1328.0,
+        "wire_bytes_mean": 103561376.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "iid",
+        "configuration": "dsgd",
+        "seeds": 3,
+        "accuracy_mean": 87.00374533333333,
+        "accuracy_sample_sd": 3.5683372019344484,
+        "loss_mean": 0.9324229583333334,
+        "scheduled_oracle_tasks_mean": 2144.0,
+        "completed_model_updates_mean": 2136.0,
+        "wire_bytes_mean": 41829648.0
+      },
+      {
+        "profile": "uniform",
+        "partitioner": "iid",
+        "configuration": "gt-dsgd",
+        "seeds": 3,
+        "accuracy_mean": 83.604869,
+        "accuracy_sample_sd": 4.777786496551195,
+        "loss_mean": 1.1679090833333334,
+        "scheduled_oracle_tasks_mean": 1798.0,
+        "completed_model_updates_mean": 1790.0,
+        "wire_bytes_mean": 69866496.0
+      }
+    ],
+    "paired_capacities": {
+      "uniform-s0": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "uniform-s1": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "uniform-s2": [
+        {
+          "client": 0,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 1,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 2,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 3,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 4,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 5,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 6,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        },
+        {
+          "client": 7,
+          "training_speed": 3,
+          "bandwidth": 100000000
+        }
+      ],
+      "heterogeneous-s0": [
+        {
+          "client": 0,
+          "training_speed": 12,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "heterogeneous-s1": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 1,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 4,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 30,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 7,
+          "training_speed": 12,
+          "bandwidth": 50000000
+        }
+      ],
+      "heterogeneous-s2": [
+        {
+          "client": 0,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 1,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 2,
+          "training_speed": 2,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 3,
+          "training_speed": 5,
+          "bandwidth": 400000000
+        },
+        {
+          "client": 4,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 5,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 6,
+          "training_speed": 5,
+          "bandwidth": 50000000
+        },
+        {
+          "client": 7,
+          "training_speed": 30,
+          "bandwidth": 50000000
+        }
+      ]
+    },
+    "manifests": {
+      "digits-r2": {
+        "output": "/mnt/data/mdevos/conflux/output/detag-validation/digits-r2",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "detag",
+          "gt-dsgd",
+          "dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "02c4e4931994eb49b54a79ff4406feb03bac500b8d44ad764bdcac1b74b65b04"
+      },
+      "digits-r1-control": {
+        "output": "/mnt/data/mdevos/conflux/output/detag-validation/digits-r1-control",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "detag"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 1,
+        "detag_eta": 0.0,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "02c4e4931994eb49b54a79ff4406feb03bac500b8d44ad764bdcac1b74b65b04"
+      }
+    },
+    "workload": "Offline sklearn digits, 64-32-10 ReLU MLP, 8-node ring, 3 simulated seconds, fixed local-model snapshots at 1/2/3 seconds on all 445 test examples, IID and Dirichlet alpha=.3, 3 seeds, batch32, predeclared LR=.05, no shared momentum/decay, local_steps=1.",
+    "configurations": [
+      "detag R=2 eta=Algorithm 3 spectral choice (default)",
+      "detag R=1 eta=0 (predeclared pipeline control)",
+      "GT-DSGD",
+      "plain DSGD"
+    ],
+    "capacity": "Nominal 100 MB/s, 2ms latency; uniform 9ms per gradient. Heterogeneous independent gradient times 6/15/36/90ms and quarter clients at 4x bandwidth, remainder .5x. Means differ across profiles; methods are paired within each profile/seed.",
+    "wire_layout": "Dense parameters are 9640 bytes. Each DeTAG inner iteration sends 19280 bytes per neighbor plus one header and phase/step metadata, overlapping one gradient. GT-DSGD sends two sequential 9640-byte vectors; plain DSGD sends one. Partial final-horizon wire traffic is included.",
+    "units": "Completed model updates are phases for DeTAG, iterations for GT-DSGD/DSGD. Scheduled oracle tasks count individual minibatch gradients for all methods.",
+    "limitations": [
+      "Short untuned screening; no held-out metric used for configuration selection.",
+      "R=1 and R=2 controls were declared before execution; both are reported.",
+      "Zero simulated vector/setup cost, constant compute timings, stable membership.",
+      "Scalar CUDA executor wall times overlap validation work and are not protocol speed measurements.",
+      "Different startup/update ordering means R=1 eta=0 DeTAG is not a finite-trajectory equivalence test for this ATC GT-DSGD."
+    ],
+    "summary_csv": "detag-digits-summary.csv",
+    "curves_csv": "detag-digits-curves.csv",
+    "reproduction_commands": [
+      "python scripts/validate_algorithms.py --variants detag gt-dsgd dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --bandwidth 100000000 --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --partitioners iid dirichlet --seeds 0 1 2 --detag-phase-length 2 --device cuda:0 --output output/detag-validation/digits-r2",
+      "python scripts/validate_algorithms.py --variants detag --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --bandwidth 100000000 --latency-ms 2 --learning-rate .05 --profiles uniform heterogeneous --partitioners iid dirichlet --seeds 0 1 2 --detag-phase-length 1 --detag-eta 0 --device cuda:0 --output output/detag-validation/digits-r1-control"
+    ]
+  }
+}

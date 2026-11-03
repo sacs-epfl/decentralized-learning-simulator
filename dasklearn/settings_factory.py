@@ -73,7 +73,9 @@ def session_options(args, device):
     from dasklearn.simulation.qgm.settings import qgm_options
     from dasklearn.simulation.swift.settings import swift_options
     from dasklearn.simulation.gt_dsgd.settings import gt_dsgd_options
+    from dasklearn.simulation.detag.settings import detag_options
     algorithm_params = {
+        "detag": detag_options(args),
         "gt-dsgd": gt_dsgd_options(args),
         "swift": swift_options(args),
         "qgm": qgm_options(args),

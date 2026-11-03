@@ -34,6 +34,10 @@ OPERATIONS["swift_pack"] = Operation("dasklearn.optimizer.swift:pack", 1, True)
 OPERATIONS["gt_dsgd_gradient"] = Operation("dasklearn.optimizer.gt_dsgd:gradient", 3, True)
 OPERATIONS["gt_dsgd_track"] = Operation("dasklearn.optimizer.gt_dsgd:track", 2, True)
 OPERATIONS["gt_dsgd_mix"] = Operation("dasklearn.optimizer.gt_dsgd:mix", 1, True)
+OPERATIONS["detag_packet"] = Operation("dasklearn.optimizer.detag:packet", 1, True)
+OPERATIONS["detag_gradient"] = Operation("dasklearn.optimizer.detag:gradient", 2, True)
+OPERATIONS["detag_gossip"] = Operation("dasklearn.optimizer.detag:gossip", 1, True)
+OPERATIONS["detag_finish"] = Operation("dasklearn.optimizer.detag:finish", 2, True)
 OPERATIONS["complete_incoming"] = Operation(
     "dasklearn.privacy.incoming:complete_incoming_operation", 1, True)
 
