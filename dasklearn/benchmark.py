@@ -1,7 +1,7 @@
 """Paired, fixed simulated-time benchmarks and live, auditable leaderboards.
 
 The JSON result is the interface to both the dashboard and offline reports.
-Nothing in this module changes a protocol's optimizer or constructs a global model.
+Evaluation can use individual client models or an offline global parameter average.
 """
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -10,6 +10,7 @@ import io
 import math
 from pathlib import Path
 import random
+import re
 import statistics
 import subprocess
 import sys
@@ -38,12 +39,18 @@ class Benchmark:
     targets: list
     network: dict
     runs: list
+    tuning: dict | None = None
+    selection: dict | None = None
+    evaluation_model: str = "local"
+    execution_devices: list | None = None
 
     def manifest(self):
         return dict(version=1, kind="algorithm-leaderboard", name=self.name,
                     budgets=self.budgets, seeds=self.seeds, times=self.times,
                     accuracy_targets=self.targets, network=self.network,
-                    time_basis="simulated_seconds", runs=[asdict(run) for run in self.runs])
+                    time_basis="simulated_seconds", runs=[asdict(run) for run in self.runs],
+                    tuning=self.tuning, selection=self.selection,
+                    evaluation_model=self.evaluation_model, execution_devices=self.execution_devices)
 
 
 def _numbers(value, name, *, integer=False, zero=False):
@@ -60,14 +67,21 @@ def _numbers(value, name, *, integer=False, zero=False):
 
 def load_benchmark(path, parser, *, output=None, budgets=None, seeds=None, variants=None, period=None):
     """Resolve without loading models, datasets, or creating output directories."""
-    path, document = read_document(path, extra_fields={"benchmark"})
+    path, document = read_document(path, extra_fields={"benchmark", "tuning"})
     if "matrix" in document or document.get("execution", "local") != "local":
         raise ValueError("Benchmarks use named runs and local numerical execution")
     spec = document.get("benchmark")
-    allowed = {"budgets", "seeds", "evaluation_period", "accuracy_targets", "network"}
+    allowed = {"budgets", "seeds", "evaluation_period", "accuracy_targets", "network", "evaluation_model", "execution_devices"}
     if not isinstance(spec, dict) or set(spec) - allowed:
         raise ValueError(f"benchmark must be a mapping with fields {sorted(allowed)}")
     budgets = _numbers(budgets if budgets is not None else spec.get("budgets"), "budgets", integer=True)
+    evaluation_model = spec.get("evaluation_model", "local")
+    if not isinstance(evaluation_model, str) or evaluation_model not in {"local", "global"}:
+        raise ValueError("benchmark.evaluation_model must be local or global")
+    execution_devices = spec.get("execution_devices")
+    if execution_devices is not None and (not isinstance(execution_devices, list) or not execution_devices
+            or any(not isinstance(device, str) or not re.fullmatch(r"cpu|mps|cuda(?::[0-9]+)?", device) for device in execution_devices)):
+        raise ValueError("execution_devices must be a nonempty list of concrete CPU/CUDA/MPS devices; repeated devices share a GPU")
     seeds = _numbers(seeds if seeds is not None else spec.get("seeds"), "seeds", integer=True, zero=True)
     period = period if period is not None else spec.get("evaluation_period", 30)
     _numbers([period], "evaluation_period", integer=True)
@@ -133,10 +147,15 @@ def load_benchmark(path, parser, *, output=None, budgets=None, seeds=None, varia
     if len(runs) > 10000:
         raise ValueError("Benchmark exceeds 10,000 runs")
     target = Path(output).expanduser().resolve() if output else (path.parent / Path(document.get("output", "../output/leaderboard")).expanduser()).resolve()
-    return Benchmark(path, document["name"], target, budgets, seeds, times, targets, network, runs)
+    benchmark = Benchmark(path, document["name"], target, budgets, seeds, times, targets, network, runs,
+                          evaluation_model=evaluation_model, execution_devices=execution_devices)
+    if "tuning" in document:
+        from dasklearn.lr_tuning import validate_tuning
+        benchmark.tuning = validate_tuning(document["tuning"], benchmark, names)
+    return benchmark
 
 
-def configure_simulation(simulation, times, network):
+def configure_simulation(simulation, times, network, evaluation_model="local"):
     """Install passive observations, leaving protocol updates and messages intact."""
     from dasklearn import AUGMENTATION_FACTOR_SIM
     from dasklearn.simulation.events import Event, TEST_SNAPSHOT
@@ -167,10 +186,20 @@ def configure_simulation(simulation, times, network):
             simulation.schedule(Event(int(seconds * MICROSECONDS), 0, TEST_SNAPSHOT, is_global=True))
 
     def snapshot(event):
-        for peer in range(simulation.settings.participants):
-            round_nr, model = simulation.latest_models[peer]
-            simulation.clients[peer].create_compute_task("test", dict(
-                model=model, round=round_nr, time=event.time, peer=peer), name=Task.generate_name("benchmark_snapshot"))
+        if evaluation_model == "global":
+            checkpoints = [simulation.latest_models[peer] for peer in range(simulation.settings.participants)]
+            round_nr = max(round_nr for round_nr, _ in checkpoints)
+            client = simulation.clients[0]
+            aggregate = client.create_compute_task("aggregate", dict(
+                models=[model for _, model in checkpoints], weights=[1 / len(checkpoints)] * len(checkpoints),
+                round=round_nr, time=event.time, peer=-1), name=Task.generate_name("benchmark_global_average"))
+            client.create_compute_task("test", dict(model=TaskRef(aggregate.name, 0), round=round_nr,
+                time=event.time, peer=-1), name=Task.generate_name("benchmark_global_test"))
+        else:
+            for peer in range(simulation.settings.participants):
+                round_nr, model = simulation.latest_models[peer]
+                simulation.clients[peer].create_compute_task("test", dict(
+                    model=model, round=round_nr, time=event.time, peer=peer), name=Task.generate_name("benchmark_snapshot"))
         sent = sum(client.bw_scheduler.total_bytes_sent for client in simulation.clients)
         active = sum(min(transfer.transfer_size, transfer.transferred + int(
             (event.time - transfer.last_time_updated) / MICROSECONDS * transfer.allocated_bw))
@@ -207,13 +236,16 @@ async def run_worker(resolved):
     # the same timestamp. No evaluation includes work past the declared budget.
     settings.duration += 1
     simulation = import_class(simulation_path)(settings)
-    network = configure_simulation(simulation, document["times"], document["network"])
+    evaluation_model = document.get("evaluation_model", "local")
+    network = configure_simulation(simulation, document["times"], document["network"], evaluation_model)
     simulation.setup_directories()
     simulation.simulate()
     simulation.workflow_dag.build_task_indices()
     simulation.workflow_dag.check_validity()
     write_json(Path(document["output"]) / "network.json", network)
-    write_json(Path(document["output"]) / "execution.json", dict(artifacts=simulation.data_dir, settings=settings.to_dict()))
+    write_json(Path(document["output"]) / "execution.json", dict(artifacts=simulation.data_dir,
+               evaluation_model=evaluation_model, aggregation_weighting="uniform" if evaluation_model == "global" else None,
+               settings=settings.to_dict()))
     execute_local(simulation, retain_results=False)
     # Keep live readers' per-peer files stable. The ordinary merge deletes them
     # while writing the combined file, which races a polling reader.
@@ -227,8 +259,8 @@ async def run_worker(resolved):
     write_json(Path(document["output"]) / "training-executor.json", simulation.execution_training_stats)
 
 
-def read_curve(directory, peers, times, *, strict=False):
-    """Read closed CSV rows only; publish a prefix of complete all-peer snapshots."""
+def read_curve(directory, peers, times, *, strict=False, evaluation_model="local"):
+    """Read closed CSV rows; publish complete checkpoints for the selected readout."""
     import json
     directory = Path(directory)
     network_path = directory / "network.json"
@@ -252,7 +284,8 @@ def read_curve(directory, peers, times, *, strict=False):
         for row in csv.DictReader(io.StringIO(source)):
             stamp, peer = float(row["time"]), int(row["peer"])
             accuracy, loss = float(row["accuracy"]), float(row["loss"])
-            if (stamp not in times or not 0 <= peer < peers or not math.isfinite(loss)
+            valid_peer = peer == -1 if evaluation_model == "global" else 0 <= peer < peers
+            if (stamp not in times or not valid_peer or not math.isfinite(loss)
                     or not math.isfinite(accuracy) or not 0 <= accuracy <= 100):
                 raise ValueError("Invalid benchmark evaluation row")
             observations = checkpoints.setdefault(stamp, {})
@@ -262,15 +295,16 @@ def read_curve(directory, peers, times, *, strict=False):
     curve = []
     for stamp in times:
         rows = checkpoints.get(stamp, {})
-        if len(rows) != peers:
+        if len(rows) != (1 if evaluation_model == "global" else peers):
             break
         if stamp not in network:
             raise ValueError("Missing communication checkpoint")
         values = sorted(accuracy for accuracy, _ in rows.values())
         curve.append(dict(time=stamp, accuracy=statistics.mean(values),
                           loss=statistics.mean(loss for _, loss in rows.values()),
-                          worst_decile_accuracy=statistics.mean(values[:max(1, math.ceil(peers / 10))]),
-                          bytes_sent=network[stamp], peers=peers))
+                          worst_decile_accuracy=None if evaluation_model == "global" else statistics.mean(values[:max(1, math.ceil(peers / 10))]),
+                          bytes_sent=network[stamp], peers=peers,
+                          evaluated_models=1 if evaluation_model == "global" else peers))
     if strict and len(curve) != len(times):
         raise ValueError(f"Incomplete checkpoints: {len(curve)}/{len(times)}")
     return curve
@@ -309,10 +343,12 @@ def leaderboard(suite):
                 if metrics is not None:
                     observed.append((run, metrics))
             row = dict(variant=variant, rank=None, seeds=[run["seed"] for run, _ in observed],
+                       learning_rate=runs[0]["options"]["learning_rate"],
                        expected_seeds=len(suite["seeds"]), complete=len(observed) == len(suite["seeds"]),
                        failed_runs=sum(run["status"] in {"failed", "interrupted"} for run in runs))
             for field in ("accuracy", "loss", "average_accuracy", "worst_decile_accuracy", "bytes_sent", "best_observed_accuracy"):
-                row[field] = _estimate([metrics[field] for _, metrics in observed]) if observed else None
+                values = [metrics[field] for _, metrics in observed if metrics[field] is not None]
+                row[field] = _estimate(values) if values else None
             row["execution_wall_seconds"] = _estimate([run["wall_seconds"] for run, _ in observed
                 if run["status"] == "completed"]) if any(run["status"] == "completed" for run, _ in observed) else None
             row["time_to_accuracy"] = {}
@@ -334,7 +370,9 @@ def leaderboard(suite):
                 accuracy_targets=suite["accuracy_targets"], network=suite["network"],
                 evaluation_split=suite["runs"][0]["options"]["evaluation_split"],
                 scenario={key: suite["runs"][0]["options"][key] for key in ("dataset", "model", "peers", "partitioner", "alpha")},
-                provenance=suite.get("provenance"), tables=tables, runs=suite["runs"])
+                provenance=suite.get("provenance"), selection=suite.get("selection"),
+                evaluation_model=suite.get("evaluation_model", "local"), execution_devices=suite.get("execution_devices"),
+                tables=tables, runs=suite["runs"])
 
 
 def save_results(output, suite):
@@ -342,7 +380,7 @@ def save_results(output, suite):
     write_json(output / "manifest.json", suite)
     write_json(output / "leaderboard.json", result)
     columns = ["budget", "variant", "rank", "provisional", "seeds", "accuracy_mean", "accuracy_sd",
-               "average_accuracy", "worst_decile_accuracy", "bytes_sent", "best_observed_accuracy", "execution_wall_seconds"]
+               "average_accuracy", "worst_decile_accuracy", "bytes_sent", "best_observed_accuracy", "execution_wall_seconds", "learning_rate"]
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=columns)
     writer.writeheader()
@@ -351,17 +389,19 @@ def save_results(output, suite):
             record = dict(budget=table["budget"], variant=row["variant"], rank=row["rank"],
                           provisional=table["provisional"], seeds=len(row["seeds"]),
                           accuracy_mean=row["accuracy"]["mean"] if row["accuracy"] else None,
-                          accuracy_sd=row["accuracy"]["sd"] if row["accuracy"] else None)
-            for key in columns[7:]:
+                          accuracy_sd=row["accuracy"]["sd"] if row["accuracy"] else None,
+                          learning_rate=row["learning_rate"])
+            for key in columns[7:-1]:
                 record[key] = row[key]["mean"] if row[key] else None
             writer.writerow(record)
     temporary = output / "leaderboard.csv.tmp"
     temporary.write_text(buffer.getvalue())
     temporary.replace(output / "leaderboard.csv")
+    return result
 
 
-def execute_benchmark(benchmark, *, poll_seconds=1):
-    """Sequential workers avoid resource contention; readers can poll atomic JSON."""
+def execute_benchmark(benchmark, *, poll_seconds=1, on_update=None):
+    """Schedule isolated workers; one process slot per declared execution device."""
     root = Path(__file__).resolve().parents[1]
     try:
         benchmark.output.mkdir(parents=True, exist_ok=False)
@@ -370,53 +410,87 @@ def execute_benchmark(benchmark, *, poll_seconds=1):
     (benchmark.output / "runs").mkdir()
     (benchmark.output / ("source" + benchmark.path.suffix)).write_text(benchmark.path.read_text())
     suite = benchmark.manifest() | dict(status="running", provenance=provenance(root))
+    def publish():
+        result = save_results(benchmark.output, suite)
+        if on_update is not None:
+            on_update(result)
     for run in suite["runs"]:
         run.update(status="planned", curve=[])
-    save_results(benchmark.output, suite)
-    interrupted = False
-    for index, record in enumerate(suite["runs"]):
-        directory = benchmark.output / "runs" / record["name"]
-        directory.mkdir()
-        resolved = dict(options=record["options"], times=benchmark.times,
-                        network=benchmark.network, output=str(directory))
-        write_json(directory / "resolved.json", resolved)
-        record.update(status="running", started_at=datetime.now(timezone.utc).isoformat())
-        save_results(benchmark.output, suite)
-        print(f"[{index + 1}/{len(suite['runs'])}] {record['name']}", flush=True)
-        started = time.monotonic()
-        process = None
-        try:
-            with (directory / "run.log").open("w") as log:
-                process = subprocess.Popen([sys.executable, str(root / "scripts/run_benchmark.py"),
-                    "--worker", str(directory / "resolved.json")], cwd=root, stdout=log,
-                    stderr=subprocess.STDOUT, start_new_session=True)
-                while process.poll() is None:
-                    record["curve"] = read_curve(directory, record["options"]["peers"], benchmark.times)
-                    record["wall_seconds"] = time.monotonic() - started
-                    save_results(benchmark.output, suite)
-                    try:
-                        process.wait(timeout=poll_seconds)
-                    except subprocess.TimeoutExpired:
-                        pass
-                record["returncode"] = process.returncode
-            if process.returncode != 0:
-                raise ValueError(f"Worker exited {process.returncode}; see {directory / 'run.log'}")
-            record["curve"] = read_curve(directory, record["options"]["peers"], benchmark.times, strict=True)
-            record["status"] = "completed"
-        except KeyboardInterrupt:
-            interrupted = True
-            record.update(status="interrupted", error="Benchmark interrupted")
-            if process is not None:
-                _stop(process)
-        except (OSError, ValueError, KeyError, TypeError) as exc:
-            record.update(status="failed", error=str(exc))
-            if process is not None:
-                _stop(process)
-        record.update(wall_seconds=time.monotonic() - started, finished_at=datetime.now(timezone.utc).isoformat())
-        write_json(directory / "manifest.json", record)
-        save_results(benchmark.output, suite)
-        if interrupted:
-            break
+    publish()
+    devices = benchmark.execution_devices or [None]
+    active, next_run, interrupted = {}, 0, False
+
+    def finish(slot, status, error=None):
+        job = active.pop(slot)
+        record = job["record"]
+        if error is not None:
+            record["error"] = error
+        record.update(status=status, wall_seconds=time.monotonic() - job["started"],
+                      finished_at=datetime.now(timezone.utc).isoformat())
+        if job["log"] is not None:
+            job["log"].close()
+        write_json(job["directory"] / "manifest.json", record)
+
+    try:
+        while active or next_run < len(suite["runs"]):
+            for slot, device in enumerate(devices):
+                if slot in active or next_run == len(suite["runs"]):
+                    continue
+                record = suite["runs"][next_run]
+                next_run += 1
+                directory = benchmark.output / "runs" / record["name"]
+                directory.mkdir()
+                if device is not None:
+                    record["options"]["device"] = device
+                record.update(status="running", started_at=datetime.now(timezone.utc).isoformat(), executor_slot=slot)
+                job = dict(record=record, directory=directory, process=None, log=None, started=time.monotonic())
+                active[slot] = job
+                resolved = dict(options=record["options"], times=benchmark.times, evaluation_model=benchmark.evaluation_model,
+                                network=benchmark.network, output=str(directory))
+                try:
+                    write_json(directory / "resolved.json", resolved)
+                    job["log"] = (directory / "run.log").open("w")
+                    job["process"] = subprocess.Popen([sys.executable, str(root / "scripts/run_benchmark.py"),
+                        "--worker", str(directory / "resolved.json")], cwd=root, stdout=job["log"],
+                        stderr=subprocess.STDOUT, start_new_session=True)
+                    print(f"[{next_run}/{len(suite['runs'])}] {record['name']} on {record['options']['device']} (slot {slot})", flush=True)
+                except OSError as exc:
+                    finish(slot, "failed", str(exc))
+            for slot, job in list(active.items()):
+                process, record = job["process"], job["record"]
+                try:
+                    code = process.poll()
+                    if code is not None:
+                        record["returncode"] = code
+                        if code != 0:
+                            raise ValueError(f"Worker exited {code}; see {job['directory'] / 'run.log'}")
+                    record["curve"] = read_curve(job["directory"], record["options"]["peers"], benchmark.times,
+                        strict=code == 0, evaluation_model=benchmark.evaluation_model)
+                    record["wall_seconds"] = time.monotonic() - job["started"]
+                    if code is not None:
+                        finish(slot, "completed")
+                except (OSError, ValueError, KeyError, TypeError) as exc:
+                    _stop(process)
+                    finish(slot, "failed", str(exc))
+            publish()
+            if active:
+                try:
+                    next(iter(active.values()))["process"].wait(timeout=poll_seconds)
+                except subprocess.TimeoutExpired:
+                    pass
+    except KeyboardInterrupt:
+        interrupted = True
+        for slot, job in list(active.items()):
+            if job["process"] is not None:
+                _stop(job["process"])
+            finish(slot, "interrupted", "Benchmark interrupted")
+    finally:
+        # Unexpected parent errors must not leave any worker process behind.
+        for job in active.values():
+            if job["process"] is not None:
+                _stop(job["process"])
+            if job["log"] is not None:
+                job["log"].close()
     suite["status"] = "interrupted" if interrupted else ("failed" if any(run["status"] == "failed" for run in suite["runs"]) else "completed")
-    save_results(benchmark.output, suite)
+    publish()
     return 130 if interrupted else int(suite["status"] != "completed")

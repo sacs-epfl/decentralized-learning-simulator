@@ -110,26 +110,37 @@ equivalence.
 
 ## Measurements and interpretation
 
-At each checkpoint, evaluate the latest published, completed local model for
-**every physical participant**, with the initial model as fallback for clients
-that have not updated. FedAvg's server is not an extra participant. All clients
-use the same evaluation split/subset. No global parameter average is created.
-Evaluation is passive: its real execution cost contributes to wall time, but it
-does not consume modeled training/network resources. Events at identical
-simulated times follow the simulator's deterministic event order.
+`benchmark.evaluation_model` selects the readout (default `local`):
 
-The collector publishes only a consecutive prefix of complete, unique all-client
-checkpoints. Missing or invalid final checkpoints fail the run. A completed
-checkpoint may appear while its worker is still processing later checkpoints.
+- `local`: evaluate every physical participant's latest completed local model
+  on the same split/subset, then average client accuracies.
+- `global`: take the **uniform arithmetic parameter average of all participants'
+  latest completed local models**, then evaluate that single global model once
+  on the selected split/subset. This is parameter averaging, not prediction
+  ensembling or averaging accuracies. FedAvg's server is not an extra input.
+
+Both modes include the initial model for clients that have not updated.
+Aggregation/evaluation is an **offline diagnostic**: its execution cost contributes
+to wall time, while collection traffic, aggregation latency, and evaluation do
+not consume modeled protocol resources. The global average never feeds back into
+client training. Events at identical simulated times follow the simulator's
+deterministic event order. GNLeNet has no BatchNorm buffers; the shared aggregation
+routine averages floating state and uses the existing maximum rule for integer
+buffers on other supported models.
+
+The collector publishes only a consecutive prefix of complete, unique checkpoints:
+all client scores for local readout, or one global score for global readout.
+Missing or invalid final checkpoints fail the run. A completed checkpoint may
+appear while its worker is still processing later checkpoints.
 
 For each selected budget the dashboard and exports contain:
 
 | Measurement | Definition |
 |---|---|
-| Accuracy | Mean client accuracy at the exact budget; primary sort key |
+| Accuracy | Mean client accuracy (`local`) or single averaged-model accuracy (`global`) at the exact budget; primary sort key |
 | Accuracy SD | Sample standard deviation across seeds; blank for one seed |
 | Average accuracy | Area under the checkpoint curve from zero to the budget, divided by the budget; left-constant integration, in percentage points |
-| Worst 10% accuracy | Mean of the lowest `ceil(clients / 10)` client accuracies, then mean across seeds |
+| Worst 10% accuracy | Local readout only: mean of the lowest `ceil(clients / 10)` client accuracies, then mean across seeds; omitted for global readout |
 | Traffic | Total sent bytes, counted once, including bytes sent by unfinished transfers at the checkpoint |
 | Best observed accuracy | Maximum checkpoint mean accuracy within the budget, calculated per seed then averaged |
 | Time to accuracy | First observed checkpoint reaching the target; no interpolation |
@@ -146,13 +157,137 @@ official numeric ranks are withheld. Failed/interrupted runs retain their status
 and logs, are excluded from aggregate scores, and keep the ranking provisional.
 Exact ties share a rank. Close means do not imply statistically distinct winners.
 
-The default example uses common hyperparameters and is explicitly an **untuned
-screening**. Named runs support hand-selected configurations, but automated
-equal-budget tuning, independent held-out-seed selection, model-state checkpoint
-selection/resume, and final held-out testing are not implemented here. Keep tuning
-on validation data and run an independent final evaluation before making research
-claims. Best observed accuracy is a finite-budget observation, not an estimate of
-the unlimited-time optimum or a saved deployable checkpoint.
+The default synthetic example uses common hyperparameters and is explicitly an
+**untuned screening**. Named runs support hand-selected configurations. The
+optional tuning pipeline below selects LRs on validation data before running
+fresh seeds on test data. Model-state checkpoint selection/resume is not
+implemented. Best observed accuracy is a finite-budget observation, not an
+estimate of the unlimited-time optimum or a saved deployable checkpoint.
+
+## Global-model rerun with frozen LRs and a longer horizon
+
+The follow-up configuration reuses the previously selected LRs without another
+search, measures a single averaged global model, and runs each trajectory through
+900 simulated seconds:
+
+```sh
+python scripts/run_benchmark.py experiments/leaderboard-cifar10-32-global900.yaml --plan
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_benchmark.py experiments/leaderboard-cifar10-32-global900.yaml
+python scripts/serve_leaderboard.py output/leaderboard-cifar10-32-global900
+```
+
+It preserves CIFAR-10/GNLeNet, 32 IID clients, the original capacities and network
+latency, and evaluation seeds 10/11/12. Frozen LRs are FedAvg/D-PSGD/QGM `0.01`,
+CHOCO `0.1`, and DeMo `0.001`, selected by the earlier 300-second **local-model**
+validation search. They are reused as requested, rather than retuned for this
+global readout or longer horizon. There are **15 runs**, with four workers across
+two GPUs and two workers sharing each GPU. Budget views are 60/300/900 seconds;
+one global model is evaluated on all 10,000 test images every 60 seconds.
+The previous 300-second run remains in its original output directory.
+
+Each global checkpoint uses equal weight for every client's latest available
+model, including initially idle clients. The mean model is an evaluation branch
+only. Its collection/aggregation overhead is excluded from simulated protocol
+time and reported network bytes; wall time includes the actual averaging and
+evaluation. The dashboard labels this readout and omits worst-client accuracy.
+Best observed accuracy at 900 seconds is a finite-budget result, not evidence of
+an unlimited-time optimum.
+
+## Automated equal-budget LR tuning
+
+The first real-data configuration compares **FedAvg, D-PSGD, QGM, CHOCO-SGD, and
+DeMo**, using CIFAR-10, GNLeNet (85,354 parameters), and 32 clients:
+
+```sh
+python scripts/prepare_dataset.py uoft-cs/cifar10 --data data/cifar10
+python scripts/run_benchmark.py experiments/leaderboard-cifar10-32.yaml --plan
+python scripts/run_benchmark.py experiments/leaderboard-cifar10-32.yaml
+python scripts/serve_leaderboard.py output/leaderboard-cifar10-32
+```
+
+Skip preparation if `data/cifar10` already contains a prepared DatasetDict.
+The configuration uses CUDA device 0, IID clients, full participation for FedAvg,
+ring communication for D-PSGD/QGM/CHOCO, and DeMo's ring all-gather. All clients
+have 1 MB/s bandwidth, a modeled 20 ms local step, and 10 ms network latency.
+The measured GPU execution speed does not change these modeled capacities.
+The native CIFAR pipeline normalizes images and uses no data augmentation.
+FedAvg's server retains the implementation's unconstrained bandwidth.
+
+Append a top-level `tuning` section to a benchmark configuration:
+
+```yaml
+tuning:
+  budget: 300
+  seeds: [0]
+  evaluation_period: 300
+  evaluation_examples: 1000
+  metric: accuracy
+  learning_rates:
+    fedavg: [0.003, 0.01, 0.03, 0.1, 0.3]
+    dpsgd-ring: [0.003, 0.01, 0.03, 0.1, 0.3]
+    qgm: [0.003, 0.01, 0.03, 0.1, 0.3]
+    choco: [0.003, 0.01, 0.03, 0.1, 0.3]
+    demo: [0.0001, 0.0003, 0.001, 0.003, 0.01]
+```
+
+The LR keys must exactly match named variants. Every algorithm must have the
+**same number of unique, positive candidates**. Trial count, seed set, simulated
+duration, evaluation cadence, and validation subset size are identical across
+algorithms. Equal budget means equal allocated trials and simulated seconds;
+actual CPU/GPU wall time and completed optimizer updates can differ. There is no
+early elimination, extra refinement, or transfer of trials between algorithms.
+LR ranges differ to account for different update rules. These ranges are a
+declared search space, not a guarantee that each algorithm's optimum is inside it.
+Boundary winners are recorded without silently adding trials.
+
+The pipeline forces every search trial to use `validation`. It selects the LR
+with the highest mean accuracy at the exact tuning budget, averaged across all
+tuning seeds. `metric: average_accuracy` instead selects the mean curve integral
+and requires intermediate checkpoints. Lower LR breaks an exact score tie.
+Every candidate must complete on every tuning seed; failed or incomplete
+searches preserve their artifacts and **block final evaluation**, so a partially
+evaluated grid cannot silently select a winner. No automatic retries are added.
+
+Final benchmark settings must use `evaluation_split: test`. Final seeds must be
+disjoint from tuning seeds. After selection, LR is frozen per algorithm for all
+final seeds and budgets. Other algorithm options stay fixed throughout both
+phases. The checked-in first experiment runs **25 tuning trials** (five LRs × one
+seed × five algorithms), then **15 held-out runs** (three seeds × five algorithms).
+
+CIFAR's fixed stratified holdout reserves 5,000 of the original 50,000 training
+images before client partitioning, leaving 45,000 for training. Tuning uses the
+same deterministic, class-balanced 1,000-image subset of that validation split.
+Final evaluation uses all 10,000 original test images, on fresh seeds 10/11/12,
+at time zero and every 60 seconds through 300 seconds. Budget views are 60 and
+300 seconds; the single selected LR optimizes the **300-second** criterion.
+One tuning seed keeps this first search manageable; additional tuning seeds are
+supported and multiply every algorithm's allowance equally. This short, IID
+experiment is a first comparison, not a long-horizon or heterogeneous-data claim.
+
+The root dashboard automatically follows the active phase. During tuning, it
+shows validation candidates and the declared search budget. During evaluation,
+it shows the five algorithms, frozen LRs, and held-out test curves. Selecting
+settings or time horizons based on these test results requires a new independent
+evaluation before making an unbiased final claim.
+
+```text
+OUTPUT/
+  pipeline.json               # phase, status, search budget, selected rates
+  resolved.json               # complete resolved pipeline specification
+  source.yaml
+  dataset-source.json         # prepared dataset provenance, when available
+  selection.json              # validation scores per candidate/seed and winners
+  leaderboard.json            # live mirror of active phase plus pipeline status
+  leaderboard.csv
+  tuning/                    # ordinary benchmark artifacts for every candidate
+  evaluation/                # ordinary benchmark artifacts with frozen LRs
+```
+
+The same `run_benchmark.py` command handles both phases. The normal `--output`,
+`--variants`, and final `--budgets`/`--seeds` overrides still work. Changing final
+budgets does not change `tuning.budget`; keep the distinction explicit in reports.
+Use a new output directory for every search. Phase manifests retain separate
+source/package provenance, raw curves, exact trial settings, logs, and failures.
 
 ## Artifacts and failures
 
@@ -173,8 +308,15 @@ OUTPUT/
 ```
 
 Each run has its own process to isolate model, dataset, RNG, and executor state.
-Runs execute sequentially to avoid competition for the same CPU/GPU. The parent
-polls metrics once per second; the dashboard refreshes every two seconds.
+Runs execute sequentially unless `benchmark.execution_devices` declares worker
+slots. For example `[cuda:0, cuda:1, cuda:0, cuda:1]` runs at most four workers,
+two per GPU, and assigns each new run to the next free slot. Devices are recorded
+in each run's resolved settings; repeated devices intentionally share a GPU.
+CPU thread counts remain per worker. Actual wall times include resource
+contention, while modeled protocol time and network capacities remain fixed.
+Ctrl-C/SIGTERM stops every active worker process group and leaves queued runs
+planned. The parent polls metrics once per second; the dashboard refreshes every
+two seconds.
 Outputs are read-only from the dashboard. Raw CSVs remain available for audit.
 
 Existing output directories are refused. Failed workers do not stop the remaining

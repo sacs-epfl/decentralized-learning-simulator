@@ -51,9 +51,21 @@ function chart(id, series, field, label) {
   }
 }
 function render(data) {
+  const globalModel = data.evaluation_model === "global";
   $("title").textContent = data.name;
-  $("status").textContent = data.status;
-  $("scenario").textContent = `${data.scenario.dataset} · ${data.scenario.model} · ${data.scenario.peers} clients · ${data.scenario.partitioner} · ${data.network.profile} capacities`;
+  $("status").textContent = data.pipeline ? `${data.pipeline.phase} · ${data.status}` : data.status;
+  $("tuning-section").hidden = !data.pipeline;
+  if (data.pipeline) {
+    const spec=data.pipeline.tuning, selected=data.pipeline.selected;
+    $("tuning-title").textContent = selected ? "Frozen learning rates · held-out evaluation" : "Equal-budget learning-rate search";
+    $("tuning-rule").textContent = `${spec.trials_per_algorithm} trials per algorithm · ${spec.budget}s per trial · validation only · ${spec.evaluation_examples || "all"} examples per checkpoint. Maximize mean ${spec.metric}; lower LR breaks exact ties. Final seeds: ${data.pipeline.final_seeds.join(", ")}.${data.pipeline.error ? " " + data.pipeline.error : ""}`;
+    $("tuning-rows").replaceChildren(...Object.entries(spec.learning_rates).map(([variant,rates]) => {
+      const row=document.createElement("tr"); cell(row,variant); cell(row,rates.join(", ")); cell(row,selected?.[variant] ?? "Pending"); return row;
+    }));
+  }
+  $("scenario").textContent = `${data.scenario.dataset} · ${data.scenario.model} · ${data.scenario.peers} clients · ${data.scenario.partitioner} · ${data.network.profile} capacities · ${globalModel ? "global model" : "mean client accuracy"}`;
+  $("worst-client-header").hidden = globalModel;
+  $("metric-note").textContent = globalModel ? "Each checkpoint averages all client parameters with equal weights, then evaluates that global model once. Aggregation is an offline diagnostic: collection time and traffic are excluded from protocol costs. Average accuracy integrates the global learning curve. Full-run wall time includes evaluation and any concurrent worker contention." : "Accuracy averages individual client accuracies. Worst 10% averages the lowest-scoring clients. Average accuracy integrates the learning curve. Traffic counts sent bytes, including partial transfers. Full-run wall time includes evaluation and any concurrent worker contention.";
   $("completed").textContent = `${data.runs.filter(run => run.status === "completed").length} / ${data.runs.length}`;
   $("split").textContent = data.evaluation_split;
   $("updated").textContent = new Date(data.updated_at).toLocaleTimeString();
@@ -64,12 +76,13 @@ function render(data) {
   const table = data.tables.find(table => table.budget === +select.value);
   $("budget-label").textContent = `${table.budget} s`;
   $("ranking-note").textContent = table.provisional ? "Provisional results · Official ranks appear after every variant has the full paired seed set. Partial or failed runs never receive a final rank." : "Complete paired comparison · Sorted by mean accuracy at the selected simulated budget. Small differences may fall within seed variation.";
+  if (data.pipeline?.phase === "tuning") $("ranking-note").textContent = "Validation search trials · These candidate scores select learning rates. The five-algorithm comparison starts after selection, using fresh seeds and test data.";
   $("rows").replaceChildren(); $("targets").replaceChildren();
   for (const row of table.rows) {
     const tr = document.createElement("tr");
     const accuracy = row.accuracy ? `${number(row.accuracy.mean)} ± ${row.accuracy.sd == null ? "—" : number(row.accuracy.sd)}` : "—";
-    const values = [row.rank ?? "—", row.variant, `${row.seeds.length}/${row.expected_seeds}${row.failed_runs ? " · failed" : ""}`, accuracy,
-      number(row.average_accuracy?.mean), number(row.worst_decile_accuracy?.mean), number(row.bytes_sent?.mean == null ? null : row.bytes_sent.mean/1e6),
+    const values = [row.rank ?? "—", row.variant, row.learning_rate ?? "—", `${row.seeds.length}/${row.expected_seeds}${row.failed_runs ? " · failed" : ""}`, accuracy,
+      number(row.average_accuracy?.mean), ...(globalModel ? [] : [number(row.worst_decile_accuracy?.mean)]), number(row.bytes_sent?.mean == null ? null : row.bytes_sent.mean/1e6),
       number(row.best_observed_accuracy?.mean), number(row.execution_wall_seconds?.mean, 1)];
     values.forEach(value => cell(tr, value)); $("rows").append(tr);
     const targetRow = document.createElement("tr"); cell(targetRow, ""); cell(targetRow, row.variant);
@@ -98,6 +111,7 @@ function render(data) {
     box.append(name,status); if (run.error) {const error=document.createElement("div");error.textContent=run.error;box.append(error);} return box;
   }));
   $("interpretation").textContent = data.evaluation_split === "test" ? "Exploratory test-set comparison. Best observed accuracy is a descriptive maximum over checkpoints; it is not an independently evaluated, validation-selected checkpoint or an estimate of unlimited-time performance." : "Best observed accuracy is measured on validation checkpoints within the declared budget. Final held-out test evaluation and automatic hyperparameter tuning are separate steps.";
+  if (data.pipeline) $("interpretation").textContent = data.pipeline.phase === "tuning" ? "Each algorithm receives the same number of candidates, tuning seeds, simulated seconds, and validation examples. Candidate ranges are declared in advance; no test scores enter LR selection." : "Learning rates were frozen using validation data on separate seeds. Test accuracy at the declared budgets is the held-out comparison. Best observed test accuracy is descriptive and must not be used to select checkpoints or retune settings.";
   $("provenance").textContent=JSON.stringify({scenario:data.scenario,network:data.network,provenance:data.provenance,runs:data.runs.map(({curve,...run}) => run)}, null, 2);
 }
 async function refresh() {

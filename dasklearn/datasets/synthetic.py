@@ -14,6 +14,11 @@ class TensorPartition(Dataset):
     def __getitem__(self, index):
         return {"img": self.features[index], "label": self.labels[index]}
 
+    def evaluation_subset(self, count):
+        if count >= len(self):
+            return self
+        return TensorPartition(self.features[:count], self.labels[:count])
+
 
 class SyntheticDataset:
     def __init__(self, settings):

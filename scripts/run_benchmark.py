@@ -33,6 +33,9 @@ def main(argv=None):
         if args.plan:
             print(json.dumps(benchmark.manifest() | dict(output=str(benchmark.output)), indent=2, allow_nan=False))
             return 0
+        if benchmark.tuning is not None:
+            from dasklearn.lr_tuning import execute_tuned_benchmark
+            return execute_tuned_benchmark(benchmark)
         return execute_benchmark(benchmark)
     except ValueError as exc:
         parser.error(str(exc))

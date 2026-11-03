@@ -115,6 +115,25 @@ accuracy over time, worst-client performance, traffic, time to accuracy, best
 observed accuracy, and actual execution time. Results remain provisional until
 the full paired seed set is available. The synthetic example is untuned screening.
 
+For automatic validation-only LR selection with equal trial budgets, followed by
+fresh-seed test evaluation of five algorithms on CIFAR-10/GNLeNet with 32 clients:
+
+```sh
+python scripts/run_benchmark.py experiments/leaderboard-cifar10-32.yaml --plan
+python scripts/run_benchmark.py experiments/leaderboard-cifar10-32.yaml
+```
+
+Prepare `data/cifar10` first; see the [tuning protocol and live phase view](docs/leaderboard.md#automated-equal-budget-lr-tuning).
+
+To reuse the selected LRs and evaluate the uniform average of all client models
+through 900 simulated seconds, with four workers across two GPUs:
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_benchmark.py experiments/leaderboard-cifar10-32-global900.yaml
+```
+
+See [global-model evaluation and the frozen-LR rerun](docs/leaderboard.md#global-model-rerun-with-frozen-lrs-and-a-longer-horizon).
+
 For configuration files and parameter sweeps, use the shared experiment runner:
 
 ```sh
