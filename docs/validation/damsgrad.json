@@ -1,0 +1,1317 @@
+{
+  "date": "2026-11-03",
+  "base_commit": "c5bfd6293dc71692da6e110333fd314706de3ad4",
+  "source_sha256": "33e841a48150bdd59d2520c04a09055bd7fe24087b1e7209d2bb626b6198fa28",
+  "source_hash_method": "Sorted relative path bytes plus content of dasklearn/**/*.py, args.py, main.py, scripts/validate_algorithms.py; matches all runner manifests",
+  "references": {
+    "paper": "https://proceedings.mlr.press/v189/chen23b.html",
+    "pdf_sha256": {
+      "paper": "035b72595b0b28824ce6488708e5bf9b347e87beeb296c7f88f37fd4ef4190c7",
+      "supplement": "60664f92bd31f2a717ea6e8a470dd8a3fa47c1b6c5ceb6547870b365fe5c3a1b"
+    },
+    "contract": "Algorithm 3: local m/v/vhat, mix OLD x and raw half-step u; x_next=Wx-lr*m_next/sqrt(max(Wu,epsilon)); u_next=Wu+vhat_next-vhat_old. No bias correction. Floor is inside square root.",
+    "initialization": "Shared seeded model; m0=v0=0; vhat0=u_half0=epsilon. Paper omits v0 from input line; explicit standard zero choice here. No bootstrap gradient.",
+    "scope": "Fixed connected symmetric doubly stochastic Metropolis W; stable membership, local_steps=1, shared momentum=0, fully trainable common-dtype floating parameters, local buffers. Old model/tracker packet overlaps one charged gradient. No compression, current-denominator alternative, directed/time-varying mixing, local blocks, churn or LoRA.",
+    "reference_comparison": "No authors implementation was executed or Reference label claimed. Numerical checks use independent paper equations and autograd gradients."
+  },
+  "environment": {
+    "conda_prefix": "/mnt/data/mdevos/conda/envs/conflux-gpu",
+    "python": "3.12.15",
+    "torch": "2.14.1+cu130",
+    "numpy": "2.5.4",
+    "device": "cuda:0",
+    "gpu": "NVIDIA RTX 5000 Ada Generation"
+  },
+  "tests": {
+    "command": "python -m pytest -q",
+    "passed": 838,
+    "warnings": 5,
+    "duration_seconds": 121.2,
+    "damsgrad_specific_cases": 54,
+    "specific_command": "python -m pytest tests/test_damsgrad.py -q",
+    "specific_result": "54 passed in 5.22s",
+    "checks": [
+      "Independent complete logistic model/m/v/vhat/u and old packet trajectories: two graphs, three beta pairs including zero, skew and barriers",
+      "Raw tracker mean equals mean running maximum and reaches consensus with unequal local second moments",
+      "Single-client delayed denominator, no bias correction, floor inside sqrt and raw tracker retained",
+      "Exact two-dense-vector bytes, old-state transfer/gradient overlap, readiness, early/duplicates and causal dependencies",
+      "Local buffers and immutable inputs, one/two/regular graphs, duration stop and snapshots",
+      "Seeded serialized replay, streaming, CPU/CUDA all states and packets, settings/registry/baseline aliases",
+      "Full maintained regression suite"
+    ]
+  },
+  "cli_smoke": {
+    "command": "python main.py --algorithm damsgrad --local --dataset synthetic --model mlp --peers 4 --local-steps 1 --momentum 0 --learning-rate .001 --rounds 4 --duration 3 --test-period 3 --test-method snapshot --device cuda:0 --work-dir output/damsgrad-validation/cli-smoke",
+    "exit_code": 0,
+    "metric_rows": 4,
+    "completed_rounds": 4
+  },
+  "benchmarks": {
+    "runs": 126,
+    "damsgrad_runs": 42,
+    "horizon_seconds": 3,
+    "peers": 8,
+    "dataset": "sklearn digits",
+    "model": "mlp, 2410 float32 parameters",
+    "learning_rate_grid": [
+      0.001,
+      0.01,
+      0.05
+    ],
+    "congested_learning_rate": 0.01,
+    "commands": [
+      "python scripts/validate_algorithms.py --variants damsgrad dsgd gt-dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --bandwidth 100000000 --latency-ms 2 --learning-rate 0.001 --profiles uniform heterogeneous --partitioners iid dirichlet --seeds 0 1 2 --device cuda:0 --output output/damsgrad-validation/digits-lr001",
+      "python scripts/validate_algorithms.py --variants damsgrad dsgd gt-dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --bandwidth 100000000 --latency-ms 2 --learning-rate 0.01 --profiles uniform heterogeneous --partitioners iid dirichlet --seeds 0 1 2 --device cuda:0 --output output/damsgrad-validation/digits-lr01",
+      "python scripts/validate_algorithms.py --variants damsgrad dsgd gt-dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --bandwidth 100000000 --latency-ms 2 --learning-rate 0.05 --profiles uniform heterogeneous --partitioners iid dirichlet --seeds 0 1 2 --device cuda:0 --output output/damsgrad-validation/digits-lr05",
+      "python scripts/validate_algorithms.py --variants damsgrad dsgd gt-dsgd --dataset digits --peers 8 --local-steps 1 --duration 3 --test-period 1 --bandwidth 200000 --latency-ms 2 --learning-rate 0.01 --profiles uniform heterogeneous --partitioners dirichlet --seeds 0 1 2 --device cuda:0 --output output/damsgrad-validation/digits-congested"
+    ],
+    "manifests": {
+      "ample-lr001": {
+        "output": "/mnt/data/mdevos/conflux/output/damsgrad-validation/digits-lr001",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "damsgrad",
+          "dsgd",
+          "gt-dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "damsgrad_topology": "ring",
+        "damsgrad_degree": 4,
+        "damsgrad_beta1": 0.9,
+        "damsgrad_beta2": 0.999,
+        "damsgrad_epsilon": 1e-06,
+        "fspda_topology": "ring",
+        "fspda_degree": 4,
+        "fspda_sampling": "bernoulli",
+        "fspda_edge_probability": 0.5,
+        "fspda_keep_ratio": 0.1,
+        "fspda_consensus_stepsize": 0.1,
+        "fspda_dual_weight": 0.01,
+        "fspda_dual_stepsize": 0.1,
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.001,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "33e841a48150bdd59d2520c04a09055bd7fe24087b1e7209d2bb626b6198fa28"
+      },
+      "ample-lr01": {
+        "output": "/mnt/data/mdevos/conflux/output/damsgrad-validation/digits-lr01",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "damsgrad",
+          "dsgd",
+          "gt-dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "damsgrad_topology": "ring",
+        "damsgrad_degree": 4,
+        "damsgrad_beta1": 0.9,
+        "damsgrad_beta2": 0.999,
+        "damsgrad_epsilon": 1e-06,
+        "fspda_topology": "ring",
+        "fspda_degree": 4,
+        "fspda_sampling": "bernoulli",
+        "fspda_edge_probability": 0.5,
+        "fspda_keep_ratio": 0.1,
+        "fspda_consensus_stepsize": 0.1,
+        "fspda_dual_weight": 0.01,
+        "fspda_dual_stepsize": 0.1,
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.01,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "33e841a48150bdd59d2520c04a09055bd7fe24087b1e7209d2bb626b6198fa28"
+      },
+      "ample-lr05": {
+        "output": "/mnt/data/mdevos/conflux/output/damsgrad-validation/digits-lr05",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "damsgrad",
+          "dsgd",
+          "gt-dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "damsgrad_topology": "ring",
+        "damsgrad_degree": 4,
+        "damsgrad_beta1": 0.9,
+        "damsgrad_beta2": 0.999,
+        "damsgrad_epsilon": 1e-06,
+        "fspda_topology": "ring",
+        "fspda_degree": 4,
+        "fspda_sampling": "bernoulli",
+        "fspda_edge_probability": 0.5,
+        "fspda_keep_ratio": 0.1,
+        "fspda_consensus_stepsize": 0.1,
+        "fspda_dual_weight": 0.01,
+        "fspda_dual_stepsize": 0.1,
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "33e841a48150bdd59d2520c04a09055bd7fe24087b1e7209d2bb626b6198fa28"
+      },
+      "congested-lr01": {
+        "output": "/mnt/data/mdevos/conflux/output/damsgrad-validation/digits-congested",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "damsgrad",
+          "dsgd",
+          "gt-dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "damsgrad_topology": "ring",
+        "damsgrad_degree": 4,
+        "damsgrad_beta1": 0.9,
+        "damsgrad_beta2": 0.999,
+        "damsgrad_epsilon": 1e-06,
+        "fspda_topology": "ring",
+        "fspda_degree": 4,
+        "fspda_sampling": "bernoulli",
+        "fspda_edge_probability": 0.5,
+        "fspda_keep_ratio": 0.1,
+        "fspda_consensus_stepsize": 0.1,
+        "fspda_dual_weight": 0.01,
+        "fspda_dual_stepsize": 0.1,
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 200000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.01,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "33e841a48150bdd59d2520c04a09055bd7fe24087b1e7209d2bb626b6198fa28"
+      }
+    },
+    "summary": "damsgrad-digits-summary.csv",
+    "curves": "damsgrad-digits-curves.csv",
+    "paired_capacities": [
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 12,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 2,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 4,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 4,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 30,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 1,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 4,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 7,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 12,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 2,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 4,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 4,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 30,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 1,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 4,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 7,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 200000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 200000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 200000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 12,
+            "bandwidth": 800000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 2,
+            "training_speed": 12,
+            "bandwidth": 100000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 4,
+            "training_speed": 5,
+            "bandwidth": 800000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 100000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 800000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 100000
+          },
+          {
+            "client": 3,
+            "training_speed": 30,
+            "bandwidth": 100000
+          },
+          {
+            "client": 4,
+            "training_speed": 12,
+            "bandwidth": 100000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 6,
+            "training_speed": 30,
+            "bandwidth": 800000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 100000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 800000
+          },
+          {
+            "client": 1,
+            "training_speed": 2,
+            "bandwidth": 100000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 100000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 800000
+          },
+          {
+            "client": 4,
+            "training_speed": 30,
+            "bandwidth": 100000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 7,
+            "training_speed": 30,
+            "bandwidth": 100000
+          }
+        ]
+      }
+    ],
+    "audits": [
+      "All 126 runs have 24 finite metric rows across all 8 clients at 1/2/3 seconds",
+      "Capacities match across methods and learning rates within capacity condition/profile/partition/seed",
+      "Learning settings identical within rate; no momentum or decay; beta1=.9/beta2=.999/epsilon1e-6 in every DAMSGrad run",
+      "Sent/received bytes balance and match summary; charged compute matches client totals",
+      "DAMSGrad symmetric doubly stochastic mixing, spectral contraction and exact 19280-byte payloads",
+      "DAMSGrad completed iterations contiguous and within horizon, after charged gradient and prior completion",
+      "Every snapshot round matches the last available completed update, allowing event ordering at equal timestamps",
+      "All manifests match the final optimizer/protocol source hash"
+    ],
+    "limitations": "Untuned short screening over all reported common learning rates. No best-rate selection or held-out hyperparameter tuning. Rates across adaptive and SGD methods have different scales. Algorithms differ in order, overlap and bytes, so no isolated adaptation ablation or general performance ranking. Profile means differ; compare within profile. Actual execution times overlap other validation work and do not determine simulated time. No live broker or larger-model execution."
+  }
+}

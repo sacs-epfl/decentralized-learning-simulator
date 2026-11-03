@@ -58,8 +58,10 @@ def create_parser():
     add_relaysgd_arguments(parser)
     from dasklearn.simulation.sgp.settings import add_sgp_arguments
     add_sgp_arguments(parser)
+    from dasklearn.simulation.damsgrad.settings import add_damsgrad_arguments
     from dasklearn.simulation.fspda.settings import add_fspda_arguments
     from dasklearn.simulation.motef.settings import add_motef_arguments
+    add_damsgrad_arguments(parser)
     add_fspda_arguments(parser)
     add_motef_arguments(parser)
     parser.add_argument('--group-size', type=int, default=8)

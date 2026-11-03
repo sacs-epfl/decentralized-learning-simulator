@@ -280,3 +280,21 @@ measures that difference; it does not justify a full Reference-equivalence
 label. [Evidence and benchmark records](validation/fspda.json) preserve the pin
 and checks. [Scope and limits](fspda.md#random-network-communication-and-supported-scope)
 exclude STORM, stale-message asynchrony, churn, local blocks and LoRA.
+
+## Decentralized AMSGrad: 3 November 2026
+
+`damsgrad` implements Algorithm 3 of Chen et al. (ACML 2022/PMLR 2023).
+[Independent numerical/protocol tests](../tests/test_damsgrad.py) compare full
+model, moment, running-maximum, adaptive-tracker and packet trajectories with
+an independent matrix oracle. They check delayed denominator semantics,
+tracker conservation/consensus, exact wire bytes, computation/network overlap,
+serialization, streaming, CPU/CUDA agreement and CLI/broker registration.
+
+[Evidence and benchmark records](validation/damsgrad.json) pin the primary
+paper/supplement and final source hash. No authors' code comparison was
+executed; the label is Numerical · Protocol · Integration.
+[Initialization and optimizer contract](damsgrad.md#update-and-initialization)
+state zero v0, epsilon inside the square root and no bias correction.
+[Scope and limits](damsgrad.md#communication-timing-and-supported-scope)
+exclude compression, local blocks, directed/time-varying mixing, churn and
+live multi-process validation.

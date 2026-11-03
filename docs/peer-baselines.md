@@ -7,6 +7,7 @@
 | DeTAG | [ICML 2021](https://proceedings.mlr.press/v139/lu21a.html) / [JMLR 2023](https://jmlr.org/papers/v24/22-0044.html) | Accelerated gossip and phase gradient averaging, with computation overlapping charged communication. |
 | RelaySGD | [NeurIPS 2021](https://arxiv.org/abs/2110.04175) | Tree relaying gives uniform origin weights over delayed model parcels, with explicit sums/counts and per-hop network costs. |
 | SGP | [ICML 2019](https://proceedings.mlr.press/v97/assran19a.html) | PushSum numerator/mass correction supports directed sender-column mixing, including time-varying exponential graphs. |
+| Decentralized AMSGrad | [ACML 2022 / PMLR 2023](https://proceedings.mlr.press/v189/chen23b.html) | Adaptive first/second moments with consensus on the delayed adaptive denominator. |
 | FSPDA-SA | [arXiv:2410.18774v2, 2025](https://arxiv.org/abs/2410.18774v2) | Primal–dual correction with randomly activated undirected edges and shared coordinate sparsification. |
 | MoTEF | [ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/39b77b5e422b4e070e2811b73ea9bcf7-Abstract-Conference.html) | Combines momentum tracking and two compressed estimate channels with error feedback under data heterogeneity. |
 | Moshpit SGD | [NeurIPS 2021](https://papers.neurips.cc/paper_files/paper/2021/hash/97275a23ca44226c9964043c8462be96-Abstract.html) | Small-group chunked all-reduce on heterogeneous devices; the closest collective-communication baseline. |
@@ -15,7 +16,7 @@
 | Shatter | [PoPETs 2025](https://petsymposium.org/popets/2025/popets-2025-0043.php) | Existing chunked virtual-node baseline, retained in every comparison. |
 
 
-See also [FSPDA-SA](fspda.md), [MoTEF's implementation contract](motef.md), [SGP](sgp.md), [RelaySGD](relaysgd.md), [DeTAG](detag.md), [GT-DSGD](gt-dsgd.md), [SWIFT](swift.md), [DSpodFL](dspodfl.md) and [DeMo](demo.md).
+See also [Decentralized AMSGrad](damsgrad.md), [FSPDA-SA](fspda.md), [MoTEF's implementation contract](motef.md), [SGP](sgp.md), [RelaySGD](relaysgd.md), [DeTAG](detag.md), [GT-DSGD](gt-dsgd.md), [SWIFT](swift.md), [DSpodFL](dspodfl.md) and [DeMo](demo.md).
 
 ## Implemented protocol contracts
 
@@ -73,7 +74,7 @@ Use `scripts/validate_algorithms.py` for synthetic/digits workloads,
 `scripts/run_cifar.py` for native CIFAR-10, and `scripts/run_tiny.py` for
 Tiny ImageNet with compatible models/optimizers. The baseline aliases are
 `moshpit`, `teleportation-ring`, `teleportation-hypercube`, `d-local-sgd-ring`,
-`dspodfl`, `demo`, `swift`, `gt-dsgd`, `detag`, `relaysgd`, `sgp`, `motef` and `fspda`. SWIFT, GT-DSGD, DeTAG, RelaySGD, SGP, MoTEF and FSPDA-SA require `--local-steps 1 --momentum 0`;
+`dspodfl`, `demo`, `swift`, `gt-dsgd`, `detag`, `relaysgd`, `sgp`, `motef`, `fspda` and `damsgrad`. SWIFT, GT-DSGD, DeTAG, RelaySGD, SGP, MoTEF, FSPDA-SA and Decentralized AMSGrad require `--local-steps 1 --momentum 0`;
 `--swift-averaging-interval H` selects periodic averaging. The coordinator accepts `--algorithm teleportation` with
 `--teleportation-topology ring` or `hypercube` instead of the aliases.
 
