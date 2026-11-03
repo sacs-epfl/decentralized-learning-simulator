@@ -1,0 +1,1292 @@
+{
+  "date": "2026-11-03",
+  "base_commit": "7f800d54e85c46040ba80ffd25c5a3602c718a5c",
+  "source_sha256": "ffa5d31e9a18692d4f4e53f3da8e2a66610fa43af2ad50c45f93b1cc5991be54",
+  "source_hash_method": "Sorted relative path bytes plus content of dasklearn/**/*.py, args.py, main.py, scripts/validate_algorithms.py; matches all runner manifests",
+  "references": {
+    "paper": "https://arxiv.org/abs/2410.18774v2",
+    "paper_pdf_sha256": "50908bad8760dc930dc83ec3cc70871c6ace0f5d38e3cfafe8b2fe5c5d6a2f69",
+    "repository": "https://github.com/OscarYau525/FSPDA",
+    "commit": "0808887c6e9f713ca203df3138fb8995094be694",
+    "contract": "FSPDA-SA simultaneous old-state descent/ascent, paper (7) and Appendix A (35)-(36): L_i=sum Cij(x_i-x_j), x_next=x-lr*g-eta*u-gamma*L, u_next=u+beta*L; zero node dual startup.",
+    "differences": [
+      "Interpret opposite signs in paper (6)/(8b) as typos, following incidence definition, (7), (11), (36).",
+      "Reference code uses new self minus old neighbors in dual ascent. Simulator uses old self minus old neighbors, preserving zero-sum dual. Audit measures discrepancy rather than claiming trajectory equivalence.",
+      "Shared deterministic graph/mask schedule replaces reference mask-negotiation traffic; explicit sparse indices and values are charged. Global coordinate sampling rather than reference per-tensor sampling."
+    ],
+    "scope": "Stable membership; fully trainable common-dtype parameters and local buffers; local_steps=1, momentum=0. Neighbor-round blocking with old-model/gradient overlap; optional global barrier. No STORM, stale-message asynchronous counter/rescaling, optimizer momentum/Adam, compression noise, local blocks, churn or LoRA."
+  },
+  "environment": {
+    "conda_prefix": "/mnt/data/mdevos/conda/envs/conflux-gpu",
+    "python": "3.12.15",
+    "torch": "2.14.1+cu130",
+    "numpy": "2.5.4",
+    "device": "cuda:0",
+    "gpu": "NVIDIA RTX 5000 Ada Generation"
+  },
+  "tests": {
+    "command": "python -m pytest -q",
+    "passed": 781,
+    "warnings": 5,
+    "duration_seconds": 121.0,
+    "fspda_specific_cases": 54,
+    "checks": [
+      "Independent incidence-matrix logistic trajectories; two graphs, two sampling modes, dense/sparse masks, skew and barriers",
+      "Zero-sum dual and mean gradient invariants; convergence to exact unequal-quadratic optimum",
+      "Old-state ascent, persistent dual forces on isolated iterations, local buffers and immutable inputs",
+      "Exact payload bytes, overlap/readiness, early/duplicates, small graphs, duration stop",
+      "Seeded serialized DAG replay, streaming snapshots, CPU/CUDA model/dual/packet agreement",
+      "Shared CLI, comparison aliases and broker settings registration; full maintained regression suite"
+    ]
+  },
+  "reference_audit": {
+    "command": "python tests/check_fspda_reference.py /tmp/conflux-fspda-reference",
+    "passed": true,
+    "reference_commit": "0808887c6e9f713ca203df3138fb8995094be694",
+    "matched_old_state_node_steps": 24,
+    "max_primal_error": 5.551115123125783e-17,
+    "max_dual_order_identity_error": 3.1051550219984847e-16,
+    "max_dual_discrepancy": 0.35219826621620787,
+    "max_reference_dual_sum": 0.320065239731413,
+    "scope": "Unchanged reference step with mocked old-model packets and explicit zero-sum dual inputs. Primal matches; reference dual uses new self minus old neighbors, simulator uses old self per paper (7)/(36). No full-trajectory equivalence or distributed reference deployment claimed.",
+    "source_sha256": {
+      "pcode/optim/fspda.py": "72ca56ccea424066607c84d2b0748779c463bd2b4fba1b5ee517ec3ddce20522",
+      "pcode/optim/utils.py": "9a0fe936af255a324fc406f7a30c35714d7e97d09cbd5d7fc3b83afe2a7e865f",
+      "pcode/utils/tensor_buffer.py": "3b902ce8c7de1d7b1e2d198f2b4142c7542a69fd105f3affdd03b156dd98d796",
+      "pcode/utils/communication.py": "cb11604fa875e94a2ea32118e8b2ce1936289226de1a5d029f4a405277e8e3e5"
+    }
+  },
+  "cli_smoke": {
+    "command": "python main.py --algorithm fspda --local --dataset synthetic --model mlp --peers 4 --local-steps 1 --momentum 0 --learning-rate .05 --rounds 3 --duration 1 --test-period 1 --test-method snapshot --device cuda:0 --work-dir output/fspda-validation/cli-smoke",
+    "exit_code": 0
+  },
+  "benchmarks": {
+    "runs": 66,
+    "fspda_runs": 30,
+    "horizon_seconds": 3,
+    "peers": 8,
+    "dataset": "sklearn digits",
+    "model": "mlp, 2410 float32 parameters",
+    "manifests": {
+      "ample": {
+        "output": "/mnt/data/mdevos/conflux/output/fspda-validation/digits-ample",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "fspda",
+          "dsgd",
+          "gt-dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "iid",
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "fspda_topology": "ring",
+        "fspda_degree": 4,
+        "fspda_sampling": "bernoulli",
+        "fspda_edge_probability": 0.5,
+        "fspda_keep_ratio": 0.1,
+        "fspda_consensus_stepsize": 0.1,
+        "fspda_dual_weight": 0.01,
+        "fspda_dual_stepsize": 0.1,
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "ffa5d31e9a18692d4f4e53f3da8e2a66610fa43af2ad50c45f93b1cc5991be54"
+      },
+      "congested": {
+        "output": "/mnt/data/mdevos/conflux/output/fspda-validation/digits-congested",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "fspda",
+          "dsgd",
+          "gt-dsgd"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "fspda_topology": "ring",
+        "fspda_degree": 4,
+        "fspda_sampling": "bernoulli",
+        "fspda_edge_probability": 0.5,
+        "fspda_keep_ratio": 0.1,
+        "fspda_consensus_stepsize": 0.1,
+        "fspda_dual_weight": 0.01,
+        "fspda_dual_stepsize": 0.1,
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 200000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "ffa5d31e9a18692d4f4e53f3da8e2a66610fa43af2ad50c45f93b1cc5991be54"
+      },
+      "dense-control": {
+        "output": "/mnt/data/mdevos/conflux/output/fspda-validation/digits-dense",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "fspda"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "fspda_topology": "ring",
+        "fspda_degree": 4,
+        "fspda_sampling": "bernoulli",
+        "fspda_edge_probability": 1.0,
+        "fspda_keep_ratio": 1.0,
+        "fspda_consensus_stepsize": 0.1,
+        "fspda_dual_weight": 0.01,
+        "fspda_dual_stepsize": 0.1,
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "ffa5d31e9a18692d4f4e53f3da8e2a66610fa43af2ad50c45f93b1cc5991be54"
+      },
+      "one-edge-control": {
+        "output": "/mnt/data/mdevos/conflux/output/fspda-validation/digits-one-edge",
+        "dataset": "digits",
+        "device": "cuda:0",
+        "variants": [
+          "fspda"
+        ],
+        "profiles": [
+          "uniform",
+          "heterogeneous"
+        ],
+        "partitioners": [
+          "dirichlet"
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "peers": 8,
+        "sample_size": 8,
+        "chunks": 4,
+        "success_fraction": 1,
+        "dspod_degree": 4,
+        "dspod_sgd_probability": 0.5,
+        "dspod_communication_probability": 0.5,
+        "dspod_probability_mode": "capacity",
+        "demo_decay": 0.999,
+        "demo_chunk": 64,
+        "demo_topk": 32,
+        "choco_topology": "ring",
+        "choco_degree": 4,
+        "choco_compressor": "topk",
+        "choco_keep_ratio": 0.01,
+        "choco_consensus_stepsize": 0.1,
+        "qgm_topology": "ring",
+        "qgm_degree": 4,
+        "qgm_mode": "quasi",
+        "qgm_beta": 0.9,
+        "qgm_mu": null,
+        "qgm_nesterov": false,
+        "swift_topology": "ring",
+        "swift_degree": 4,
+        "swift_averaging_interval": 1,
+        "swift_influence": null,
+        "gt_dsgd_topology": "ring",
+        "gt_dsgd_degree": 4,
+        "detag_topology": "ring",
+        "detag_degree": 4,
+        "detag_phase_length": 2,
+        "detag_eta": null,
+        "relaysgd_topology": "balanced",
+        "relaysgd_normalization": "counts",
+        "sgp_topology": "exponential",
+        "fspda_topology": "ring",
+        "fspda_degree": 4,
+        "fspda_sampling": "one-edge",
+        "fspda_edge_probability": 0.5,
+        "fspda_keep_ratio": 0.1,
+        "fspda_consensus_stepsize": 0.1,
+        "fspda_dual_weight": 0.01,
+        "fspda_dual_stepsize": 0.1,
+        "motef_topology": "ring",
+        "motef_degree": 4,
+        "motef_compressor": "topk",
+        "motef_keep_ratio": 0.01,
+        "motef_consensus_stepsize": 0.1,
+        "motef_momentum_weight": 0.1,
+        "duration": 3.0,
+        "test_period": 1.0,
+        "bandwidth": 100000000,
+        "latency_ms": 2.0,
+        "learning_rate": 0.05,
+        "local_steps": 1,
+        "alpha": 0.3,
+        "gpu_residency": true,
+        "training_batching": true,
+        "training_batch_size": 2,
+        "gpu_state_cache_mb": 256,
+        "python": "3.12.15",
+        "torch": "2.14.1+cu130",
+        "numpy": "2.5.4",
+        "source_sha256": "ffa5d31e9a18692d4f4e53f3da8e2a66610fa43af2ad50c45f93b1cc5991be54"
+      }
+    },
+    "summary": "fspda-digits-summary.csv",
+    "curves": "fspda-digits-curves.csv",
+    "paired_capacities": [
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "iid",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 100000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 12,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 2,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 4,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 4,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 30,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "iid",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 1,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 4,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 7,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 12,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 2,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 4,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 4,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 30,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": false,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 1,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 400000000
+          },
+          {
+            "client": 4,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 50000000
+          },
+          {
+            "client": 7,
+            "training_speed": 30,
+            "bandwidth": 50000000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 200000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 200000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "uniform",
+        "partitioner": "dirichlet",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 1,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 2,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 3,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 4,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 5,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 6,
+            "training_speed": 3,
+            "bandwidth": 200000
+          },
+          {
+            "client": 7,
+            "training_speed": 3,
+            "bandwidth": 200000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 0,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 12,
+            "bandwidth": 800000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 2,
+            "training_speed": 12,
+            "bandwidth": 100000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 4,
+            "training_speed": 5,
+            "bandwidth": 800000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 100000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 1,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 1,
+            "training_speed": 5,
+            "bandwidth": 800000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 100000
+          },
+          {
+            "client": 3,
+            "training_speed": 30,
+            "bandwidth": 100000
+          },
+          {
+            "client": 4,
+            "training_speed": 12,
+            "bandwidth": 100000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 6,
+            "training_speed": 30,
+            "bandwidth": 800000
+          },
+          {
+            "client": 7,
+            "training_speed": 12,
+            "bandwidth": 100000
+          }
+        ]
+      },
+      {
+        "congested": true,
+        "profile": "heterogeneous",
+        "partitioner": "dirichlet",
+        "seed": 2,
+        "clients": [
+          {
+            "client": 0,
+            "training_speed": 5,
+            "bandwidth": 800000
+          },
+          {
+            "client": 1,
+            "training_speed": 2,
+            "bandwidth": 100000
+          },
+          {
+            "client": 2,
+            "training_speed": 2,
+            "bandwidth": 100000
+          },
+          {
+            "client": 3,
+            "training_speed": 5,
+            "bandwidth": 800000
+          },
+          {
+            "client": 4,
+            "training_speed": 30,
+            "bandwidth": 100000
+          },
+          {
+            "client": 5,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 6,
+            "training_speed": 5,
+            "bandwidth": 100000
+          },
+          {
+            "client": 7,
+            "training_speed": 30,
+            "bandwidth": 100000
+          }
+        ]
+      }
+    ],
+    "audits": [
+      "All 66 runs have 24 finite metric rows across all 8 clients at 1/2/3 seconds",
+      "Matched capacities within condition/profile/partition/seed and all learning settings fixed",
+      "Sent and received bytes balance and match per-seed summary; charged compute matches client totals",
+      "FSPDA payloads: 241*(8+4)=2892 sparse bytes, 9640 dense bytes plus round/header",
+      "FSPDA completed iterations contiguous, within horizon, after positive charged gradients and prior completion",
+      "Recorded active neighbors are symmetric where both same-round completions exist; all within underlying connected ring",
+      "All manifests match final numerical/protocol source hash"
+    ],
+    "limitations": "Short, untuned mechanism screening; test-set curves observed, no selection or retuning. Dense/sparse/one-edge controls differ in both activation and communication. Not an isolated primal-dual or compression ablation, paper reproduction, large-model ranking or live broker validation. Heterogeneous profiles have different mean capacities from uniform; compare algorithms within profile. Actual execution times overlap other validation work and do not define simulated time."
+  }
+}

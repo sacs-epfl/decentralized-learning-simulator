@@ -30,6 +30,7 @@ from dasklearn.simulation.gt_dsgd.settings import add_gt_dsgd_arguments, gt_dsgd
 from dasklearn.simulation.detag.settings import add_detag_arguments, detag_options
 from dasklearn.simulation.relaysgd.settings import add_relaysgd_arguments, relaysgd_options
 from dasklearn.simulation.sgp.settings import add_sgp_arguments, sgp_options
+from dasklearn.simulation.fspda.settings import add_fspda_arguments, fspda_options
 from dasklearn.simulation.motef.settings import add_motef_arguments, motef_options
 from dasklearn.util import MICROSECONDS
 from dasklearn import AUGMENTATION_FACTOR_SIM
@@ -52,6 +53,7 @@ async def main():
     add_detag_arguments(p)
     add_relaysgd_arguments(p)
     add_sgp_arguments(p)
+    add_fspda_arguments(p)
     add_motef_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
@@ -96,6 +98,7 @@ async def main():
     if args.variant=='detag':specific.update(detag_options(args))
     if args.variant=='relaysgd':specific.update(relaysgd_options(args))
     if args.variant=='sgp':specific.update(sgp_options(args))
+    if args.variant=='fspda':specific.update(fspda_options(args))
     if args.variant=='motef':specific.update(motef_options(args))
     if args.variant=='dspodfl':specific.update(dspodfl_options(args))
     settings = config(algorithm="shatter" if args.variant == "shatter-r2" else "qgm" if args.variant in {"qgm","dsgdm","dsgd"} else args.variant, seed=args.seed,
@@ -168,7 +171,7 @@ async def main():
     sim.test_snapshot=final_snapshot
     started=time.perf_counter();sim.simulate();sim.workflow_dag.build_task_indices();sim.workflow_dag.check_validity()
     print(json.dumps({"event_simulation_s":time.perf_counter()-started,"tasks":len(sim.workflow_dag.tasks),
-          "model_bytes":sim.model_size,"training_tasks":sum(t.func in {"train", "compute_gradient", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values())}),flush=True)
+          "model_bytes":sim.model_size,"training_tasks":sum(t.func in {"train", "compute_gradient", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values())}),flush=True)
     def progress(status):
         print(json.dumps(status),flush=True)
     execute_local(sim,retain_results=False,progress=progress)
@@ -189,7 +192,7 @@ async def main():
         "final_accuracy_10000":None if final is None else float(final.accuracy.mean()),
         "final_loss_10000":None if final is None else float(final.loss.mean()),
         "bytes_sent":sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
-        "training_tasks":sum(t.func in {"train", "compute_gradient", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values()),
+        "training_tasks":sum(t.func in {"train", "compute_gradient", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values()),
         "actual_execution_s":time.perf_counter()-started}
     pd.DataFrame([row]).to_csv(args.output/"summary.csv",index=False)
     print(json.dumps(row),flush=True);(args.output/"COMPLETE").write_text("Completed one-seed Tiny ImageNet run\n")

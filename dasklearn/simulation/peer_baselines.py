@@ -23,14 +23,18 @@ from dasklearn.simulation.relaysgd.settings import RelaySGDSettings
 from dasklearn.simulation.relaysgd.simulation import RelaySGDSimulation
 from dasklearn.simulation.sgp.settings import SGPSettings
 from dasklearn.simulation.sgp.simulation import SGPSimulation
+from dasklearn.simulation.fspda.settings import FSPDASettings
 from dasklearn.simulation.motef.settings import MoTEFSettings
+from dasklearn.simulation.fspda.simulation import FSPDASimulation
 from dasklearn.simulation.motef.simulation import MoTEFSimulation
 
 
-BASELINE_VARIANTS = ("motef", "sgp", "relaysgd", "detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
+BASELINE_VARIANTS = ("fspda", "motef", "sgp", "relaysgd", "detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
 
 
 def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
+    if variant == 'fspda':
+        return FSPDASimulation, FSPDASettings, {}
     if variant == 'motef':
         return MoTEFSimulation, MoTEFSettings, {}
     if variant == 'sgp':

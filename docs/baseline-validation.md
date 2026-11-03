@@ -262,3 +262,21 @@ state checks, and an optional pinned reference-helper audit. See the separate
 [CHOCO contract and validation evidence](choco.md) for its update order, supported
 compressors, local-SGD extension and communication accounting. Earlier audit
 counts and source hashes above describe the earlier classic-baseline snapshot.
+
+## FSPDA-SA: 3 November 2026
+
+`fspda` implements the paper's simultaneous old-state primal–dual SA updates
+with random undirected edges and shared unscaled coordinate masks.
+[Independent numerical/protocol tests](../tests/test_fspda.py) cover full
+logistic trajectories, mean/dual conservation, a known quadratic optimum,
+exact wire bytes, timing overlap, sparse/dense and single-edge sampling,
+serialization, streaming and CPU/CUDA agreement. CLI and comparison runners
+share the same settings; a live multi-process deployment is not validated.
+
+The [source-discrepancy contract](fspda.md#recurrence-and-source-discrepancy)
+explains the printed sign inconsistency and the reference code's new-self/old-
+neighbor dual update. An [executed audit](../tests/check_fspda_reference.py)
+measures that difference; it does not justify a full Reference-equivalence
+label. [Evidence and benchmark records](validation/fspda.json) preserve the pin
+and checks. [Scope and limits](fspda.md#random-network-communication-and-supported-scope)
+exclude STORM, stale-message asynchrony, churn, local blocks and LoRA.

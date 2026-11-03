@@ -40,6 +40,7 @@ from dasklearn.simulation.gt_dsgd.settings import add_gt_dsgd_arguments, gt_dsgd
 from dasklearn.simulation.detag.settings import add_detag_arguments, detag_options
 from dasklearn.simulation.relaysgd.settings import add_relaysgd_arguments, relaysgd_options
 from dasklearn.simulation.sgp.settings import add_sgp_arguments, sgp_options
+from dasklearn.simulation.fspda.settings import add_fspda_arguments, fspda_options
 from dasklearn.simulation.motef.settings import add_motef_arguments, motef_options
 from dasklearn.util import MICROSECONDS
 
@@ -70,6 +71,7 @@ async def run_one(args, variant, profile, partitioner, seed):
     if variant=='detag':specific.update(detag_options(args))
     if variant=='relaysgd':specific.update(relaysgd_options(args))
     if variant=='sgp':specific.update(sgp_options(args))
+    if variant=='fspda':specific.update(fspda_options(args))
     if variant=='motef':specific.update(motef_options(args))
     if variant=='demo':specific.update(demo_options(args))
     if variant=='dspodfl':specific.update(dspodfl_options(args))
@@ -161,7 +163,7 @@ async def run_one(args, variant, profile, partitioner, seed):
            "learning_rate": args.learning_rate,
            "final_accuracy": float(curve.accuracy.iloc[-1]), "final_loss": float(curve.loss.iloc[-1]),
            "model_bytes": sim.model_size, "bytes_sent": sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
-           "training_tasks": sum(t.func in {"train", "compute_gradient", "demo_prepare", "qgm_train", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values()),
+           "training_tasks": sum(t.func in {"train", "compute_gradient", "demo_prepare", "qgm_train", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values()),
            "simulated_compute_s": sum(c.compute_time for c in sim.clients) / MICROSECONDS,
            "actual_execution_s": time.perf_counter() - started}
     if getattr(args,"final_test",False):
@@ -218,6 +220,7 @@ async def main():
     add_detag_arguments(parser)
     add_relaysgd_arguments(parser)
     add_sgp_arguments(parser)
+    add_fspda_arguments(parser)
     add_motef_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)

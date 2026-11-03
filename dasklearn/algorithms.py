@@ -7,6 +7,7 @@ from importlib import import_module
 
 
 ALGORITHMS = {
+    'fspda': ('fspda', 'FSPDASettings', 'FSPDASimulation'),
     'motef': ('motef', 'MoTEFSettings', 'MoTEFSimulation'),
     'sgp': ('sgp', 'SGPSettings', 'SGPSimulation'),
     'relaysgd': ('relaysgd', 'RelaySGDSettings', 'RelaySGDSimulation'),
