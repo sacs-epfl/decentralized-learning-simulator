@@ -3,6 +3,7 @@
 const $ = id => document.getElementById(id);
 const colors = ["#72e4bf", "#7bb9ff", "#ffc27b", "#df9fff", "#ff8c9a", "#91d6e6", "#d2dc7f", "#b8a1ff"];
 let current;
+let selectedSetting, renderedSetting, refreshTimer, refreshGeneration = 0;
 const number = (value, digits = 2) => value == null ? "—" : value.toLocaleString(undefined, {maximumFractionDigits: digits, minimumFractionDigits: digits});
 function cell(row, value) { const td = document.createElement("td"); td.textContent = value; row.append(td); }
 function svgElement(tag, attributes, content) {
@@ -63,16 +64,22 @@ function render(data) {
       const row=document.createElement("tr"); cell(row,variant); cell(row,rates.join(", ")); cell(row,selected?.[variant] ?? "Pending"); return row;
     }));
   }
-  $("scenario").textContent = `${data.scenario.dataset} · ${data.scenario.model} · ${data.scenario.peers} clients · ${data.scenario.partitioner} · ${data.network.profile} capacities · ${globalModel ? "global model" : "mean client accuracy"}`;
+  const partition = data.scenario.partitioner === "dirichlet" ? `Dirichlet α = ${data.scenario.alpha}` : data.scenario.partitioner;
+  $("scenario").textContent = `${data.scenario.dataset} · ${data.scenario.model} · ${data.scenario.peers} clients · ${partition} · ${data.network.profile} capacities · ${globalModel ? "global model" : "mean client accuracy"}`;
   $("worst-client-header").hidden = globalModel;
   $("metric-note").textContent = globalModel ? "Each checkpoint averages all client parameters with equal weights, then evaluates that global model once. Aggregation is an offline diagnostic: collection time and traffic are excluded from protocol costs. Average accuracy integrates the global learning curve. Full-run wall time includes evaluation and any concurrent worker contention." : "Accuracy averages individual client accuracies. Worst 10% averages the lowest-scoring clients. Average accuracy integrates the learning curve. Traffic counts sent bytes, including partial transfers. Full-run wall time includes evaluation and any concurrent worker contention.";
   $("completed").textContent = `${data.runs.filter(run => run.status === "completed").length} / ${data.runs.length}`;
   $("split").textContent = data.evaluation_split;
   $("updated").textContent = new Date(data.updated_at).toLocaleTimeString();
   const select = $("budget");
-  if ([...select.options].map(option => +option.value).join() !== data.budgets.join()) {
+  const settingKey = selectedSetting ?? data.name;
+  if (renderedSetting !== settingKey || [...select.options].map(option => +option.value).join() !== data.budgets.join()) {
+    const previous = renderedSetting === settingKey ? +select.value : null;
     select.replaceChildren(...data.budgets.map(budget => new Option(`${budget} seconds`, budget)));
+    select.value = previous !== null && data.budgets.includes(previous) ? previous : data.budgets.includes(900) ? 900 : Math.max(...data.budgets);
   }
+  renderedSetting = settingKey;
+  $("export").href = `/leaderboard.csv?setting=${encodeURIComponent(selectedSetting ?? "default")}`;
   const table = data.tables.find(table => table.budget === +select.value);
   $("budget-label").textContent = `${table.budget} s`;
   $("ranking-note").textContent = table.provisional ? "Provisional results · Official ranks appear after every variant has the full paired seed set. Partial or failed runs never receive a final rank." : "Complete paired comparison · Sorted by mean accuracy at the selected simulated budget. Small differences may fall within seed variation.";
@@ -115,12 +122,37 @@ function render(data) {
   $("provenance").textContent=JSON.stringify({scenario:data.scenario,network:data.network,provenance:data.provenance,runs:data.runs.map(({curve,...run}) => run)}, null, 2);
 }
 async function refresh() {
+  const generation = ++refreshGeneration;
+  clearTimeout(refreshTimer);
   try {
-    const response = await fetch("/leaderboard.json", {cache:"no-store"});
+    const settingsResponse = await fetch("/settings.json", {cache:"no-store"});
+    if (!settingsResponse.ok) throw new Error(`Cannot load settings (HTTP ${settingsResponse.status})`);
+    const catalog = await settingsResponse.json();
+    if (generation !== refreshGeneration) return;
+    if (selectedSetting === undefined) selectedSetting = new URLSearchParams(window.location.search).get("setting") ?? catalog.default;
+    if (!catalog.settings.some(setting => setting.id === selectedSetting)) selectedSetting = catalog.default;
+    const picker = $("setting");
+    if ([...picker.options].map(option => option.value).join() !== catalog.settings.map(setting => setting.id).join()) {
+      picker.replaceChildren(...catalog.settings.map(setting => new Option(setting.label, setting.id)));
+    }
+    picker.value = selectedSetting;
+    $("setting-picker").hidden = catalog.settings.length < 2;
+    const response = await fetch(`/leaderboard.json?setting=${encodeURIComponent(selectedSetting)}`, {cache:"no-store"});
     if (!response.ok) throw new Error(`Waiting for results (HTTP ${response.status})`);
-    current = await response.json(); render(current); $("connection").textContent="Refreshes every 2 seconds. Results remain available after the benchmark finishes.";
-  } catch (error) {$("connection").textContent=error.message;}
-  setTimeout(refresh, 2000);
+    const result = await response.json();
+    if (generation !== refreshGeneration) return;
+    current = result; render(current); $("connection").textContent="Refreshes every 2 seconds. Remote experiments continue while this page is closed.";
+  } catch (error) {if (generation === refreshGeneration) $("connection").textContent=error.message;}
+  finally {if (generation === refreshGeneration) refreshTimer = setTimeout(refresh, 2000);}
 }
 $("budget").addEventListener("change", () => {if (current) render(current);});
+$("setting").addEventListener("change", () => {
+  selectedSetting = $("setting").value; current = null;
+  const query = new URLSearchParams(window.location.search); query.set("setting", selectedSetting);
+  window.history.replaceState(null, "", `${window.location.pathname}?${query}${window.location.hash}`);
+  for (const id of ["rows", "targets", "runs", "legend", "time-chart", "traffic-chart"]) $(id).replaceChildren();
+  for (const id of ["completed", "budget-label", "split", "updated"]) $(id).textContent = "—";
+  $("status").textContent = "Loading"; $("title").textContent = "Loading selected setting…"; $("scenario").textContent = "";
+  refresh();
+});
 refresh();

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "default": "dirichlet01-heterogeneous",
+  "settings": [
+    {
+      "id": "iid-uniform",
+      "label": "IID · homogeneous hardware",
+      "output": "../output/leaderboard-cifar10-32-global900"
+    },
+    {
+      "id": "dirichlet01-heterogeneous",
+      "label": "Non-IID (Dirichlet α = 0.1) · heterogeneous hardware",
+      "output": "../output/leaderboard-cifar10-32-dirichlet01-heterogeneous-global900"
+    }
+  ]
+}

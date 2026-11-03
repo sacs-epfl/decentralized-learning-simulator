@@ -1,0 +1,43 @@
+# Extreme setting: reuse the established LRs; change only data/hardware profile.
+version: 1
+name: cifar10-gnlenet-32-dirichlet01-heterogeneous-global900
+output: ../output/leaderboard-cifar10-32-dirichlet01-heterogeneous-global900
+benchmark:
+  budgets: [60, 300, 900]
+  seeds: [10, 11, 12]
+  evaluation_period: 60
+  evaluation_model: global
+  execution_devices: [cuda:0, cuda:1, cuda:0, cuda:1]
+  accuracy_targets: [30, 40, 50, 60, 70, 80]
+  network:
+    profile: heterogeneous
+    bandwidth_bytes_per_second: 1000000
+    compute_step_ms: 20
+settings:
+  dataset: cifar10
+  dataset_base_path: ../data/cifar10
+  model: gnlenet
+  device: cuda:0
+  peers: 32
+  partitioner: dirichlet
+  alpha: 0.1
+  validation_set_fraction: 0.1
+  evaluation_split: test
+  evaluation_examples: 0
+  local_steps: 1
+  batch_size: 32
+  momentum: 0
+  weight_decay: 0
+  network_latency_ms: 10
+  torch_threads: 4
+runs:
+  - name: fedavg
+    settings: {algorithm: fl, sample_size: 32, learning_rate: 0.01}
+  - name: dpsgd-ring
+    settings: {algorithm: dpsgd, topology: ring, learning_rate: 0.01}
+  - name: qgm
+    settings: {algorithm: qgm, qgm_topology: ring, learning_rate: 0.01}
+  - name: choco
+    settings: {algorithm: choco, choco_topology: ring, choco_keep_ratio: 0.1, choco_consensus_stepsize: 0.1, learning_rate: 0.1}
+  - name: demo
+    settings: {algorithm: demo, demo_decay: 0.999, demo_chunk: 64, demo_topk: 32, learning_rate: 0.001}

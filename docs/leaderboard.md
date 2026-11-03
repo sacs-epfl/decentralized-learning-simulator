@@ -20,6 +20,22 @@ Open <http://127.0.0.1:8765>. For execution on a remote host, forward the port:
 serves only the dashboard, its script, and the two leaderboard exports.
 It can start before the benchmark creates its output directory.
 
+To select between experiment settings on one dashboard:
+
+```sh
+python scripts/serve_leaderboard.py --catalog experiments/leaderboard-settings.json --port 8766
+```
+
+The setting picker keeps each scenario's runs, rankings, curves, and CSV separate.
+The catalog currently includes the completed IID/homogeneous 900-second run and
+the Dirichlet alpha 0.1 / heterogeneous run. The latter is the default setting.
+The budget picker defaults to **900 seconds** when available (otherwise the
+largest available budget), and preserves a user's choice during live refreshes.
+Setting links can be bookmarked, e.g. `?setting=dirichlet01-heterogeneous`.
+To add future IID/heterogeneous or non-IID/homogeneous combinations, add their
+result directories to this catalog and restart the server; no data is pooled
+across settings. A catalog may include a setting before its output exists.
+
 Use the Python environment containing the simulator requirements. No additional
 dashboard framework, database, external service, or JavaScript build is needed.
 
@@ -192,6 +208,30 @@ time and reported network bytes; wall time includes the actual averaging and
 evaluation. The dashboard labels this readout and omits worst-client accuracy.
 Best observed accuracy at 900 seconds is a finite-budget result, not evidence of
 an unlimited-time optimum.
+
+## Dirichlet alpha 0.1 and heterogeneous hardware
+
+The extreme follow-up uses the same five algorithms and frozen LRs as the global
+900-second experiment, with 32 clients and seeds 10/11/12:
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_benchmark.py experiments/leaderboard-cifar10-32-dirichlet01-heterogeneous.yaml
+```
+
+Only two scenario fields change: `settings.partitioner: dirichlet` with
+`alpha: 0.1`, and `benchmark.network.profile: heterogeneous`. Compute-step times
+and bandwidths have independent client assignments, drawn from the existing
+`[0.5, 1, 2, 4]` factors and normalized to mean one. Client capacities are paired
+across algorithms for each seed. Base mean step time remains 20 ms, base mean
+bandwidth 1 MB/s, and latency 10 ms. The native CIFAR partitioner enforces at
+least eight examples per client. Learning rates are reused without tuning.
+
+There are 15 runs, four concurrent workers across two GPUs, global parameter
+averaging every 60 seconds, and budget views of 60/300/900 seconds. Select
+**Non-IID (Dirichlet α = 0.1) · heterogeneous hardware** in the catalog dashboard
+to monitor it. Experiments and the dashboard run on the remote host independently
+of the browser or SSH tunnel. Closing a laptop stops its tunnel but does not stop
+the remote workers; reconnect the tunnel to view progress again.
 
 ## Automated equal-budget LR tuning
 

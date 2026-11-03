@@ -134,6 +134,15 @@ CUDA_VISIBLE_DEVICES=0,1 python scripts/run_benchmark.py experiments/leaderboard
 
 See [global-model evaluation and the frozen-LR rerun](docs/leaderboard.md#global-model-rerun-with-frozen-lrs-and-a-longer-horizon).
 
+The extreme Dirichlet alpha 0.1 / heterogeneous-hardware scenario reuses those
+LRs and runs separately. Both scenarios are selectable on one live dashboard,
+which defaults to the 900-second budget:
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_benchmark.py experiments/leaderboard-cifar10-32-dirichlet01-heterogeneous.yaml
+python scripts/serve_leaderboard.py --catalog experiments/leaderboard-settings.json --port 8766
+```
+
 For configuration files and parameter sweeps, use the shared experiment runner:
 
 ```sh
