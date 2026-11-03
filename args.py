@@ -54,6 +54,8 @@ def create_parser():
     add_gt_dsgd_arguments(parser)
     from dasklearn.simulation.detag.settings import add_detag_arguments
     add_detag_arguments(parser)
+    from dasklearn.simulation.relaysgd.settings import add_relaysgd_arguments
+    add_relaysgd_arguments(parser)
     parser.add_argument('--group-size', type=int, default=8)
     parser.add_argument('--averaging-steps', type=int, default=1)
     parser.add_argument('--teleportation-topology', choices=['ring', 'hypercube', 'complete'], default='ring')

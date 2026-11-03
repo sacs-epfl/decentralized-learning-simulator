@@ -28,6 +28,7 @@ from dasklearn.simulation.qgm.settings import add_qgm_arguments, qgm_options
 from dasklearn.simulation.swift.settings import add_swift_arguments, swift_options
 from dasklearn.simulation.gt_dsgd.settings import add_gt_dsgd_arguments, gt_dsgd_options
 from dasklearn.simulation.detag.settings import add_detag_arguments, detag_options
+from dasklearn.simulation.relaysgd.settings import add_relaysgd_arguments, relaysgd_options
 from dasklearn.util import MICROSECONDS
 from dasklearn import AUGMENTATION_FACTOR_SIM
 from validate_algorithms import plot
@@ -47,6 +48,7 @@ async def main():
     add_swift_arguments(p)
     add_gt_dsgd_arguments(p)
     add_detag_arguments(p)
+    add_relaysgd_arguments(p)
     p.add_argument("--group-size", type=int, default=8)
     p.add_argument("--averaging-steps", type=int, default=1)
     p.add_argument("--duration", type=int, default=1800)
@@ -88,6 +90,7 @@ async def main():
     if args.variant=='swift':specific.update(swift_options(args))
     if args.variant=='gt-dsgd':specific.update(gt_dsgd_options(args))
     if args.variant=='detag':specific.update(detag_options(args))
+    if args.variant=='relaysgd':specific.update(relaysgd_options(args))
     if args.variant=='dspodfl':specific.update(dspodfl_options(args))
     settings = config(algorithm="shatter" if args.variant == "shatter-r2" else "qgm" if args.variant in {"qgm","dsgdm","dsgd"} else args.variant, seed=args.seed,
         work_dir=str(args.output), dataset="tiny_imagenet", model="resnet18", participants=args.peers,

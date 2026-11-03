@@ -38,6 +38,7 @@ from dasklearn.simulation.qgm.settings import add_qgm_arguments, qgm_options
 from dasklearn.simulation.swift.settings import add_swift_arguments, swift_options
 from dasklearn.simulation.gt_dsgd.settings import add_gt_dsgd_arguments, gt_dsgd_options
 from dasklearn.simulation.detag.settings import add_detag_arguments, detag_options
+from dasklearn.simulation.relaysgd.settings import add_relaysgd_arguments, relaysgd_options
 from dasklearn.util import MICROSECONDS
 
 
@@ -65,6 +66,7 @@ async def run_one(args, variant, profile, partitioner, seed):
     if variant=='swift':specific.update(swift_options(args))
     if variant=='gt-dsgd':specific.update(gt_dsgd_options(args))
     if variant=='detag':specific.update(detag_options(args))
+    if variant=='relaysgd':specific.update(relaysgd_options(args))
     if variant=='demo':specific.update(demo_options(args))
     if variant=='dspodfl':specific.update(dspodfl_options(args))
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
@@ -210,6 +212,7 @@ async def main():
     add_swift_arguments(parser)
     add_gt_dsgd_arguments(parser)
     add_detag_arguments(parser)
+    add_relaysgd_arguments(parser)
     parser.add_argument("--duration", type=float, default=90)
     parser.add_argument("--test-period", type=float, default=5)
     parser.add_argument("--bandwidth", type=int, default=4000)

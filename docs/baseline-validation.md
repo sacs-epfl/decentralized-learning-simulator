@@ -5,6 +5,18 @@ contract. A successful run or registry/settings round-trip does not establish
 algorithmic correctness. These checks cover the stated specialization, not every
 paper option, topology, optimizer, model or failure mode.
 
+## RelaySGD: 3 November 2026
+
+[RelaySGD's contract](relaysgd.md) implements Algorithm 1 with explicit tree
+forwarding, population counts and selectable startup normalization. Independent
+origin-history references check all models and directed messages across three
+trees, both startup rules, compute skew and global barriers. Exact traffic,
+causal waiting, immutable state, message guards, replay, snapshots and CPU/CUDA
+agreement are covered. A standalone check executes the pinned official
+RelayMechanism with mocked transport, agreeing within `3.33e-16` in float64.
+The [validation record](validation/relaysgd.json) preserves the short digits
+screening and its topology/startup sensitivity runs.
+
 ## DeTAG: 3 November 2026
 
 [DeTAG's contract](detag.md) implements Algorithms 2/3 with the normalized
