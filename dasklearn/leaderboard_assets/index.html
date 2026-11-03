@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Algorithm leaderboard · Decentralized learning</title>
+  <style>
+    :root{color-scheme:dark;--bg:#10171e;--panel:#18232d;--line:#304150;--text:#eef3f8;--muted:#a9bac8;--accent:#72e4bf}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,sans-serif}
+    main{max-width:1500px;margin:auto;padding:36px clamp(16px,4vw,56px)}h1{font-size:clamp(26px,4vw,42px);letter-spacing:-1px;margin:10px 0}h2{font-size:19px;margin:0 0 14px}
+    .eyebrow{font-size:12px;letter-spacing:2px;color:var(--accent);text-transform:uppercase}.muted,small{color:var(--muted)}
+    .top,.controls,.summary{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}.summary{justify-content:flex-start;gap:28px;margin:24px 0}.summary strong{display:block;font-size:23px;font-weight:600}
+    .badge{border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:12px}section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;margin:20px 0}
+    select,button,a.button{background:#223441;color:var(--text);border:1px solid #465f70;border-radius:6px;padding:8px 12px;font:inherit}a{color:var(--accent)}label{display:flex;gap:10px;align-items:center}select:focus,button:focus,a:focus{outline:2px solid var(--accent);outline-offset:3px}
+    .scroll{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px}th,td{padding:13px 12px;text-align:right;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:11px;letter-spacing:.3px}th:nth-child(2),td:nth-child(2){text-align:left}td:nth-child(2){font-weight:600}tbody tr:hover{background:#20313d}td:first-child{color:var(--accent)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.chart{width:100%;height:auto;display:block}.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px}.legend span{display:inline-flex;align-items:center;gap:6px}.dot{width:8px;height:8px;border-radius:50%;display:inline-block}.notice{color:var(--muted);font-size:13px;max-width:1000px}.error{color:#ffb8a8}details{margin:20px 0}summary{cursor:pointer;color:var(--accent)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.run-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.run{border-left:2px solid var(--line);padding:4px 12px;font-size:12px}.run strong{font-size:13px}.run.error{border-color:#ffb8a8}
+    @media(max-width:950px){.grid{grid-template-columns:1fr}section{padding:16px}}
+  </style>
+  <script src="/app.js" defer></script>
+</head>
+<body><main>
+  <div class="top"><div><div class="eyebrow">Decentralized learning / benchmark</div><h1 id="title">Algorithm leaderboard</h1><div class="muted" id="scenario">Waiting for benchmark results…</div></div><span class="badge" id="status" aria-live="polite">Connecting</span></div>
+  <div class="summary"><div><small>Completed runs</small><strong id="completed">—</strong></div><div><small>Comparison budget</small><strong id="budget-label">—</strong></div><div><small>Evaluation split</small><strong id="split">—</strong></div><div><small>Last refreshed</small><strong id="updated">—</strong></div></div>
+  <section>
+    <div class="controls"><h2>Performance at a fixed time</h2><label>Simulated budget <select id="budget" aria-label="Simulated time budget"></select></label><a class="button" href="/leaderboard.csv" download>Export CSV</a></div>
+    <p class="notice" id="ranking-note">Each result requires every client at the same simulated time.</p>
+    <div class="scroll"><table><thead><tr><th>Rank</th><th>Algorithm / variant</th><th>Seeds</th><th>Accuracy % ± SD</th><th>Avg. accuracy %</th><th>Worst 10% %</th><th>Traffic MB</th><th>Best observed %</th><th>Full-run wall s</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <p class="notice">Average accuracy integrates the learning curve from time zero. Worst 10% averages the lowest-scoring clients. Traffic counts sent bytes, including partial transfers. Full-run wall time includes all configured budgets and evaluation.</p>
+  </section>
+  <div class="grid"><section><h2>Accuracy over simulated time</h2><svg id="time-chart" class="chart" viewBox="0 0 680 330" role="img" aria-label="Mean accuracy across available seeds over simulated seconds"></svg><div id="legend" class="legend"></div></section><section><h2>Accuracy versus communication</h2><svg id="traffic-chart" class="chart" viewBox="0 0 680 330" role="img" aria-label="Mean accuracy versus total transmitted megabytes"></svg><p class="notice">Curves update when complete client snapshots arrive. Seed counts can differ while runs are in progress; official ranks require the full paired seed set.</p></section></div>
+  <section><h2>Time to accuracy</h2><div class="scroll"><table><thead id="target-head"></thead><tbody id="targets"></tbody></table></div><p class="notice">First observed checkpoint, without interpolation. “Reached” reports successful seeds / evaluated seeds. Unreached seeds are censored at the selected budget; the displayed time averages reached seeds only.</p></section>
+  <section><h2>Run progress</h2><div id="runs" class="run-list"></div></section>
+  <p class="notice" id="interpretation"></p>
+  <details><summary>Scenario, configuration, and provenance</summary><pre id="provenance"></pre></details>
+  <p class="notice" id="connection" role="status"></p>
+</main></body></html>

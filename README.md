@@ -100,6 +100,21 @@ SGP implementation follows the published algorithm and authors' reference.
 
 ## Run a small comparison
 
+For paired, fixed-time rankings with live accuracy/traffic curves, use the
+[algorithm leaderboard](docs/leaderboard.md). Budgets are configurable simulated
+seconds; the offline example covers all registered algorithms:
+
+```sh
+python scripts/run_benchmark.py experiments/leaderboard.yaml
+# In another terminal:
+python scripts/serve_leaderboard.py output/leaderboard
+```
+
+Open <http://127.0.0.1:8765>. Rankings show accuracy at each budget, average
+accuracy over time, worst-client performance, traffic, time to accuracy, best
+observed accuracy, and actual execution time. Results remain provisional until
+the full paired seed set is available. The synthetic example is untuned screening.
+
 For configuration files and parameter sweeps, use the shared experiment runner:
 
 ```sh

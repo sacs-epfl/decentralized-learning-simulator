@@ -72,6 +72,6 @@ class FLServer(BaseClient):
                 "time": self.simulator.current_time, "peer": self.index}, name=test_task_name)
             self.global_model = TaskRef(test_task_name, 0)
 
-        if self.round < self.simulator.settings.rounds:
+        if self.simulator.settings.stop == "duration" or self.round < self.simulator.settings.rounds:
             start_next_round_event = Event(self.simulator.current_time, self.index, START_ROUND)
             self.simulator.schedule(start_next_round_event)

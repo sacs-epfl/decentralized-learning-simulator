@@ -39,6 +39,7 @@ class AsynchronousClient(BaseClient, ABC):
         self.compute_time += event.data["train_time"]
         self.own_model = event.data["model"]
         self.age += 1
+        self.publish_model(self.age, self.own_model)
 
     def on_incoming_model(self, event: Event):
         """
@@ -73,6 +74,7 @@ class AsynchronousClient(BaseClient, ABC):
         else:
             weights = None
         self.own_model = self.aggregate_models(model_names, self.age, weights)
+        self.publish_model(self.age, self.own_model)
 
     def disseminate_model(self):
         """

@@ -1,0 +1,75 @@
+version: 1
+name: algorithm-leaderboard
+output: ../output/leaderboard
+benchmark:
+  budgets: [20, 60]
+  seeds: [0, 1, 2]
+  evaluation_period: 5
+  accuracy_targets: [40, 60, 80]
+  network:
+    profile: uniform
+    bandwidth_bytes_per_second: 1000000
+    compute_step_ms: 200
+settings:
+  dataset: synthetic
+  model: mlp
+  device: cpu
+  peers: 8
+  partitioner: iid
+  learning_rate: 0.05
+  local_steps: 1
+  batch_size: 32
+  momentum: 0
+  weight_decay: 0
+  evaluation_split: validation
+  torch_threads: 1
+  topology: ring
+  sample_size: 4
+  group_size: 4
+runs:
+  - name: fedavg
+    settings: {algorithm: fl}
+  - name: dpsgd-ring
+    settings: {algorithm: dpsgd}
+  - name: adpsgd
+    settings: {algorithm: adpsgd}
+  - name: epidemic
+    settings: {algorithm: epidemic}
+  - name: gossip
+    settings: {algorithm: gossip, gl_period: 1}
+  - name: super-gossip
+    settings: {algorithm: super-gossip, k: 2}
+  - name: hgl
+    settings: {algorithm: lubor, k: 2}
+  - name: shatter-r2
+    settings: {algorithm: shatter, k: 2, r: 2}
+  - name: moshpit
+    settings: {algorithm: moshpit}
+  - name: teleportation-ring
+    settings: {algorithm: teleportation, teleportation_topology: ring}
+  - name: qgm
+    settings: {algorithm: qgm}
+  - name: swift
+    settings: {algorithm: swift}
+  - name: gt-dsgd
+    settings: {algorithm: gt-dsgd}
+  - name: detag
+    settings: {algorithm: detag}
+  - name: relaysgd
+    settings: {algorithm: relaysgd}
+  - name: sgp
+    settings: {algorithm: sgp}
+  - name: damsgrad
+    settings: {algorithm: damsgrad}
+  - name: fspda
+    settings: {algorithm: fspda}
+  - name: motef
+    settings: {algorithm: motef}
+  - name: choco
+    settings: {algorithm: choco}
+  - name: dspodfl
+    settings: {algorithm: dspodfl}
+  - name: demo
+    settings: {algorithm: demo}
+  - name: conflux-original
+    settings: {algorithm: conflux, chunks_in_sample: 2}

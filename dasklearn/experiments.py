@@ -26,7 +26,7 @@ def _unique_pairs(pairs):
     return result
 
 
-def read_document(path):
+def read_document(path, *, extra_fields=()):
     path = Path(path).expanduser().resolve()
     try:
         source = path.read_text()
@@ -54,7 +54,7 @@ def read_document(path):
         raise ValueError("An experiment must be an object/mapping")
     if not all(isinstance(key, str) for key in document):
         raise ValueError("Experiment field names must be strings")
-    unknown = set(document) - {"version", "name", "output", "execution", "settings", "matrix", "runs"}
+    unknown = set(document) - {"version", "name", "output", "execution", "settings", "matrix", "runs"} - set(extra_fields)
     if unknown:
         raise ValueError(f"Unknown experiment fields: {sorted(unknown)}")
     if type(document.get("version")) is not int or document["version"] != 1:
