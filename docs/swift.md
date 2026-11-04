@@ -104,6 +104,29 @@ it is not a wall-clock age or a bounded-delay claim across unequal client rates.
 All gradient/model dependencies are explicit DAG references, and the numerical
 update operation carries its importable contract for saved-DAG and worker execution.
 
+## Cost of executing fixed-time benchmarks
+
+SWIFT is expensive to evaluate in the current simulator. In the 32-client
+CIFAR-10/GNLeNet leaderboard with 20 ms per local step and 1 MB/s per client,
+a 300-simulated-second trial scheduled **480,000 client updates** (15,000 per
+client). GT-DSGD, RelaySGD and Decentralized AMSGrad scheduled approximately
+5,650–7,816 updates; MoTEF scheduled 18,341. SWIFT keeps computing while dense
+model messages queue, so its numerical workload is much larger under the same
+simulated horizon. The gradient-only executor also lacks generic SGD batching.
+
+The first SWIFT trial was still running after 18 minutes when this search was
+stopped; the other completed trials took approximately 1.2–4.6 minutes each.
+No completed SWIFT runtime or final accuracy is claimed. SWIFT was deferred from
+this leaderboard extension and replaced with SGP. Its partial results, raw
+artifacts and the completed other-algorithm trials remain archived on disk in
+`output/leaderboard-cifar10-32-extended/`. This archive is excluded from the
+leaderboard menu.
+
+This is a wall-clock cost of executing the benchmark, separate from simulated
+protocol time. A 900-second simulated budget is not a 15-minute wall-clock cap.
+See the [investigation backlog](leaderboard.md#swift-execution-cost-and-stale-communication)
+for profiling, protocol-preserving optimization and re-entry steps.
+
 ## Usage
 
 ```sh

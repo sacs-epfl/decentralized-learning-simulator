@@ -157,6 +157,18 @@ plain SGD, uniform pair weights and stable membership. Age weighting and other
 optimizer choices are not certified by this audit. AD-PSGD uses the simulated
 duration budget rather than a global synchronous round limit.
 
+**Leaderboard execution cost (3 November 2026).** AD-PSGD is deferred from the
+active CIFAR-10/GNLeNet leaderboard. With 32 clients, a 20 ms mean local step and
+300 simulated seconds, each IID/homogeneous tuning trial scheduled about
+497,000 executor tasks. Initial progress suggested approximately 40 minutes of
+wall time per trial with concurrent GPU workers; the trials were stopped before
+completion, so this is an extrapolation. Continuous passive-client computation
+and separate gradient/update tasks make these runs much more expensive than the
+communication-limited baselines. Investigate implementation and execution cost
+before reintroducing AD-PSGD. Existing partial artifacts are preserved.
+The [investigation backlog](leaderboard.md#ad-psgd-execution-cost) lists profiling,
+dependency checks and re-entry steps.
+
 ### Epidemic
 
 Oracle mode uses seeded regular graphs; local mode independently samples outgoing

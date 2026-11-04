@@ -27,17 +27,99 @@ python scripts/serve_leaderboard.py --catalog experiments/leaderboard-settings.j
 ```
 
 The setting picker keeps each scenario's runs, rankings, curves, and CSV separate.
-The catalog currently includes the completed IID/homogeneous 900-second run and
-the Dirichlet alpha 0.1 / heterogeneous run. The latter is the default setting.
+The catalog includes all four combinations of IID/non-IID data and
+homogeneous/heterogeneous hardware. Non-IID uses Dirichlet alpha 0.1.
+The non-IID/heterogeneous setting is the default.
 The budget picker defaults to **900 seconds** when available (otherwise the
 largest available budget), and preserves a user's choice during live refreshes.
 Setting links can be bookmarked, e.g. `?setting=dirichlet01-heterogeneous`.
-To add future IID/heterogeneous or non-IID/homogeneous combinations, add their
-result directories to this catalog and restart the server; no data is pooled
-across settings. A catalog may include a setting before its output exists.
+Accuracy and evaluation-loss curves are shown against simulated time and sent
+traffic, averaging available seeds at each checkpoint. Loss has a separate
+vertical scale, with lower values better; the table also shows loss mean and
+standard deviation at the selected budget. For the CIFAR-10/GNLeNet global-model
+runs this is test-set negative log-likelihood per example, evaluated on the
+averaged client parameters. It is already recorded in existing checkpoint
+exports, so displaying these curves does not require rerunning experiments.
+To add other settings, add their result directories to this catalog and restart
+the server; no data is pooled across settings. A catalog may include a setting
+before its output exists.
 
 Use the Python environment containing the simulator requirements. No additional
 dashboard framework, database, external service, or JavaScript build is needed.
+
+## Step-budgeted centralized reference
+
+`experiments/leaderboard-cifar10-centralized.yaml` defines a separate pooled-data
+reference for the CIFAR-10/GNLeNet leaderboard. One node has the entire
+**45,000-image training split**; the 5,000 validation and 10,000 test images stay
+held out. It runs direct PyTorch SGD without the simulator: there are no modeled
+compute times, heterogeneous capacities, communication or aggregation. It uses
+the same preprocessing, model, batch size 32, zero momentum/decay and one
+minibatch update per step. A persistent shuffled loader covers the complete
+training partition and reshuffles at epoch boundaries.
+
+```sh
+python scripts/run_centralized_baseline.py experiments/leaderboard-cifar10-centralized.yaml --plan
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_centralized_baseline.py \
+  experiments/leaderboard-cifar10-centralized.yaml --devices cuda:0 cuda:1 cuda:0 cuda:1
+```
+
+LR selection comes first. Five candidates `[.003, .01, .03, .1, .3]` each get
+**5,000 SGD steps**, tuning seed 0 and the same balanced 1,000-image validation
+subset. The highest endpoint validation accuracy wins; lower LR breaks an exact
+tie. All candidates must finish their allocated steps; non-finite endpoints are
+ineligible. These are equal **step** budgets within this reference search, not
+the earlier collaborative algorithms' equal simulated-time tuning budgets.
+
+The selected LR is frozen for three fresh seeds (10/11/12). Each trains for
+**50,000 minibatch steps**, approximately 35.6 epochs, with full validation-set
+evaluation at initialization, every 1,000 steps and the exact final step. These
+counts are configurable. Each seed saves its **minimum-validation-loss model**;
+the earlier step breaks an exact loss tie. Its selected checkpoint
+is evaluated **once on the full test set after training finishes**. No test
+curve or best-test checkpoint is used for LR or checkpoint selection.
+
+The catalog's optional `reference: {output: ../output/leaderboard-cifar10-centralized-minloss}`
+attaches this result to compatible held-out global-model settings at serve time.
+It does not rewrite existing experiments, CSVs or rankings. All three final seeds
+must complete before lines appear. Tuning views have no test reference. The
+dashboard shows LR/training progress and, on completion, mean test accuracy and
+loss with sample SD across seeds. A labelled **dashed horizontal line** appears
+on each of the four accuracy/loss plots, with a dashed legend key.
+
+The same pooled-data reference is shown for IID/non-IID and homogeneous/
+heterogeneous settings: partitioning and client hardware profiles do not affect
+this single-node training. The reference stays fixed when the simulated budget
+picker changes and is labelled with its own SGD-step budget. It is an empirical
+reference, not a mathematical upper bound or an equal-compute/time comparison.
+Its best checkpoint means lowest loss on the declared validation schedule within
+the step limit, not a guarantee of convergence or maximum attainable test accuracy.
+
+The first reference selected checkpoints by validation accuracy. It is archived
+unchanged under `output/leaderboard-cifar10-centralized-steps/`. To reuse that
+completed, unchanged LR search while regenerating the minimum-loss checkpoints:
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_centralized_baseline.py \
+  experiments/leaderboard-cifar10-centralized.yaml \
+  --reuse-tuning output/leaderboard-cifar10-centralized-steps
+```
+
+Reuse verifies the search specification, data/model/optimizer settings, seeds,
+raw trial settings, validation curves and original LR selection before starting
+final workers. LR selection still maximizes validation accuracy at 5,000 steps;
+the separate final-checkpoint criterion minimizes validation loss. The rerun
+uses the same LR and seeds, scans the full 50,000-step trajectories, and reads
+the test set once per newly selected checkpoint. Prior test readouts have already
+been inspected; this revised reference is exploratory rather than a new untouched
+test-set claim.
+
+Artifacts under the fresh output directory include source/resolved settings,
+`selection.json`, the live `reference.json`, per-phase manifests, per-worker
+`metrics.json`, validation curves, logs, and `best-model.pt` for each final seed.
+The checkpoint contains CPU model state and the selected validation metrics.
+Source/package provenance and actual execution wall time are recorded; there
+are no simulated-time budgets applied. Existing output directories are refused.
 
 ## Budgets and scenarios
 
@@ -233,6 +315,395 @@ to monitor it. Experiments and the dashboard run on the remote host independentl
 of the browser or SSH tunnel. Closing a laptop stops its tunnel but does not stop
 the remote workers; reconnect the tunnel to view progress again.
 
+## Remaining data/hardware combinations
+
+These configurations complete the four-setting matrix:
+
+| Data | Hardware | Configuration |
+| --- | --- | --- |
+| IID | Heterogeneous | `experiments/leaderboard-cifar10-32-iid-heterogeneous.yaml` |
+| Dirichlet alpha 0.1 | Homogeneous | `experiments/leaderboard-cifar10-32-dirichlet01-uniform.yaml` |
+
+Each uses the same five algorithms, frozen LRs, seeds 10/11/12, CIFAR-10/GNLeNet,
+32 clients, 900-second horizon, and global-model evaluation every 60 seconds.
+Each configuration has two worker slots, one per GPU, so both experiments can
+run concurrently with four workers total. Worker scheduling affects execution
+wall time; the simulated protocol capacities and budgets match the other settings.
+
+```sh
+# Run in separate terminals, or launch both as detached background processes.
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_benchmark.py experiments/leaderboard-cifar10-32-iid-heterogeneous.yaml
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_benchmark.py experiments/leaderboard-cifar10-32-dirichlet01-uniform.yaml
+```
+
+Both appear in the same setting picker on port 8766. No LR search is repeated.
+
+## Five-algorithm extension across all four settings
+
+`experiments/leaderboard-cifar10-32-additions-sgp.yaml` adds SGP, GT-DSGD, MoTEF,
+RelaySGD and Decentralized AMSGrad to the completed five-algorithm comparisons:
+
+```sh
+python scripts/extend_leaderboard.py experiments/leaderboard-cifar10-32-additions-sgp.yaml \
+  --baseline-catalog experiments/leaderboard-base-settings.json --plan
+CUDA_VISIBLE_DEVICES=0,1 python scripts/extend_leaderboard.py experiments/leaderboard-cifar10-32-additions-sgp.yaml \
+  --baseline-catalog experiments/leaderboard-base-settings.json \
+  --reuse-tuning output/leaderboard-cifar10-32-extended/tuning
+```
+
+The search uses IID data and homogeneous capacities, five declared LR candidates
+per algorithm, seed 0, 300 simulated seconds per candidate, and 1,000 validation
+images. Thus every addition receives five trials and 1,500 simulated tuning
+seconds. The same global-parameter-average readout used in final evaluation
+selects the highest endpoint validation accuracy; the lower LR breaks exact
+ties. All candidates must finish before selection. There is no early stopping,
+extra refinement, or test-based LR selection.
+
+Selected LRs are frozen across all four data/hardware combinations. Each setting
+gets three new test seeds (10/11/12) per algorithm, giving 60 final runs with
+60/300/900-second views and full test-set evaluation every 60 seconds. Settings
+execute sequentially, each with four worker slots shared across both GPUs.
+The original SWIFT search was stopped because execution was slow: its 300-second
+trials schedule 480,000 client updates, and the first was still running after
+18 minutes. SWIFT is deferred and replaced with SGP. See the
+[SWIFT execution-cost note](swift.md#cost-of-executing-fixed-time-benchmarks).
+
+RelaySGD uses a balanced tree with count normalization; SGP uses the one-peer
+rotating directed exponential graph. The other additions use rings.
+MoTEF uses magnitude Top-k at 10%, consensus step .1 and fresh-gradient
+momentum weight .1. AMSGrad fixes beta1=.9, beta2=.999 and epsilon=1e-6; its LR
+grid is smaller than the SGD grids. These non-LR settings are held fixed during
+tuning and all final runs.
+
+The extension preserves original result directories. It writes combined
+ten-algorithm reports under `output/leaderboard-cifar10-32-extended-sgp/settings/`,
+with the original 15 runs plus 15 additions per setting. New LRs display as
+pending until selection; rankings remain provisional until all ten algorithms
+have paired checkpoints. A separate **LR tuning · five additions** catalog entry
+shows validation trials. `selection.json` records candidate scores, the selected
+LRs and selection rule; `pipeline.json` records progress and failures. Failure or
+interruption during tuning prevents final evaluation from starting.
+
+The rescheduled search reuses 12 completed non-SWIFT trials without running them
+again. `--reuse-tuning` accepts only completed trials whose full options (apart
+from execution device), network, seeds, checkpoint schedule and model readout
+match. Raw resolved settings and observation CSVs must also agree with the
+reported curves. Reused trials retain their original wall time and provenance;
+only missing candidates execute, with no extra tuning budget. A fresh search
+can omit this flag. A resumed search needs a fresh output directory.
+
+The old `leaderboard-cifar10-32-additions.yaml` configuration and all old outputs
+remain intact on disk under `output/leaderboard-cifar10-32-extended/`. The old
+search is excluded from the leaderboard menu, active search and final rankings.
+
+The original five retain their existing results and LRs, selected by the earlier
+local-client validation search. The new search uses the current global-model
+readout; equal tuning budget here applies to the five additions. Final model
+readout, data, capacities, budgets and paired seeds match within each setting.
+
+## DeTAG, Teleportation and Moshpit extension
+
+This historical configuration added three algorithms to the completed
+ten-algorithm baselines. Its tuning outcomes are now carried into the combined
+seven-algorithm batch below; its original artifacts remain intact:
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1 python scripts/extend_leaderboard.py \
+  experiments/leaderboard-cifar10-32-detag-teleportation-moshpit.yaml \
+  --baseline-catalog experiments/leaderboard-ten-settings.json
+```
+
+Each receives the same five LRs `[.003, .01, .03, .1, .3]`, seed 0,
+300 simulated seconds per trial, and 1,000 validation images. Selection uses
+endpoint accuracy of the equal-weight global parameter average. Thus there
+are 15 tuning trials and 1,500 simulated tuning seconds per algorithm. The
+selected LRs are frozen across seeds 10/11/12 and all four settings: 36 new
+900-second test runs, evaluated on the full test set every 60 seconds.
+
+`local_steps` remains **1** throughout. Other method parameters are fixed:
+DeTAG uses a ring, phase length 2 and spectral acceleration; the phase averages
+gradients at fixed parameters, rather than performing two successive local SGD
+steps. Teleportation uses eight active clients and ring mixing. Its global
+evaluation follows the same rule as all other algorithms: average the latest
+published models of all 32 physical clients, including currently idle clients.
+Moshpit uses groups of up to eight, one averaging step, and bandwidth-based
+load balancing, with stable membership.
+
+The configuration has eight concurrent workers, four per GPU. The original
+batch stopped during tuning: DeTAG's .03, .1 and .3 trials produced non-finite
+validation loss at the full 300-second budget. Twelve other trials completed;
+no final test runs started. Both successful and divergent outcomes are reused
+by the combined batch, without giving any algorithm additional search trials.
+
+## Seven-algorithm combined batch
+
+This historical batch was interrupted after tuning finished for all methods
+except AD-PSGD. AD-PSGD and DeTAG were then deferred at the user's request.
+The active five-peer-algorithm batch below reuses its completed trials.
+
+`experiments/leaderboard-cifar10-32-seven-additions.yaml` batches DeTAG,
+Teleportation, Moshpit, AD-PSGD, Epidemic Learning, Gossip Learning and Shatter:
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1 python scripts/extend_leaderboard.py \
+  experiments/leaderboard-cifar10-32-seven-additions.yaml \
+  --baseline-catalog experiments/leaderboard-ten-settings.json \
+  --reuse-tuning output/leaderboard-cifar10-32-extended13/tuning
+```
+
+Each algorithm gets five LR candidates `[.003, .01, .03, .1, .3]`, each with
+300 simulated seconds, seed 0 and the same 1,000-image validation subset.
+All use global-model evaluation. Of the 35 allocated tuning trials, 15 outcomes
+are reused (12 successful and three divergent); only 20 new trials execute.
+No extra candidates or automatic refinement are added. LRs are selected by
+endpoint validation accuracy, then frozen across all four data/hardware settings.
+
+An LR candidate with non-finite global validation metrics at its exact full
+tuning budget is marked `diverged` and cannot win. All earlier checkpoints must
+be complete and finite. Its raw observations, allocated budget and wall time
+remain recorded. Early divergence, malformed observations, worker errors and
+non-finite test metrics still fail the pipeline. If an algorithm has no eligible
+candidate, final evaluation does not start.
+
+Final runs use three fresh seeds (10/11/12), 900 simulated seconds, the full
+10,000-image test set, and global-model evaluation every 60 seconds. There are
+84 new test runs (seven algorithms × three seeds × four settings). Combined
+reports under `output/leaderboard-cifar10-32-extended17/settings/` include all
+earlier results: **17 algorithms and 51 runs per setting**. The default budget
+view is 900 seconds. Select **LR tuning · seven additions** to follow the search;
+the completed five-addition tuning view remains available separately.
+
+`local_steps` stays **1** for every algorithm. DeTAG, Teleportation and Moshpit
+retain the settings described above. The four further additions fix:
+
+| Algorithm | Fixed protocol settings |
+| --- | --- |
+| AD-PSGD | 16 active and 16 passive clients, arithmetic parameter averaging |
+| Epidemic Learning | Local mode, two randomly selected outgoing neighbors per round, directed receiver averaging |
+| Gossip Learning | One-second gossip period, age-weighted aggregation |
+| Shatter | Two model chunks and virtual-node degree two |
+
+These are the repository's implementations and specializations. Gossip Learning
+retains its legacy validation status; Epidemic Learning is not an exact-paper
+reproduction claim. Shatter uses the real-node chunked specialization, without
+claiming the complete virtual-node privacy protocol. See the README's algorithm
+table and linked implementation contracts for details.
+
+Eight workers share both GPUs, four per GPU. Settings run sequentially after
+tuning. AD-PSGD's continuously training passive clients can require more actual
+execution time than communication-limited methods; this does not change its
+simulated budget. Run cards show executor task progress between evaluation
+checkpoints. The driver and dashboard can run detached from SSH, and all prior
+result directories are preserved.
+
+## Five-peer-algorithm batch with AD-PSGD and DeTAG deferred
+
+The active configuration is
+`experiments/leaderboard-cifar10-32-peer-additions.yaml`. It includes
+Teleportation, Moshpit, Epidemic Learning, Gossip Learning and Shatter:
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1 python scripts/extend_leaderboard.py \
+  experiments/leaderboard-cifar10-32-peer-additions.yaml \
+  --baseline-catalog experiments/leaderboard-ten-settings.json \
+  --reuse-tuning output/leaderboard-cifar10-32-extended17/tuning
+```
+
+All 25 matching completed validation trials are reused, with the same five LRs,
+300-second budget and fixed options described above. No tuning is repeated or
+expanded. The five frozen LRs are applied to seeds 10/11/12 across all four
+data/hardware settings, giving **60 new 900-second runs**. Eight workers share
+both GPUs, four per GPU. `local_steps` remains 1. Full test-set global-model
+evaluation runs every 60 seconds, with the 900-second view selected by default.
+
+The active catalog points to
+`output/leaderboard-cifar10-32-extended15/settings/`, containing the earlier 30
+runs plus 15 additions per setting: **15 algorithms and 45 runs per setting**.
+The **LR tuning · five peer additions** view contains only the five retained
+algorithms. The earlier SGP/GT-DSGD/MoTEF/RelaySGD/AMSGrad tuning view remains
+available separately. AD-PSGD, DeTAG and SWIFT are absent from the active
+leaderboard's settings, curves, search views and rankings.
+
+AD-PSGD was stopped because its five 300-second tuning trials each scheduled
+roughly 497,000 executor tasks. Initial task-throughput extrapolation suggested
+about 40 minutes per trial under the shared GPU workload; these are estimates,
+not completed-run measurements. Continuous passive-client gradients drive much
+of that work. Its implementation and executor cost need investigation before
+reintroducing it. See the [AD-PSGD execution-cost note](baseline-validation.md#ad-psgd).
+
+DeTAG was deferred for numerical instability in this configuration: LRs .03,
+.1 and .3 gave non-finite validation loss; .003 and .01 gave very large finite
+loss and only 10% validation accuracy. None of the tested candidates was useful.
+A smaller LR range and an implementation check are future work; these outcomes
+do not establish that DeTAG is inherently unstable.
+
+The interrupted seven-algorithm batch, its partial AD-PSGD trials, all DeTAG
+outcomes and earlier outputs remain on disk. The replacement batch records the
+original trial paths, curves, wall times and provenance when reusing results.
+
+## Deferred algorithms: investigation backlog
+
+Updated 3 November 2026. These three algorithms are excluded from the active
+leaderboard at the user's request. The observations concern this implementation
+and CIFAR-10/GNLeNet configuration, not the algorithms' general merit. This is
+an investigation plan; the proposed experiments and optimizations have not run.
+
+| Priority | Algorithm | Observed blocker | First investigation |
+| --- | --- | --- | --- |
+| 1 | DeTAG | All five searched LRs were unusable: exploding finite loss or non-finite loss | Find the first unstable phase, check the numerical update against a reference, then test a smaller LR range |
+| 2 | AD-PSGD | About 497,000 executor tasks per 300-second trial; projected roughly 40 minutes of wall time | Profile passive gradient computation, model copies and separate gradient updates on a small saved workflow |
+| 3 | SWIFT | 480,000 client updates per 300-second trial; first trial still running after about 19 minutes | Reuse gradient-execution profiling, then measure packet/queue costs and cache staleness |
+
+AD-PSGD and SWIFT were interrupted before completing their trials. Their runtime
+observations do not establish completed-trial costs or accuracy. The AD-PSGD
+497,000 figure counts executor tasks; SWIFT's 480,000 figure counts client
+updates. These counts are different units and must not be compared directly.
+
+### DeTAG: numerical stability
+
+Evidence: `output/leaderboard-cifar10-32-extended13/tuning/` contains the raw
+trials. On 32 IID clients with a ring, phase length 2 and spectrum-derived eta,
+LR .003 ended at 10% validation accuracy with loss about 820; LR .01 also ended
+at 10%, with loss about 5.73e13. LRs .03, .1 and .3 produced non-finite loss at
+300 seconds. Reclassified divergent outcomes are recorded in
+`output/leaderboard-cifar10-32-extended17/tuning/`.
+
+1. **Locate the first unstable update.** Reproduce a short seeded run with
+   phase-level validation loss, gradient/tracker/parameter norms, client model
+   disagreement, and the first non-finite tensor. Record the actual mixing
+   matrix, spectral radius, eta and phase length. Compare individual local
+   models with the global average diagnostically to locate where growth starts;
+   retain the global-model readout for leaderboard scores.
+2. **Check numerical correctness before interpreting a new LR search.** Extend
+   the existing independent tests with longer deterministic trajectories and a
+   small GNLeNet case. Check gradient division by phase length, the model-then-
+   tracker update order, recurrence reset at each phase, parameter/vector
+   ordering and dtype, and the tracker-mean conservation identity. Compare CPU
+   and CUDA with the reference execution path. Existing small logistic/digits
+   checks are useful evidence but do not explain the current CIFAR instability.
+3. **Separate mixing effects from LR sensitivity.** On the same validation
+   workload, use a complete graph and an eta=0 control, then restore the
+   32-client ring and automatic eta. Compare phase lengths 1 and 2 as diagnostic
+   controls. These controls change method settings and must be reported as such;
+   phase averaging still uses fixed parameters and `local_steps` stays 1.
+4. **Test a declared smaller LR range after the checks.** A candidate replacement
+   grid is `[1e-5, 3e-5, 1e-4, 3e-4, 1e-3]`, again five candidates with equal
+   budgets. This is a proposal, not a known solution. Freeze phase length, eta
+   and topology before the replacement search. Confirm the selected LR remains
+   finite through a 900-second validation pilot, then perform fresh held-out
+   evaluation. Preserve the original failed grid and any implementation changes.
+
+Implementation and maintained contracts: [DeTAG](detag.md),
+`tests/test_detag.py`, `dasklearn/optimizer/detag.py`, and
+`dasklearn/simulation/detag/`.
+
+### AD-PSGD: execution cost
+
+Evidence: `output/leaderboard-cifar10-32-extended17/tuning-new/runs/adpsgd-*/`
+contains the partial workers, saved workflows and executor progress. The stop
+snapshot is `output/leaderboard-cifar10-32-seven-launch/adpsgd-deferred.json`.
+The observed task throughput suggested roughly 40 minutes per 300-second trial
+with concurrent workers; that was an extrapolation. Passive clients continuously
+compute gradients, while active clients wait for model exchanges. A large
+numerical workload can therefore be legitimate protocol behavior.
+
+1. **Build a measured cost breakdown.** Use a small fixed saved workflow and
+   repeat scalar CPU/CUDA execution. Separate DAG generation and loading,
+   gradient forward/backward, model copying/device transfers, gradient updates,
+   aggregation, evaluation and artifact I/O. Record completed gradient counts,
+   updates/second, peak CPU/GPU memory and ready-task parallelism. Compare an
+   isolated worker with the current concurrent workload to measure contention.
+2. **Audit task counts and dependencies.** Verify that each passive gradient is
+   computed once and applied once to the correct current model, including an
+   exchange arriving during computation. Check that model reconstruction or
+   repeated copies are not doing avoidable work. Do not cache gradients across
+   different parameters/minibatches or remove stale-gradient dependencies.
+3. **Optimize execution while preserving the update rule.** Investigate resident
+   gradient workspaces and batching only independent, ready gradient tasks.
+   Profile the separate `gradient_update` path and immutable state copies before
+   attempting fusion. Current progress records also show the generic CUDA stream
+   batching guard falling back after a state-equivalence assertion; reproduce
+   that mismatch in isolation rather than disabling the guard.
+4. **Measure before scaling up.** Compare complete model states, model readouts,
+   task RNG/minibatches, simulated event order and traffic with the reference
+   executor. Run short workload-scaling checks, then complete one 300-second
+   validation trial and a 900-second validation pilot to obtain measured costs.
+   Publish the expected campaign cost before restoring the full leaderboard
+   matrix. Slowing passive clients or capping their updates would change the
+   benchmark/protocol and is not an execution optimization.
+
+Implementation and maintained contracts:
+[AD-PSGD](baseline-validation.md#ad-psgd), `tests/test_classic_baselines.py`,
+`dasklearn/simulation/adpsgd/`, and the shared gradient execution backend.
+
+### SWIFT: execution cost and stale communication
+
+Evidence: `output/leaderboard-cifar10-32-extended/` retains the interrupted
+search. Its first trial ran about 1,135 seconds without reaching the final
+validation checkpoint. With 32 clients and 20 ms steps, a 300-second horizon
+schedules 480,000 local updates. SWIFT keeps training while dense broadcasts
+queue. Existing short digits experiments also show poor accuracy with congested
+links; that is a separate observation from slow executor performance.
+
+1. **Reuse the AD-PSGD gradient-execution investigation.** Profile gradient-only
+   tasks, `swift_pack`, `swift_update`, immutable model copies and ready-task
+   parallelism. Establish completed gradients/second and memory costs on a small
+   saved DAG before trying another long LR search. Measure DAG/event generation
+   separately from tensor execution and global-model evaluation.
+2. **Measure queued communication.** Record queued bytes/messages, completed
+   deliveries, mailbox version lag and simulated age of cached models over
+   time. Check whether packet snapshots and retained DAG references cause
+   avoidable execution/memory overhead. Optimize representation and release
+   values only after their last consumer; do not drop or coalesce broadcasts
+   that the implemented protocol charges.
+3. **Diagnose learning behavior separately.** Use validation-only ample-bandwidth
+   and congested controls with a fixed LR to distinguish numerical errors from
+   stale-cache effects. For heterogeneous compute, compare empirical activation
+   rates with the configured influence weights; do not assume uniform weights
+   compensate for unequal update rates. Any changed communication interval or
+   influence policy needs an explicit variant and its own declared settings.
+4. **Verify and stage re-entry.** Check multistep model/cache trajectories,
+   broadcast-before-gradient ordering, immutable packets, RNG, and exact
+   delivered/partial traffic against the reference. Complete a 300-second
+   validation pilot, then a 900-second one, and report measured cost and learning
+   behavior before adding it back. Confirm compatibility with the leaderboard's
+   offline global readout without feeding the average into training.
+
+Implementation and maintained contracts: [SWIFT](swift.md),
+`tests/test_swift.py`, `dasklearn/simulation/swift/`, and
+`dasklearn/optimizer/swift.py`.
+
+### Conditions for returning to the leaderboard
+
+Keep old artifacts and identify whether each change fixes an implementation bug,
+improves executor cost, or introduces a protocol variant. An executor-only change
+must preserve causal model states, RNG, simulated capacities and traffic; use the
+existing numerical equivalence guards and add a regression for the observed
+failure. Do not weaken a guard to obtain higher throughput.
+
+Use validation data for diagnosis and LR selection. Report diagnostic effort and
+all replacement grids separately: an expanded search must not be presented as
+the original equal-budget search. After fixing non-LR settings, use the same
+declared candidate count, seeds, simulated tuning budget and validation subset
+as the comparison protocol. Freeze the LR before fresh held-out evaluation.
+Replacing an algorithm's update rule invalidates reuse of its earlier training
+results; executor equivalence must be established before reusing results after
+performance work.
+
+Before a full campaign, show measured execution/memory costs and a realistic
+completion estimate. Check the selected configuration at the intended horizon
+under both data partitions and hardware profiles. Keep `local_steps=1`, the
+global-average readout and explicit failure reporting. Stable but weak results
+should be reported honestly; high accuracy is not a correctness criterion.
+These investigations do not change or interrupt the active five-addition batch.
+
+When extending baselines that are still running, `--follow-baselines` permits
+live merging without stopping their workers. Combined reports continue to read
+their latest results and remain provisional until all paired checkpoints exist.
+The extension waits for those sources before declaring completion. Use a worker
+count that accounts for the independent jobs; the eight-worker setting assumes
+the prior batch has finished. All original output directories remain intact.
+
 ## Automated equal-budget LR tuning
 
 The first real-data configuration compares **FedAvg, D-PSGD, QGM, CHOCO-SGD, and
@@ -284,9 +755,11 @@ The pipeline forces every search trial to use `validation`. It selects the LR
 with the highest mean accuracy at the exact tuning budget, averaged across all
 tuning seeds. `metric: average_accuracy` instead selects the mean curve integral
 and requires intermediate checkpoints. Lower LR breaks an exact score tie.
-Every candidate must complete on every tuning seed; failed or incomplete
-searches preserve their artifacts and **block final evaluation**, so a partially
-evaluated grid cannot silently select a winner. No automatic retries are added.
+Every candidate must reach its full budget on every tuning seed. Non-finite
+global validation metrics at that exact endpoint make a candidate ineligible;
+all other failures or incomplete searches preserve their artifacts and
+**block final evaluation**, so a partially evaluated grid cannot silently
+select a winner. No automatic retries are added.
 
 Final benchmark settings must use `evaluation_split: test`. Final seeds must be
 disjoint from tuning seeds. After selection, LR is frozen per algorithm for all

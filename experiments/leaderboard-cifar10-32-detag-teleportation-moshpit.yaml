@@ -1,0 +1,93 @@
+# Three more algorithms; local_steps stays 1. Eight workers use both GPUs.
+version: 1
+name: cifar10-gnlenet-32-detag-teleportation-moshpit
+output: ../output/leaderboard-cifar10-32-extended13
+benchmark:
+  budgets:
+  - 60
+  - 300
+  - 900
+  seeds:
+  - 10
+  - 11
+  - 12
+  evaluation_period: 60
+  evaluation_model: global
+  execution_devices:
+  - cuda:0
+  - cuda:1
+  - cuda:0
+  - cuda:1
+  - cuda:0
+  - cuda:1
+  - cuda:0
+  - cuda:1
+  accuracy_targets:
+  - 30
+  - 40
+  - 50
+  - 60
+  - 70
+  - 80
+  network:
+    profile: uniform
+    bandwidth_bytes_per_second: 1000000
+    compute_step_ms: 20
+settings:
+  dataset: cifar10
+  dataset_base_path: ../data/cifar10
+  model: gnlenet
+  device: cuda:0
+  peers: 32
+  partitioner: iid
+  validation_set_fraction: 0.1
+  evaluation_split: test
+  evaluation_examples: 0
+  local_steps: 1
+  batch_size: 32
+  momentum: 0
+  weight_decay: 0
+  network_latency_ms: 10
+  torch_threads: 4
+runs:
+- name: detag
+  settings:
+    algorithm: detag
+    detag_topology: ring
+    detag_phase_length: 2
+- name: teleportation
+  settings:
+    algorithm: teleportation
+    teleportation_topology: ring
+    sample_size: 8
+- name: moshpit
+  settings:
+    algorithm: moshpit
+    group_size: 8
+    averaging_steps: 1
+tuning:
+  budget: 300
+  seeds:
+  - 0
+  evaluation_period: 300
+  evaluation_examples: 1000
+  metric: accuracy
+  learning_rates:
+    detag:
+    - 0.003
+    - 0.01
+    - 0.03
+    - 0.1
+    - 0.3
+    teleportation:
+    - 0.003
+    - 0.01
+    - 0.03
+    - 0.1
+    - 0.3
+    moshpit:
+    - 0.003
+    - 0.01
+    - 0.03
+    - 0.1
+    - 0.3

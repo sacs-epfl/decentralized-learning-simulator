@@ -81,25 +81,35 @@ def select_learning_rates(benchmark, tuning_result):
             observations = []
             for seed in spec["seeds"]:
                 record = by_name.get(f"{variant}-lr{index:02d}-s{seed}")
-                if record is None or record["status"] != "completed":
+                if record is None or record["status"] not in {"completed", "diverged"}:
                     raise ValueError("Every algorithm must complete every candidate on every tuning seed")
                 options = record["options"]
                 if (options["learning_rate"] != rate or options["seed"] != seed
                         or options["duration"] != spec["budget"] or options["evaluation_split"] != "validation"
                         or options["evaluation_examples"] != spec["evaluation_examples"]):
                     raise ValueError("Tuning trial settings differ from the declared validation-only budget")
+                if record["status"] == "diverged":
+                    if (benchmark.evaluation_model != "global" or record.get("divergence_time") != spec["budget"]
+                            or record.get("tuning_budget_completed") is not True):
+                        raise ValueError("Diverged trials must reach the exact global validation budget")
+                    observations.append(dict(seed=seed, score=None, status="diverged"))
+                    continue
                 metrics = budget_metrics(record["curve"], spec["budget"], [])
                 if metrics is None:
                     raise ValueError("Missing exact tuning-budget checkpoint")
                 observations.append(dict(seed=seed, score=metrics[spec["metric"]]))
-            candidates.append(dict(learning_rate=rate, mean_score=statistics.mean(row["score"] for row in observations),
+            candidates.append(dict(learning_rate=rate, mean_score=statistics.mean(row["score"] for row in observations)
+                                   if all(row["score"] is not None for row in observations) else None,
                                    observations=observations))
-        winner = min(candidates, key=lambda row: (-row["mean_score"], row["learning_rate"]))
+        eligible = [row for row in candidates if row["mean_score"] is not None]
+        if not eligible:
+            raise ValueError(f"No finite LR candidate for {variant}")
+        winner = min(eligible, key=lambda row: (-row["mean_score"], row["learning_rate"]))
         selected[variant] = winner["learning_rate"]
         scores[variant] = candidates
     return dict(version=1, selected=selected, scores=scores, specification=spec,
                 selection_split="validation", evaluation_split="test", evaluation_seeds=benchmark.seeds,
-                rule=f"Maximize mean {spec['metric']} at {spec['budget']} simulated seconds across all tuning seeds; lower LR breaks exact ties")
+                rule=f"Maximize mean {spec['metric']} at {spec['budget']} simulated seconds across all tuning seeds; lower LR breaks exact ties; candidates with nonfinite endpoint validation metrics are ineligible")
 
 
 def execute_tuned_benchmark(benchmark):
@@ -132,7 +142,7 @@ def execute_tuned_benchmark(benchmark):
 
     try:
         tuning = tuning_benchmark(benchmark)
-        code = execute_benchmark(tuning, on_update=mirror)
+        code = execute_benchmark(tuning, on_update=mirror, allow_divergent_trials=True)
         if code:
             pipeline.update(status="interrupted" if code == 130 else "failed",
                             error="Tuning did not complete; final evaluation was not started")

@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import csv
 import io
+import json
 import math
 from pathlib import Path
 import random
@@ -246,7 +247,11 @@ async def run_worker(resolved):
     write_json(Path(document["output"]) / "execution.json", dict(artifacts=simulation.data_dir,
                evaluation_model=evaluation_model, aggregation_weighting="uniform" if evaluation_model == "global" else None,
                settings=settings.to_dict()))
-    execute_local(simulation, retain_results=False)
+    execution_started = time.monotonic()
+    def execution_progress(update):
+        write_json(Path(document["output"]) / "executor-progress.json",
+                   dict(update, elapsed_seconds=time.monotonic() - execution_started))
+    execute_local(simulation, retain_results=False, progress=execution_progress)
     # Keep live readers' per-peer files stable. The ordinary merge deletes them
     # while writing the combined file, which races a polling reader.
     merged = Path(simulation.data_dir) / "accuracies.csv"
@@ -257,6 +262,14 @@ async def run_worker(resolved):
             target.writelines(lines if index == 0 else lines[1:])
     temporary.replace(merged)
     write_json(Path(document["output"]) / "training-executor.json", simulation.execution_training_stats)
+
+
+class NonfiniteEvaluation(ValueError):
+    """A valid checkpoint whose model evaluation produced nonfinite metrics."""
+    def __init__(self, stamp, curve):
+        super().__init__(f"Invalid benchmark evaluation row: nonfinite metrics at {stamp}s")
+        self.stamp = stamp
+        self.curve = curve
 
 
 def read_curve(directory, peers, times, *, strict=False, evaluation_model="local"):
@@ -275,6 +288,22 @@ def read_curve(directory, peers, times, *, strict=False, evaluation_model="local
             or any(network[b] < network[a] for a, b in zip(times, times[1:]))):
         raise ValueError("Invalid communication checkpoints")
     checkpoints = {}
+    def point(stamp, rows):
+        values = sorted(accuracy for accuracy, _ in rows.values())
+        return dict(time=stamp, accuracy=statistics.mean(values),
+                    loss=statistics.mean(loss for _, loss in rows.values()),
+                    worst_decile_accuracy=None if evaluation_model == "global" else statistics.mean(values[:max(1, math.ceil(peers / 10))]),
+                    bytes_sent=network[stamp], peers=peers,
+                    evaluated_models=1 if evaluation_model == "global" else peers)
+
+    def prefix(before):
+        curve = []
+        for stamp in times:
+            rows = checkpoints.get(stamp, {})
+            if stamp >= before or len(rows) != (1 if evaluation_model == "global" else peers):
+                break
+            curve.append(point(stamp, rows))
+        return curve
     merged = sorted(directory.glob("data/*/accuracies.csv"))
     paths = merged or sorted(directory.glob("data/*/accuracies_*.csv"))
     for path in paths:
@@ -285,12 +314,13 @@ def read_curve(directory, peers, times, *, strict=False, evaluation_model="local
             stamp, peer = float(row["time"]), int(row["peer"])
             accuracy, loss = float(row["accuracy"]), float(row["loss"])
             valid_peer = peer == -1 if evaluation_model == "global" else 0 <= peer < peers
-            if (stamp not in times or not valid_peer or not math.isfinite(loss)
-                    or not math.isfinite(accuracy) or not 0 <= accuracy <= 100):
+            if stamp not in times or not valid_peer or (math.isfinite(accuracy) and not 0 <= accuracy <= 100):
                 raise ValueError("Invalid benchmark evaluation row")
             observations = checkpoints.setdefault(stamp, {})
             if peer in observations:
                 raise ValueError("Duplicate peer at a checkpoint")
+            if not math.isfinite(loss) or not math.isfinite(accuracy):
+                raise NonfiniteEvaluation(stamp, prefix(stamp))
             observations[peer] = accuracy, loss
     curve = []
     for stamp in times:
@@ -299,12 +329,7 @@ def read_curve(directory, peers, times, *, strict=False, evaluation_model="local
             break
         if stamp not in network:
             raise ValueError("Missing communication checkpoint")
-        values = sorted(accuracy for accuracy, _ in rows.values())
-        curve.append(dict(time=stamp, accuracy=statistics.mean(values),
-                          loss=statistics.mean(loss for _, loss in rows.values()),
-                          worst_decile_accuracy=None if evaluation_model == "global" else statistics.mean(values[:max(1, math.ceil(peers / 10))]),
-                          bytes_sent=network[stamp], peers=peers,
-                          evaluated_models=1 if evaluation_model == "global" else peers))
+        curve.append(point(stamp, rows))
     if strict and len(curve) != len(times):
         raise ValueError(f"Incomplete checkpoints: {len(curve)}/{len(times)}")
     return curve
@@ -345,7 +370,7 @@ def leaderboard(suite):
             row = dict(variant=variant, rank=None, seeds=[run["seed"] for run, _ in observed],
                        learning_rate=runs[0]["options"]["learning_rate"],
                        expected_seeds=len(suite["seeds"]), complete=len(observed) == len(suite["seeds"]),
-                       failed_runs=sum(run["status"] in {"failed", "interrupted"} for run in runs))
+                       failed_runs=sum(run["status"] in {"failed", "interrupted", "diverged"} for run in runs))
             for field in ("accuracy", "loss", "average_accuracy", "worst_decile_accuracy", "bytes_sent", "best_observed_accuracy"):
                 values = [metrics[field] for _, metrics in observed if metrics[field] is not None]
                 row[field] = _estimate(values) if values else None
@@ -370,7 +395,7 @@ def leaderboard(suite):
                 accuracy_targets=suite["accuracy_targets"], network=suite["network"],
                 evaluation_split=suite["runs"][0]["options"]["evaluation_split"],
                 scenario={key: suite["runs"][0]["options"][key] for key in ("dataset", "model", "peers", "partitioner", "alpha")},
-                provenance=suite.get("provenance"), selection=suite.get("selection"),
+                provenance=suite.get("provenance"), selection=suite.get("selection"), extension=suite.get("extension"),
                 evaluation_model=suite.get("evaluation_model", "local"), execution_devices=suite.get("execution_devices"),
                 tables=tables, runs=suite["runs"])
 
@@ -400,7 +425,7 @@ def save_results(output, suite):
     return result
 
 
-def execute_benchmark(benchmark, *, poll_seconds=1, on_update=None):
+def execute_benchmark(benchmark, *, poll_seconds=1, on_update=None, allow_divergent_trials=False):
     """Schedule isolated workers; one process slot per declared execution device."""
     root = Path(__file__).resolve().parents[1]
     try:
@@ -464,11 +489,23 @@ def execute_benchmark(benchmark, *, poll_seconds=1, on_update=None):
                         record["returncode"] = code
                         if code != 0:
                             raise ValueError(f"Worker exited {code}; see {job['directory'] / 'run.log'}")
+                    progress_path = job["directory"] / "executor-progress.json"
+                    if progress_path.exists():
+                        record["execution_progress"] = json.loads(progress_path.read_text())
                     record["curve"] = read_curve(job["directory"], record["options"]["peers"], benchmark.times,
                         strict=code == 0, evaluation_model=benchmark.evaluation_model)
                     record["wall_seconds"] = time.monotonic() - job["started"]
                     if code is not None:
                         finish(slot, "completed")
+                except NonfiniteEvaluation as exc:
+                    _stop(process)
+                    if (allow_divergent_trials and benchmark.evaluation_model == "global"
+                            and record["options"]["evaluation_split"] == "validation"
+                            and exc.stamp == max(benchmark.times) and len(exc.curve) == len(benchmark.times) - 1):
+                        record.update(curve=exc.curve, divergence_time=exc.stamp, tuning_budget_completed=True)
+                        finish(slot, "diverged", "Nonfinite validation metrics at the exact tuning budget; candidate is ineligible")
+                    else:
+                        finish(slot, "failed", str(exc))
                 except (OSError, ValueError, KeyError, TypeError) as exc:
                     _stop(process)
                     finish(slot, "failed", str(exc))

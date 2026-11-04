@@ -11,6 +11,11 @@ This is a fixed-topology, stable-membership specialization of plain SGD DeTAG;
 DeTAGM, DeTAG*, local-SGD substitutions, warmup and dynamic phase lengths are
 excluded.
 
+DeTAG is currently deferred from the CIFAR-10/GNLeNet leaderboard after the
+tested LR grid produced exploding or non-finite validation loss. See the
+[investigation backlog](leaderboard.md#detag-numerical-stability) for the observed
+outcomes, numerical checks and proposed replacement LR search.
+
 ## Phase equations
 
 Each phase contains `R = phase_length` inner iterations. Model parameters `x`

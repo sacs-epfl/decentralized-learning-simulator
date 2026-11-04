@@ -1,16 +1,39 @@
 {
   "version": 1,
   "default": "dirichlet01-heterogeneous",
+  "reference": {
+    "output": "../output/leaderboard-cifar10-centralized-minloss"
+  },
   "settings": [
     {
       "id": "iid-uniform",
       "label": "IID · homogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-global900"
+      "output": "../output/leaderboard-cifar10-32-extended15/settings/iid-uniform"
+    },
+    {
+      "id": "iid-heterogeneous",
+      "label": "IID · heterogeneous hardware",
+      "output": "../output/leaderboard-cifar10-32-extended15/settings/iid-heterogeneous"
+    },
+    {
+      "id": "dirichlet01-uniform",
+      "label": "Non-IID (Dirichlet α = 0.1) · homogeneous hardware",
+      "output": "../output/leaderboard-cifar10-32-extended15/settings/dirichlet01-uniform"
     },
     {
       "id": "dirichlet01-heterogeneous",
       "label": "Non-IID (Dirichlet α = 0.1) · heterogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-dirichlet01-heterogeneous-global900"
+      "output": "../output/leaderboard-cifar10-32-extended15/settings/dirichlet01-heterogeneous"
+    },
+    {
+      "id": "additions-tuning",
+      "label": "LR tuning · five additions",
+      "output": "../output/leaderboard-cifar10-32-extended-sgp/tuning"
+    },
+    {
+      "id": "extra5-tuning",
+      "label": "LR tuning · five peer additions",
+      "output": "../output/leaderboard-cifar10-32-extended15/tuning"
     }
   ]
 }

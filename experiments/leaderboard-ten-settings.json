@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "default": "dirichlet01-heterogeneous",
+  "settings": [
+    {
+      "id": "iid-uniform",
+      "label": "IID · homogeneous hardware",
+      "output": "../output/leaderboard-cifar10-32-extended-sgp/settings/iid-uniform"
+    },
+    {
+      "id": "iid-heterogeneous",
+      "label": "IID · heterogeneous hardware",
+      "output": "../output/leaderboard-cifar10-32-extended-sgp/settings/iid-heterogeneous"
+    },
+    {
+      "id": "dirichlet01-uniform",
+      "label": "Non-IID (Dirichlet α = 0.1) · homogeneous hardware",
+      "output": "../output/leaderboard-cifar10-32-extended-sgp/settings/dirichlet01-uniform"
+    },
+    {
+      "id": "dirichlet01-heterogeneous",
+      "label": "Non-IID (Dirichlet α = 0.1) · heterogeneous hardware",
+      "output": "../output/leaderboard-cifar10-32-extended-sgp/settings/dirichlet01-heterogeneous"
+    }
+  ]
+}

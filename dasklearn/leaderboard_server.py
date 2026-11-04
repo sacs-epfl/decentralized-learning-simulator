@@ -6,6 +6,8 @@ from pathlib import Path
 import re
 from urllib.parse import parse_qs, urlsplit
 
+from dasklearn.leaderboard_reference import centralized_reference, reference_spec
+
 
 def load_settings(output=None, catalog=None):
     """Resolve a fixed allowlist of result directories, including pending settings."""
@@ -16,9 +18,11 @@ def load_settings(output=None, catalog=None):
         return "default", [dict(id="default", label=output.name, output=output)]
     path = Path(catalog).expanduser().resolve()
     document = json.loads(path.read_text())
-    if (not isinstance(document, dict) or set(document) != {"version", "default", "settings"}
+    if (not isinstance(document, dict) or not {"version", "default", "settings"} <= set(document)
+            or set(document) - {"version", "default", "settings", "reference"}
             or type(document["version"]) is not int or document["version"] != 1):
         raise ValueError("A settings catalog requires version: 1, default, and settings")
+    reference_spec(path)  # Validate optional reference before starting the server.
     entries, seen = [], set()
     if not isinstance(document["settings"], list) or not document["settings"]:
         raise ValueError("A settings catalog requires nonempty settings")
@@ -38,9 +42,10 @@ def load_settings(output=None, catalog=None):
 
 
 class LeaderboardHandler(BaseHTTPRequestHandler):
-    def __init__(self, *args, default, settings, **kwargs):
+    def __init__(self, *args, default, settings, reference=None, **kwargs):
         self.default = default
         self.settings = settings
+        self.reference = reference
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -70,6 +75,12 @@ class LeaderboardHandler(BaseHTTPRequestHandler):
         except FileNotFoundError:
             self.send_error(503, "Waiting for benchmark results")
             return
+        if route == "/leaderboard.json" and self.reference is not None:
+            document = json.loads(data)
+            reference = centralized_reference(document, self.reference)
+            if reference is not None:
+                document["reference"] = reference
+                data = json.dumps(document, ensure_ascii=False, allow_nan=False).encode()
         self.send_data(data, content_type)
 
     def send_data(self, data, content_type):
@@ -88,4 +99,5 @@ class LeaderboardHandler(BaseHTTPRequestHandler):
 
 def create_server(output=None, host="127.0.0.1", port=8765, *, catalog=None):
     default, settings = load_settings(output, catalog)
-    return ThreadingHTTPServer((host, port), partial(LeaderboardHandler, default=default, settings=settings))
+    return ThreadingHTTPServer((host, port), partial(LeaderboardHandler, default=default, settings=settings,
+                                                    reference=reference_spec(catalog)))
