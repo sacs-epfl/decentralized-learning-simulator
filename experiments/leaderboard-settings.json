@@ -8,22 +8,22 @@
     {
       "id": "iid-uniform",
       "label": "IID · homogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-extended15/settings/iid-uniform"
+      "output": "../output/leaderboard-cifar10-32-dpsgd-kreg/settings/iid-uniform"
     },
     {
       "id": "iid-heterogeneous",
       "label": "IID · heterogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-extended15/settings/iid-heterogeneous"
+      "output": "../output/leaderboard-cifar10-32-dpsgd-kreg/settings/iid-heterogeneous"
     },
     {
       "id": "dirichlet01-uniform",
       "label": "Non-IID (Dirichlet α = 0.1) · homogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-extended15/settings/dirichlet01-uniform"
+      "output": "../output/leaderboard-cifar10-32-dpsgd-kreg/settings/dirichlet01-uniform"
     },
     {
       "id": "dirichlet01-heterogeneous",
       "label": "Non-IID (Dirichlet α = 0.1) · heterogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-extended15/settings/dirichlet01-heterogeneous"
+      "output": "../output/leaderboard-cifar10-32-dpsgd-kreg/settings/dirichlet01-heterogeneous"
     },
     {
       "id": "additions-tuning",
@@ -34,6 +34,11 @@
       "id": "extra5-tuning",
       "label": "LR tuning · five peer additions",
       "output": "../output/leaderboard-cifar10-32-extended15/tuning"
+    },
+    {
+      "id": "dpsgd-kreg-tuning",
+      "label": "LR tuning · D-PSGD k-regular (k = 5)",
+      "output": "../output/leaderboard-cifar10-32-dpsgd-kreg/tuning"
     }
   ]
 }

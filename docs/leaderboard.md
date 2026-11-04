@@ -83,9 +83,9 @@ The catalog's optional `reference: {output: ../output/leaderboard-cifar10-centra
 attaches this result to compatible held-out global-model settings at serve time.
 It does not rewrite existing experiments, CSVs or rankings. All three final seeds
 must complete before lines appear. Tuning views have no test reference. The
-dashboard shows LR/training progress and, on completion, mean test accuracy and
-loss with sample SD across seeds. A labelled **dashed horizontal line** appears
-on each of the four accuracy/loss plots, with a dashed legend key.
+dashboard displays the completed reference on the plots. A labelled **dashed
+horizontal line** appears on each of the four accuracy/loss plots, with a dashed
+legend key.
 
 The same pooled-data reference is shown for IID/non-IID and homogeneous/
 heterogeneous settings: partitioning and client hardware profiles do not affect
@@ -492,13 +492,15 @@ table and linked implementation contracts for details.
 Eight workers share both GPUs, four per GPU. Settings run sequentially after
 tuning. AD-PSGD's continuously training passive clients can require more actual
 execution time than communication-limited methods; this does not change its
-simulated budget. Run cards show executor task progress between evaluation
-checkpoints. The driver and dashboard can run detached from SSH, and all prior
-result directories are preserved.
+simulated budget. Executor task progress between evaluation checkpoints is
+recorded in the JSON exports and the expandable provenance details. The driver
+and dashboard can run detached from SSH, and all prior result directories are
+preserved.
 
 ## Five-peer-algorithm batch with AD-PSGD and DeTAG deferred
 
-The active configuration is
+This completed batch is the baseline for the D-PSGD k-regular extension below.
+Its configuration is
 `experiments/leaderboard-cifar10-32-peer-additions.yaml`. It includes
 Teleportation, Moshpit, Epidemic Learning, Gossip Learning and Shatter:
 
@@ -516,13 +518,16 @@ data/hardware settings, giving **60 new 900-second runs**. Eight workers share
 both GPUs, four per GPU. `local_steps` remains 1. Full test-set global-model
 evaluation runs every 60 seconds, with the 900-second view selected by default.
 
-The active catalog points to
+These combined fifteen-algorithm reports are under
 `output/leaderboard-cifar10-32-extended15/settings/`, containing the earlier 30
 runs plus 15 additions per setting: **15 algorithms and 45 runs per setting**.
 The **LR tuning · five peer additions** view contains only the five retained
 algorithms. The earlier SGP/GT-DSGD/MoTEF/RelaySGD/AMSGrad tuning view remains
 available separately. AD-PSGD, DeTAG and SWIFT are absent from the active
 leaderboard's settings, curves, search views and rankings.
+
+The active catalog now points to the sixteen-algorithm extension below, which
+preserves all of these completed results.
 
 AD-PSGD was stopped because its five 300-second tuning trials each scheduled
 roughly 497,000 executor tasks. Initial task-throughput extrapolation suggested
@@ -540,6 +545,45 @@ do not establish that DeTAG is inherently unstable.
 The interrupted seven-algorithm batch, its partial AD-PSGD trials, all DeTAG
 outcomes and earlier outputs remain on disk. The replacement batch records the
 original trial paths, curves, wall times and provenance when reusing results.
+
+## D-PSGD with log2(n)-regular topology
+
+`experiments/leaderboard-cifar10-32-dpsgd-kreg.yaml` adds
+**`dpsgd-kreg-log2`** alongside the existing D-PSGD ring variant. The fixed
+network has 32 nodes, so `k = log2(32) = 5`, recorded explicitly as `k: 5`.
+The existing D-PSGD implementation generates an undirected random 5-regular
+graph from the run seed, then uses both directed edges for communication.
+Each node has five neighbors and averages their same-round trained models with
+its own model. The seeded graph stays fixed across rounds. The tuning seed 0
+and final seeds 10/11/12 have been checked for degree five and connectivity.
+
+```sh
+python scripts/extend_leaderboard.py \
+  experiments/leaderboard-cifar10-32-dpsgd-kreg.yaml \
+  --baseline-catalog experiments/leaderboard-fifteen-settings.json --plan
+CUDA_VISIBLE_DEVICES=0,1 python scripts/extend_leaderboard.py \
+  experiments/leaderboard-cifar10-32-dpsgd-kreg.yaml \
+  --baseline-catalog experiments/leaderboard-fifteen-settings.json
+```
+
+The independent LR search uses the same five candidates
+`[.003, .01, .03, .1, .3]`, 300 simulated seconds each, seed 0, and 1,000
+validation images on IID data and homogeneous hardware. Selection maximizes
+the global-model validation accuracy at the exact tuning endpoint. The selected
+LR is frozen for all four data/hardware settings and three final seeds, giving
+**12 new 900-second test runs**. Local steps remain 1, with full test-set
+evaluation of the uniformly averaged global model every 60 seconds. The
+configured GPU slots and modeled client capacities match the preceding batch.
+Communication with five neighbors is fully charged by the existing scheduler.
+
+`experiments/leaderboard-fifteen-settings.json` captures the four completed
+fifteen-algorithm sources. Their 180 runs are preserved, and new combined reports
+are written under `output/leaderboard-cifar10-32-dpsgd-kreg/settings/`: **16
+algorithms and 48 runs per setting**. The main catalog also includes a separate
+**LR tuning · D-PSGD k-regular (k = 5)** view. The centralized minimum-validation-
+loss reference and earlier tuning views remain available, and the simulated
+budget picker still defaults to 900 seconds. Use a fresh output for each launch;
+the extension is suitable for detached background execution.
 
 ## Deferred algorithms: investigation backlog
 

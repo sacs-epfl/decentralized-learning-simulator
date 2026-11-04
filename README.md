@@ -150,16 +150,19 @@ for their configurations and concurrent execution commands.
 To tune five additional algorithms and extend all four comparisons to ten
 algorithms, see [the leaderboard extension](docs/leaderboard.md#five-algorithm-extension-across-all-four-settings).
 
-The active peer-algorithm batch adds Teleportation, Moshpit, Epidemic Learning,
+The peer-algorithm batch adds Teleportation, Moshpit, Epidemic Learning,
 Gossip Learning and Shatter, giving 15 algorithms with one local step.
 AD-PSGD and DeTAG are deferred; their artifacts are preserved. See
-[the active batch](docs/leaderboard.md#five-peer-algorithm-batch-with-ad-psgd-and-detag-deferred)
+[the peer-algorithm batch](docs/leaderboard.md#five-peer-algorithm-batch-with-ad-psgd-and-detag-deferred)
 for frozen validation-selected LRs and all four settings.
 The [deferred-algorithm investigation backlog](docs/leaderboard.md#deferred-algorithms-investigation-backlog)
 records the SWIFT, AD-PSGD and DeTAG blockers and steps for re-entry.
 The [centralized reference](docs/leaderboard.md#step-budgeted-centralized-reference)
 tunes its LR, trains one node on all training data for a fixed SGD-step budget,
 and displays held-out accuracy/loss as dashed horizontal lines on the dashboard.
+The [D-PSGD k-regular extension](docs/leaderboard.md#d-psgd-with-log2n-regular-topology)
+adds a separate seeded 5-regular graph variant for 32 clients, bringing the
+leaderboard to 16 algorithms while preserving D-PSGD-ring and prior results.
 
 For configuration files and parameter sweeps, use the shared experiment runner:
 

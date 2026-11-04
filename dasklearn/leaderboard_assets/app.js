@@ -67,20 +67,6 @@ function chart(id, series, field, label, metric = "accuracy", reference = null) 
 function render(data) {
   const globalModel = data.evaluation_model === "global";
   const reference = data.reference;
-  $("reference-section").hidden = !reference;
-  $("reference-progress").replaceChildren();
-  if (reference) {
-    const description = `${number(reference.steps, 0)} SGD steps · one node with all training data · no simulated compute or communication`;
-    $("reference-summary").textContent = reference.status === "completed"
-      ? `${description}. Test accuracy ${number(reference.accuracy.mean)}% ± ${number(reference.accuracy.sd)}; loss ${number(reference.loss.mean, 3)} ± ${number(reference.loss.sd, 3)} · ${reference.seeds.length} seeds · LR ${reference.learning_rate}. ${reference.checkpoint_rule ?? "Validation-selected checkpoints"}.`
-      : `Centralized reference: ${reference.phase ?? "preparing"} · ${reference.status}${reference.steps ? " · " + description : ""}${reference.error ? ". " + reference.error : ""}. Dashed lines appear after every final seed completes.`;
-    for (const run of reference.runs ?? []) {
-      const box = document.createElement("div"), name = document.createElement("strong"), status = document.createElement("div");
-      box.className = `run${run.error ? " error" : ""}`; name.textContent = run.name;
-      status.textContent = `${run.status} · ${number(run.completed_steps ?? 0, 0)}/${number(run.total_steps ?? reference.steps, 0)} steps · LR ${run.learning_rate}${run.best_validation ? " · selected validation loss " + number(run.best_validation.loss, 3) + " / accuracy " + number(run.best_validation.accuracy) + "% at step " + number(run.best_validation.step, 0) : ""}`;
-      box.append(name, status); $("reference-progress").append(box);
-    }
-  }
   $("title").textContent = data.name;
   $("status").textContent = data.pipeline ? `${data.pipeline.phase} · ${data.status}` : data.status;
   $("extension-note").hidden = !data.extension;
@@ -159,12 +145,6 @@ function render(data) {
     dash.className="reference-swatch";
     label.append(dash, document.createTextNode(`Centralized · ${number(reference.steps, 0)} steps`)); $("legend").append(label);
   }
-  $("runs").replaceChildren(...data.runs.map(run => {
-    const box=document.createElement("div"); box.className=`run${run.error ? " error" : ""}`;
-    const name=document.createElement("strong"), status=document.createElement("div"); name.textContent=run.name;
-    status.textContent=`${run.status} · ${run.divergence_time ?? run.curve.at(-1)?.time ?? 0}s evaluated${run.wall_seconds == null ? "" : " · " + number(run.wall_seconds,1) + "s wall"}${run.execution_progress ? " · " + number(100 * run.execution_progress.completed / run.execution_progress.total, 1) + "% tasks executed" : ""}`;
-    box.append(name,status); if (run.error) {const error=document.createElement("div");error.textContent=run.error;box.append(error);} return box;
-  }));
   $("interpretation").textContent = data.evaluation_split === "test" ? "Exploratory test-set comparison. Best observed accuracy is a descriptive maximum over checkpoints; it is not an independently evaluated, validation-selected checkpoint or an estimate of unlimited-time performance." : "Best observed accuracy is measured on validation checkpoints within the declared budget. Final held-out test evaluation and automatic hyperparameter tuning are separate steps.";
   if (data.pipeline) $("interpretation").textContent = data.pipeline.phase === "tuning" ? "Each algorithm receives the same number of candidates, tuning seeds, simulated seconds, and validation examples. Candidate ranges are declared in advance; no test scores enter LR selection." : "Learning rates were frozen using validation data on separate seeds. Test accuracy at the declared budgets is the held-out comparison. Best observed test accuracy is descriptive and must not be used to select checkpoints or retune settings.";
   $("provenance").textContent=JSON.stringify({scenario:data.scenario,network:data.network,provenance:data.provenance,reference:data.reference,runs:data.runs.map(({curve,...run}) => run)}, null, 2);
@@ -198,9 +178,8 @@ $("setting").addEventListener("change", () => {
   selectedSetting = $("setting").value; current = null;
   const query = new URLSearchParams(window.location.search); query.set("setting", selectedSetting);
   window.history.replaceState(null, "", `${window.location.pathname}?${query}${window.location.hash}`);
-  for (const id of ["rows", "targets", "runs", "legend", "time-chart", "traffic-chart", "loss-time-chart", "loss-traffic-chart"]) $(id).replaceChildren();
+  for (const id of ["rows", "targets", "legend", "time-chart", "traffic-chart", "loss-time-chart", "loss-traffic-chart"]) $(id).replaceChildren();
   $("loss-note").textContent = "";
-  $("reference-section").hidden = true; $("reference-progress").replaceChildren();
   for (const id of ["completed", "budget-label", "split", "updated"]) $(id).textContent = "—";
   $("status").textContent = "Loading"; $("title").textContent = "Loading selected setting…"; $("scenario").textContent = "";
   refresh();
