@@ -149,8 +149,6 @@ def get_args(argv=None):
             args.momentum = 0
     if args.local and args.dry_run:
         parser.error('--local and --dry-run cannot be combined')
-    if args.local and args.from_dir:
-        parser.error('--local does not support --from-dir')
     if selected.config:
         from dasklearn.experiments import validate_run
         try:

@@ -1,0 +1,381 @@
+{
+  "date": "2026-11-04",
+  "implementation": "MoTEF-VR, published Algorithm 2; separate motef-vr registration",
+  "paper": "https://proceedings.iclr.cc/paper_files/paper/2025/file/39b77b5e422b4e070e2811b73ea9bcf7-Paper-Conference.pdf",
+  "reference_commit": "10919bd38e093897329d1b096ba037701084d635",
+  "python": "/mnt/data/mdevos/conda/envs/conflux-gpu/bin/python",
+  "isolation": {
+    "worktree": "/tmp/conflux-motef-vr",
+    "branch": "codex/motef-vr",
+    "outputs": "/tmp/conflux-motef-vr-validation",
+    "main_checkout_modified": false,
+    "leaderboard_catalog_modified": false
+  },
+  "validation": [
+    {
+      "scope": "Base MoTEF and experiments, initial CPU regression",
+      "passed": 118,
+      "skipped": 1,
+      "wall_seconds": 35.73
+    },
+    {
+      "scope": "Full maintained CPU suite after RNG implementation and catalog assertion fix; before final two replay/device cases were added",
+      "command": "CUDA_VISIBLE_DEVICES='' python -m pytest -q",
+      "passed": 968,
+      "skipped": 25,
+      "warnings": 5,
+      "wall_seconds": 158.04
+    },
+    {
+      "scope": "Final VR, registry and experiment integration, including local saved-DAG replay and device rejection",
+      "command": "CUDA_VISIBLE_DEVICES='' python -m pytest -q tests/test_motef_vr.py tests/test_algorithm_registry.py tests/test_experiments.py",
+      "passed": 115,
+      "skipped": 2,
+      "wall_seconds": 35.14
+    },
+    {
+      "scope": "MoTEF and VR CPU/CUDA state agreement, exact paired RNGs, dropout and all numerical tests; before the last two CPU-only integration cases",
+      "command": "CUDA_VISIBLE_DEVICES=1 python -m pytest -q tests/test_motef_vr.py tests/test_motef.py",
+      "passed": 100,
+      "skipped": 0,
+      "wall_seconds": 8.63
+    },
+    {
+      "scope": "Public local CLI smoke",
+      "rounds": 5,
+      "peers": 4,
+      "status": "passed"
+    },
+    {
+      "scope": "Public main.py --local --from-dir saved-DAG replay",
+      "status": "passed; metrics equal original exactly"
+    },
+    {
+      "scope": "Real experiment-file runner",
+      "status": "completed",
+      "wall_seconds": 3.322,
+      "evaluated_peers": 4
+    },
+    {
+      "scope": "CIFAR and Tiny ImageNet runner option parsing",
+      "status": "passed"
+    }
+  ],
+  "pilot_environment": {
+    "physical_gpu": 1,
+    "gpu": "NVIDIA RTX 5000 Ada Generation, 32 GiB",
+    "visible_device": "cuda:0",
+    "gpu_checked_before_work": true,
+    "peers": 32,
+    "dataset": "cifar10",
+    "model": "gnlenet",
+    "partitioner": "dirichlet",
+    "alpha": 0.1,
+    "seed": 10,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "local_steps": 1,
+    "shared_momentum": 0,
+    "weight_decay": 0,
+    "topology": "ring",
+    "compressor": "topk",
+    "keep_ratio": 0.01,
+    "gamma": 0.1,
+    "lambda": 0.1,
+    "bandwidth_bytes_per_second": 1000000,
+    "compute_step_ms": 20,
+    "latency_ms": 10,
+    "torch_threads": 1,
+    "evaluation": "global parameter average, all 10000 test examples at 0 and horizon"
+  },
+  "pilot_command": "CUDA_VISIBLE_DEVICES=1 python scripts/pilot_motef_vr.py --data /mnt/data/mdevos/conflux/data/cifar10 --output /tmp/conflux-motef-vr-validation/pilot-final --durations 3 --profiles uniform heterogeneous --device cuda:0",
+  "pilot_final": [
+    {
+      "profile": "uniform",
+      "simulated_seconds": 3.0,
+      "device": "cuda:0",
+      "event_simulation_seconds": 0.3715172167867422,
+      "execution_seconds": 25.592426509130746,
+      "tasks": {
+        "initialize": 2,
+        "motef_vr_bootstrap": 32,
+        "aggregate": 2,
+        "test": 2,
+        "motef_propose": 1056,
+        "motef_vr_gradient": 1056,
+        "motef_receive": 1024
+      },
+      "gradient_evaluations": 2144,
+      "completed_updates": 1024,
+      "simulated_compute_seconds": 42.8,
+      "packet_size_bytes": 20496,
+      "parameter_count": 85354,
+      "bytes_sent": 42237945,
+      "timings": {
+        "initialize": 0.0024367780424654484,
+        "motef_vr_bootstrap": 10.044210018124431,
+        "aggregate": 0.02433649403974414,
+        "test": 0.21319936262443662,
+        "motef_propose": 1.876044515054673,
+        "motef_vr_gradient": 8.786147715523839,
+        "motef_receive": 0.3791639436967671
+      },
+      "artifacts": "/tmp/conflux-motef-vr-validation/pilot-final/uniform-3s/data/motef-vr_cifar10_n32_b1_s10_202611041022"
+    },
+    {
+      "profile": "heterogeneous",
+      "simulated_seconds": 3.0,
+      "device": "cuda:0",
+      "event_simulation_seconds": 0.2908781059086323,
+      "execution_seconds": 16.451007735915482,
+      "tasks": {
+        "initialize": 2,
+        "motef_vr_bootstrap": 32,
+        "aggregate": 2,
+        "test": 2,
+        "motef_propose": 521,
+        "motef_vr_gradient": 521,
+        "motef_receive": 489
+      },
+      "gradient_evaluations": 1074,
+      "completed_updates": 489,
+      "simulated_compute_seconds": 21.037085,
+      "packet_size_bytes": 20496,
+      "parameter_count": 85354,
+      "bytes_sent": 20890075,
+      "timings": {
+        "initialize": 0.002228402066975832,
+        "motef_vr_bootstrap": 8.600169018376619,
+        "aggregate": 0.025542179588228464,
+        "test": 0.14673841232433915,
+        "motef_propose": 0.9646598394028842,
+        "motef_vr_gradient": 4.415663837920874,
+        "motef_receive": 0.17499494785442948
+      },
+      "artifacts": "/tmp/conflux-motef-vr-validation/pilot-final/heterogeneous-3s/data/motef-vr_cifar10_n32_b1_s10_202611041022"
+    }
+  ],
+  "pilot_initial_cuda": [
+    {
+      "profile": "uniform",
+      "simulated_seconds": 1.0,
+      "device": "cuda:0",
+      "event_simulation_seconds": 0.17029846087098122,
+      "execution_seconds": 15.439402307849377,
+      "tasks": {
+        "initialize": 2,
+        "motef_vr_bootstrap": 32,
+        "aggregate": 2,
+        "test": 2,
+        "motef_propose": 352,
+        "motef_vr_gradient": 352,
+        "motef_receive": 320
+      },
+      "gradient_evaluations": 736,
+      "completed_updates": 320,
+      "simulated_compute_seconds": 14.64,
+      "packet_size_bytes": 20496,
+      "parameter_count": 85354,
+      "bytes_sent": 13899920,
+      "timings": {
+        "initialize": 0.002305870410054922,
+        "motef_vr_bootstrap": 10.147361525334418,
+        "aggregate": 0.02320440486073494,
+        "test": 0.17287211120128632,
+        "motef_propose": 0.6136474926024675,
+        "motef_vr_gradient": 2.9597216113470495,
+        "motef_receive": 0.12869521602988243
+      },
+      "artifacts": "/tmp/conflux-motef-vr-validation/pilot-cuda/uniform-1s/data/motef-vr_cifar10_n32_b1_s10_202611041016"
+    },
+    {
+      "profile": "uniform",
+      "simulated_seconds": 3.0,
+      "device": "cuda:0",
+      "event_simulation_seconds": 0.38336518919095397,
+      "execution_seconds": 23.91351211676374,
+      "tasks": {
+        "initialize": 2,
+        "motef_vr_bootstrap": 32,
+        "aggregate": 2,
+        "test": 2,
+        "motef_propose": 1056,
+        "motef_vr_gradient": 1056,
+        "motef_receive": 1024
+      },
+      "gradient_evaluations": 2144,
+      "completed_updates": 1024,
+      "simulated_compute_seconds": 42.8,
+      "packet_size_bytes": 20496,
+      "parameter_count": 85354,
+      "bytes_sent": 42237945,
+      "timings": {
+        "initialize": 0.0022377902641892433,
+        "motef_vr_bootstrap": 8.554370339494199,
+        "aggregate": 0.023443272802978754,
+        "test": 0.14042982691898942,
+        "motef_propose": 1.8658039453439415,
+        "motef_vr_gradient": 8.641799218952656,
+        "motef_receive": 0.3676267028786242
+      },
+      "artifacts": "/tmp/conflux-motef-vr-validation/pilot-cuda/uniform-3s/data/motef-vr_cifar10_n32_b1_s10_202611041016"
+    },
+    {
+      "profile": "heterogeneous",
+      "simulated_seconds": 1.0,
+      "device": "cuda:0",
+      "event_simulation_seconds": 0.21097608003765345,
+      "execution_seconds": 11.407688570208848,
+      "tasks": {
+        "initialize": 2,
+        "motef_vr_bootstrap": 32,
+        "aggregate": 2,
+        "test": 2,
+        "motef_propose": 196,
+        "motef_vr_gradient": 196,
+        "motef_receive": 164
+      },
+      "gradient_evaluations": 424,
+      "completed_updates": 164,
+      "simulated_compute_seconds": 8.100329,
+      "packet_size_bytes": 20496,
+      "parameter_count": 85354,
+      "bytes_sent": 7503280,
+      "timings": {
+        "initialize": 0.0018936218693852425,
+        "motef_vr_bootstrap": 8.4887838489376,
+        "aggregate": 0.023233676329255104,
+        "test": 0.1392699428834021,
+        "motef_propose": 0.33880202984437346,
+        "motef_vr_gradient": 1.560426913201809,
+        "motef_receive": 0.055154542438685894
+      },
+      "artifacts": "/tmp/conflux-motef-vr-validation/pilot-cuda/heterogeneous-1s/data/motef-vr_cifar10_n32_b1_s10_202611041017"
+    },
+    {
+      "profile": "heterogeneous",
+      "simulated_seconds": 3.0,
+      "device": "cuda:0",
+      "event_simulation_seconds": 0.13144472474232316,
+      "execution_seconds": 16.343653610907495,
+      "tasks": {
+        "initialize": 2,
+        "motef_vr_bootstrap": 32,
+        "aggregate": 2,
+        "test": 2,
+        "motef_propose": 521,
+        "motef_vr_gradient": 521,
+        "motef_receive": 489
+      },
+      "gradient_evaluations": 1074,
+      "completed_updates": 489,
+      "simulated_compute_seconds": 21.037085,
+      "packet_size_bytes": 20496,
+      "parameter_count": 85354,
+      "bytes_sent": 20890075,
+      "timings": {
+        "initialize": 0.0017543910071253777,
+        "motef_vr_bootstrap": 8.617753339465708,
+        "aggregate": 0.023065226152539253,
+        "test": 0.14191019488498569,
+        "motef_propose": 0.9378664712421596,
+        "motef_vr_gradient": 4.215201599057764,
+        "motef_receive": 0.16885951813310385
+      },
+      "artifacts": "/tmp/conflux-motef-vr-validation/pilot-cuda/heterogeneous-3s/data/motef-vr_cifar10_n32_b1_s10_202611041017"
+    }
+  ],
+  "pilot_initial_cpu": [
+    {
+      "profile": "uniform",
+      "simulated_seconds": 0.3,
+      "device": "cpu",
+      "event_simulation_seconds": 0.14705456607043743,
+      "execution_seconds": 26.657265891321003,
+      "tasks": {
+        "initialize": 2,
+        "motef_vr_bootstrap": 32,
+        "aggregate": 2,
+        "test": 2,
+        "motef_propose": 126,
+        "motef_vr_gradient": 126,
+        "motef_receive": 94
+      },
+      "gradient_evaluations": 284,
+      "completed_updates": 94,
+      "simulated_compute_seconds": 4.48,
+      "packet_size_bytes": 20496,
+      "parameter_count": 85354,
+      "bytes_sent": 3944132,
+      "timings": {
+        "initialize": 0.0025157667696475983,
+        "motef_vr_bootstrap": 10.750126882921904,
+        "aggregate": 0.02707992773503065,
+        "test": 9.814738582354039,
+        "motef_propose": 0.20982271153479815,
+        "motef_vr_gradient": 5.312136441003531,
+        "motef_receive": 0.03596136486157775
+      },
+      "artifacts": "/tmp/conflux-motef-vr-validation/pilot-cpu-v2/uniform-0.3s/data/motef-vr_cifar10_n32_b1_s10_202611041015"
+    }
+  ],
+  "event_only_counts": [
+    {
+      "profile": "uniform",
+      "horizon": 30,
+      "tasks": 31433,
+      "pairs": 10477,
+      "completed": 10445,
+      "event_wall_seconds": 2.7077185888774693
+    },
+    {
+      "profile": "heterogeneous",
+      "horizon": 30,
+      "tasks": 14207,
+      "pairs": 4735,
+      "completed": 4703,
+      "event_wall_seconds": 1.5191434510052204
+    }
+  ],
+  "future_900_seconds_estimate": {
+    "status": "extrapolation only; benchmark deferred by user",
+    "uniform_minutes_per_seed": [
+      65,
+      85
+    ],
+    "heterogeneous_minutes_per_seed": [
+      30,
+      45
+    ],
+    "four_scenarios_three_seeds_serial_gpu_hours": [
+      9,
+      13
+    ],
+    "method": "Estimate steady pair rate from 30-second event-only runs (10477 uniform / 4735 heterogeneous pairs). Multiply by per-pair executor wall cost from three-second pilots after subtracting charged bootstrap/data startup and global evaluation. Allow for short-sample variability; no long run executed.",
+    "limitations": [
+      "Specific to seed, one thread, scalar executor, model, compressor and capacities measured here.",
+      "Full-horizon DAG memory and sustained runtime are unmeasured.",
+      "LR/compression tuning, different models, local evaluation of every client, GPU contention or parallel workers can materially change the estimate."
+    ]
+  },
+  "remaining_scope": [
+    "Full LR tuning and leaderboard inclusion deferred explicitly.",
+    "Cold estimate memories and single-minibatch initialization do not claim the paper theorem initial-batch bound.",
+    "One local step, zero shared momentum, fixed undirected graphs and stable membership only.",
+    "Private RNG generators/external mutable stochastic state are outside paired coupling support.",
+    "CPU and CUDA only; distributed deployment untested.",
+    "Scalar paired operations do not use generic SGD GPU batching/residency."
+  ],
+  "source_sha256": {
+    "args.py": "1fa5ddd53dd0d3eeb3308bc746fd1cd77243ad99b9a5fcd17a60905982076753",
+    "dasklearn/local_runner.py": "bab6d2ab7f8add66a9c4d45c148a773fd7843025086f5b1a29a91a97688dcb2a",
+    "dasklearn/model_trainer.py": "39b2eb36ac8eeb6a9be5180e51fd42229a0a5043502bce35050784d63b744c6a",
+    "dasklearn/optimizer/motef_vr.py": "8b7f8a6ff56815a5e15fa858f091ca674a47ae9b0a38c0155b4f875075fbadc5",
+    "dasklearn/simulation/motef/client.py": "1181ce2d1a3ebaf801b77829c4faab8f5461bd8eb6f6bf147bca77c5fe66a46d",
+    "dasklearn/simulation/motef_vr/client.py": "857931cb28d0cf6699d375b9248db8d12fb4f019b61982776816d4ad3f105a3f",
+    "dasklearn/simulation/motef_vr/settings.py": "f7af98fe417c6d4b8f3be083c6223529d0690e30a5a92c775da507e72c4b772f",
+    "dasklearn/simulation/motef_vr/simulation.py": "ec0d3442a9ab3b0641ba8a15214233245f51d6a5ec0b310261b8d35542f6bb1d",
+    "tests/test_motef_vr.py": "e76a23a6dd31da6e5054b740cb3d6a1d485aa742bbf06aa6bca63da61e8165c9",
+    "scripts/pilot_motef_vr.py": "bd323a811339ac87c87cc37e7f8bea410ef17f89f2aa7a7aa8b09719aceb8846"
+  }
+}

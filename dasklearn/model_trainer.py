@@ -50,8 +50,10 @@ class ModelTrainer:
         return DataLoader(self.partition, batch_size=self.settings.learning.batch_size, shuffle=True, generator=generator)
 
     def train(self, model, local_steps: int, gradient_only: bool = False, device_name: str = "cpu", seed=None,
-              keep_on_device=False) -> Dict:
-        """Train a private model; accelerator executors may retain its workspace."""
+              keep_on_device=False, prepared_batch=None) -> Dict:
+        """Train a private model; optionally reuse one materialized gradient batch."""
+        if prepared_batch is not None and local_steps != 1:
+            raise ValueError('A prepared minibatch requires exactly one local step')
         self.is_training = True
         self.prepare_partition()
 
@@ -62,7 +64,7 @@ class ModelTrainer:
         device = torch.device(device_name)
         model = model.to(device)
 
-        train_loader = self.make_train_loader(seed)
+        train_loader = self.make_train_loader(seed) if prepared_batch is None else [prepared_batch]
 
         optimizer = SGDOptimizer(model, self.settings.learning.learning_rate, self.settings.learning.momentum, self.settings.learning.weight_decay)
         self.logger.debug("Will perform %d local steps of training on device %s (batch size: %d, lr: %f, wd: %f)",

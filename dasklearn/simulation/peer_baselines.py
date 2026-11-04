@@ -31,7 +31,11 @@ from dasklearn.simulation.fspda.simulation import FSPDASimulation
 from dasklearn.simulation.motef.simulation import MoTEFSimulation
 
 
-BASELINE_VARIANTS = ("damsgrad", "fspda", "motef", "sgp", "relaysgd", "detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
+from dasklearn.simulation.motef_vr.settings import MoTEFVRSettings
+from dasklearn.simulation.motef_vr.simulation import MoTEFVRSimulation
+
+
+BASELINE_VARIANTS = ("motef-vr", "damsgrad", "fspda", "motef", "sgp", "relaysgd", "detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
 
 
 def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
@@ -39,6 +43,8 @@ def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
         return DAMSGradSimulation, DAMSGradSettings, {}
     if variant == 'fspda':
         return FSPDASimulation, FSPDASettings, {}
+    if variant == 'motef-vr':
+        return MoTEFVRSimulation, MoTEFVRSettings, {}
     if variant == 'motef':
         return MoTEFSimulation, MoTEFSettings, {}
     if variant == 'sgp':

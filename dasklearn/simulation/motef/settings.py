@@ -24,7 +24,7 @@ def add_motef_arguments(parser):
                         help='Fraction retained over the whole parameter vector in each compressed channel')
     parser.add_argument('--motef-consensus-stepsize', type=float, default=.1)
     parser.add_argument('--motef-momentum-weight', type=float, default=.1,
-                        help='Lambda: weight of the fresh gradient in MoTEF momentum, in (0,1]')
+                        help='Lambda in (0,1]: fresh gradient weight for MoTEF; STORM correction for MoTEF-VR')
 
 
 def motef_options(args):

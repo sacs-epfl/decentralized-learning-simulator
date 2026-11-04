@@ -4,7 +4,7 @@
 [Islamov, Gao and Stich, ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/39b77b5e422b4e070e2811b73ea9bcf7-Abstract-Conference.html),
 combining momentum tracking with compressed model/tracker estimates and error
 feedback. The [reference repository](https://github.com/mlolab/MoTEF) is pinned
-at `10919bd38e093897329d1b096ba037701084d635`. MoTEF-VR is excluded.
+at `10919bd38e093897329d1b096ba037701084d635`. MoTEF-VR is a separate [`motef-vr` algorithm](motef-vr.md).
 
 ## Update and initialization
 
@@ -99,7 +99,7 @@ nonempty floating parameters of one dtype are required. Use the dedicated
 lambda to control MoTEF momentum. Coupled weight decay optionally adds
 `weight_decay*x_next` to the fresh gradient. Non-parameter buffers stay local
 through gradient forward passes. Directed/changing graphs, churn, loss/recovery,
-LoRA, quantization compressors, MoTEF-VR and multi-step local-SGD extensions are
+LoRA, quantization compressors and multi-step local-SGD extensions are
 excluded. Numerical ranges on gamma/lambda do not promise convergence for all
 learning rates and compression ratios.
 

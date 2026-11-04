@@ -6,6 +6,14 @@ from dasklearn.tasks.references import TaskRef, as_ref
 
 
 class MoTEFClient(BaseClient):
+    BOOTSTRAP_OPERATION = 'motef_bootstrap'
+    GRADIENT_OPERATION = 'motef_gradient'
+    GRADIENT_EVALUATIONS = 1
+
+    def gradient_inputs(self, state):
+        return {'model': state['proposal'], 'state': state['previous'],
+                'model_packet': state['model_packet']}
+
     def __init__(self, simulator, index):
         super().__init__(simulator, index)
         self.rounds = defaultdict(self.new_round)
@@ -15,7 +23,7 @@ class MoTEFClient(BaseClient):
         return {'started': False, 'done': False, 'inbox': RoundInbox(self.simulator.neighbors(self.index))}
 
     def init_client(self, event):
-        self.compute('motef_bootstrap', {'model': self.simulator.initial_model}, params={'round': 0},
+        self.compute(self.BOOTSTRAP_OPERATION, {'model': self.simulator.initial_model}, params={'round': 0},
                      duration=self.get_train_time(), on_complete='finish_bootstrap')
 
     def finish_bootstrap(self, event):
@@ -35,9 +43,8 @@ class MoTEFClient(BaseClient):
         task = self.create_compute_task('motef_propose', {'model': state['base'], 'state': state['previous'],
             'peer': self.index, 'round': r, 'time': self.context.now})
         state.update(proposal=TaskRef(task.name, 0), model_packet=TaskRef(task.name, 1))
-        self.compute('motef_gradient', {'model': state['proposal'], 'state': state['previous'],
-                     'model_packet': state['model_packet']}, params={'round': r},
-                     duration=self.get_train_time(), on_complete='finish_gradient')
+        self.compute(self.GRADIENT_OPERATION, self.gradient_inputs(state), params={'round': r},
+                     duration=self.GRADIENT_EVALUATIONS * self.get_train_time(), on_complete='finish_gradient')
 
     def finish_gradient(self, event):
         r = event.data['params']['round']

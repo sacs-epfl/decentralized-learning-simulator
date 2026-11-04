@@ -9,6 +9,7 @@ from importlib import import_module
 ALGORITHMS = {
     'damsgrad': ('damsgrad', 'DAMSGradSettings', 'DAMSGradSimulation'),
     'fspda': ('fspda', 'FSPDASettings', 'FSPDASimulation'),
+    'motef-vr': ('motef_vr', 'MoTEFVRSettings', 'MoTEFVRSimulation'),
     'motef': ('motef', 'MoTEFSettings', 'MoTEFSimulation'),
     'sgp': ('sgp', 'SGPSettings', 'SGPSimulation'),
     'relaysgd': ('relaysgd', 'RelaySGDSettings', 'RelaySGDSimulation'),

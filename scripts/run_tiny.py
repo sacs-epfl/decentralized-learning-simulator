@@ -102,7 +102,7 @@ async def main():
     if args.variant=='sgp':specific.update(sgp_options(args))
     if args.variant=='damsgrad':specific.update(damsgrad_options(args))
     if args.variant=='fspda':specific.update(fspda_options(args))
-    if args.variant=='motef':specific.update(motef_options(args))
+    if args.variant in {'motef', 'motef-vr'}:specific.update(motef_options(args))
     if args.variant=='dspodfl':specific.update(dspodfl_options(args))
     settings = config(algorithm="shatter" if args.variant == "shatter-r2" else "qgm" if args.variant in {"qgm","dsgdm","dsgd"} else args.variant, seed=args.seed,
         work_dir=str(args.output), dataset="tiny_imagenet", model="resnet18", participants=args.peers,
@@ -174,7 +174,7 @@ async def main():
     sim.test_snapshot=final_snapshot
     started=time.perf_counter();sim.simulate();sim.workflow_dag.build_task_indices();sim.workflow_dag.check_validity()
     print(json.dumps({"event_simulation_s":time.perf_counter()-started,"tasks":len(sim.workflow_dag.tasks),
-          "model_bytes":sim.model_size,"training_tasks":sum(t.func in {"train", "compute_gradient", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "damsgrad_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values())}),flush=True)
+          "model_bytes":sim.model_size,"training_tasks":sum(t.func in {"train", "compute_gradient", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "damsgrad_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient", "motef_vr_bootstrap", "motef_vr_gradient"} for t in sim.workflow_dag.tasks.values())}),flush=True)
     def progress(status):
         print(json.dumps(status),flush=True)
     execute_local(sim,retain_results=False,progress=progress)
@@ -195,7 +195,7 @@ async def main():
         "final_accuracy_10000":None if final is None else float(final.accuracy.mean()),
         "final_loss_10000":None if final is None else float(final.loss.mean()),
         "bytes_sent":sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
-        "training_tasks":sum(t.func in {"train", "compute_gradient", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "damsgrad_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values()),
+        "training_tasks":sum(t.func in {"train", "compute_gradient", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "damsgrad_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient", "motef_vr_bootstrap", "motef_vr_gradient"} for t in sim.workflow_dag.tasks.values()),
         "actual_execution_s":time.perf_counter()-started}
     pd.DataFrame([row]).to_csv(args.output/"summary.csv",index=False)
     print(json.dumps(row),flush=True);(args.output/"COMPLETE").write_text("Completed one-seed Tiny ImageNet run\n")

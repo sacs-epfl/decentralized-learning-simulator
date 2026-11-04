@@ -78,6 +78,7 @@ checks rather than a ranking. An omitted category is not claimed for that row.
 | Decentralized AMSGrad | `damsgrad` | [On the Convergence of Decentralized Adaptive Gradient Methods — ACML 2022 / PMLR 2023](https://proceedings.mlr.press/v189/chen23b.html) | Algorithm 3: local moments, dynamic average consensus on adaptive state, delayed denominator, and overlapping old-state exchange. | [Numerical · Protocol · Integration](docs/damsgrad.md#validation) · [Limits](docs/damsgrad.md#communication-timing-and-supported-scope) |
 | FSPDA-SA | `fspda` | [A Stochastic Approximation Approach for Efficient Decentralized Optimization on Random Networks — arXiv v2, 2025](https://arxiv.org/abs/2410.18774v2) | Simultaneous primal–dual SA with random undirected edges and shared unscaled coordinate masks; follows paper (7)/(36). | [Numerical · Protocol · Integration](docs/fspda.md#validation) · [Limits](docs/fspda.md#random-network-communication-and-supported-scope) |
 | MoTEF | `motef` | [Towards Faster Decentralized Stochastic Optimization with Communication Compression — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/39b77b5e422b4e070e2811b73ea9bcf7-Abstract-Conference.html) | Base Algorithm 1: momentum tracking with persistent compressed model/tracker estimates and charged startup. | [Numerical · Protocol · Reference · Integration](docs/motef.md#validation) · [Limits](docs/motef.md#communication-and-supported-scope) |
+| MoTEF-VR | `motef-vr` | Same ICLR 2025 paper, Algorithm 2 | Coupled fresh minibatch gradient pairs, momentum tracking and compressed error feedback; two charged gradients per iteration. | [Validation and limits](docs/motef-vr.md) |
 | CHOCO-SGD | `choco` | [Decentralized Stochastic Optimization and Gossip Algorithms with Compressed Communication — ICML 2019](https://proceedings.mlr.press/v97/koloskova19a.html); [deep-learning extension — ICLR 2020](https://arxiv.org/abs/1907.09356) | Persistent public estimates; Top-k/random-k compression; explicit local-SGD block extension. | [Numerical · Protocol · Reference · Integration](docs/choco.md#usage-and-validation) · [Limits](docs/choco.md#supported-model-and-optimizer-state) |
 | DSpodFL | `dspodfl` | [Decentralized Sporadic Federated Learning: A Unified Algorithmic Framework with Convergence Guarantees — ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/9521b6e7f33e039e7d92e23f5e37bbf4-Abstract-Conference.html) | One-step rule and explicit local-SGD block extension. | [Numerical · Protocol · Integration](tests/test_dspodfl.py) · [Limits](docs/dspodfl.md) |
 | DeMo | `demo` | [DeMo: Decoupled Momentum Optimization — ICLR 2026](https://proceedings.iclr.cc/paper_files/paper/2026/hash/17790fc9b4828206f99a0dea35da3657-Abstract-Conference.html) | Reference Signum optimizer; ring all-gather and CNN adaptation. | [Numerical · Protocol · Reference · Integration](docs/demo.md#validation) · [Limits](docs/demo.md) |
@@ -86,7 +87,7 @@ checks rather than a ranking. An omitted category is not claimed for that row.
 [Baseline contracts and sources](docs/peer-baselines.md),
 [DSpodFL semantics](docs/dspodfl.md), [DeMo semantics](docs/demo.md),
 [CHOCO-SGD semantics and usage](docs/choco.md),
-[Quasi-Global Momentum](docs/qgm.md), [SWIFT](docs/swift.md), [GT-DSGD](docs/gt-dsgd.md), [DeTAG](docs/detag.md), [RelaySGD](docs/relaysgd.md), [SGP](docs/sgp.md), [MoTEF](docs/motef.md), [FSPDA-SA](docs/fspda.md), [Decentralized AMSGrad](docs/damsgrad.md).
+[Quasi-Global Momentum](docs/qgm.md), [SWIFT](docs/swift.md), [GT-DSGD](docs/gt-dsgd.md), [DeTAG](docs/detag.md), [RelaySGD](docs/relaysgd.md), [SGP](docs/sgp.md), [MoTEF](docs/motef.md), [MoTEF-VR](docs/motef-vr.md), [FSPDA-SA](docs/fspda.md), [Decentralized AMSGrad](docs/damsgrad.md).
 Paper links identify the source algorithms, not a claim of exact paper reproduction.
 Validation labels describe specific checks, not a certification of every option.
 Reference means an executed comparison with authors' code; comparison with
@@ -224,7 +225,8 @@ python main.py --algorithm moshpit --dataset synthetic --model mlp \
 Without `--dry-run`, the coordinator waits for its configured brokers. Start a
 broker with `python broker.py --coordinator tcp://HOST:5555 --port 5556 --workers 2`.
 All registered settings types are supported by the shared broker registry.
-Use `--from-dir PATH` to load a saved workflow/settings pair.
+Use `--from-dir PATH` to load a saved workflow/settings pair. Add `--local`
+to execute the saved DAG in process without regenerating the simulation.
 
 ## Performance and validation
 

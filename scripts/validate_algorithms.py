@@ -74,7 +74,7 @@ async def run_one(args, variant, profile, partitioner, seed):
     if variant=='sgp':specific.update(sgp_options(args))
     if variant=='damsgrad':specific.update(damsgrad_options(args))
     if variant=='fspda':specific.update(fspda_options(args))
-    if variant=='motef':specific.update(motef_options(args))
+    if variant in {'motef', 'motef-vr'}:specific.update(motef_options(args))
     if variant=='demo':specific.update(demo_options(args))
     if variant=='dspodfl':specific.update(dspodfl_options(args))
     configuration = config(algorithm=algorithm, seed=seed, work_dir=str(args.output / "runs"),
@@ -165,7 +165,7 @@ async def run_one(args, variant, profile, partitioner, seed):
            "learning_rate": args.learning_rate,
            "final_accuracy": float(curve.accuracy.iloc[-1]), "final_loss": float(curve.loss.iloc[-1]),
            "model_bytes": sim.model_size, "bytes_sent": sum(c.bw_scheduler.total_bytes_sent for c in sim.clients),
-           "training_tasks": sum(t.func in {"train", "compute_gradient", "demo_prepare", "qgm_train", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "damsgrad_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient"} for t in sim.workflow_dag.tasks.values()),
+           "training_tasks": sum(t.func in {"train", "compute_gradient", "demo_prepare", "qgm_train", "gt_dsgd_gradient", "detag_gradient", "sgp_gradient", "damsgrad_gradient", "fspda_gradient", "motef_bootstrap", "motef_gradient", "motef_vr_bootstrap", "motef_vr_gradient"} for t in sim.workflow_dag.tasks.values()),
            "simulated_compute_s": sum(c.compute_time for c in sim.clients) / MICROSECONDS,
            "actual_execution_s": time.perf_counter() - started}
     if getattr(args,"final_test",False):

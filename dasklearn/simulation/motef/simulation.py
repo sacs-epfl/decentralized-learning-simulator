@@ -17,6 +17,7 @@ from dasklearn.tasks.references import TaskRef
 
 class MoTEFSimulation(Simulation):
     CLIENT_CLASS = MoTEFClient
+    MEASUREMENT_PREFIX = 'motef'
 
     def __init__(self, settings):
         if settings.participants < 1 or settings.learning.local_steps != 1:
@@ -95,14 +96,14 @@ class MoTEFSimulation(Simulation):
 
     def save_measurements(self):
         super().save_measurements()
-        with open(os.path.join(self.data_dir, 'motef-mixing.json'), 'w') as f:
+        with open(os.path.join(self.data_dir, self.MEASUREMENT_PREFIX + '-mixing.json'), 'w') as f:
             json.dump({'edges': sorted(self.graph.edges), 'mixing_matrix': [
                 [self.weight(i, j) if i == j or self.graph.has_edge(i, j) else 0. for j in self.graph]
                 for i in self.graph], 'compressor': self.settings.compressor,
                 'keep_ratio': self.settings.keep_ratio, 'consensus_stepsize': self.settings.consensus_stepsize,
                 'momentum_weight': self.settings.momentum_weight, 'packet_size_bytes': self.packet_size,
                 'initialization': 'H0=G0=0; V0=M0=one charged local minibatch gradient'}, f, indent=2)
-        with open(os.path.join(self.data_dir, 'motef-rounds.csv'), 'w') as f:
+        with open(os.path.join(self.data_dir, self.MEASUREMENT_PREFIX + '-rounds.csv'), 'w') as f:
             writer = csv.writer(f)
             writer.writerow(['peer', 'round', 'gradient_ready_us', 'completed_time_us'])
             for c in self.clients:

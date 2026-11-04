@@ -83,6 +83,7 @@ def session_options(args, device):
         "damsgrad": damsgrad_options(args),
         "fspda": fspda_options(args),
         "motef": motef_options(args),
+        "motef-vr": motef_options(args),
         "sgp": sgp_options(args),
         "relaysgd": relaysgd_options(args),
         "detag": detag_options(args),
