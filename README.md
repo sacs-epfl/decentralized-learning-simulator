@@ -164,6 +164,10 @@ and displays held-out accuracy/loss as dashed horizontal lines on the dashboard.
 The [D-PSGD k-regular extension](docs/leaderboard.md#d-psgd-with-log2n-regular-topology)
 adds a separate seeded 5-regular graph variant for 32 clients, bringing the
 leaderboard to 16 algorithms while preserving D-PSGD-ring and prior results.
+The [DSpodFL extension](docs/leaderboard.md#dspodfl-extension) adds an LR-tuned
+variant across all four settings, extending the comparison to 17 variants while
+preserving previous runs. FSPDA-SA is deferred for executor runtime; its partial
+results and investigation steps are preserved in the backlog.
 
 For configuration files and parameter sweeps, use the shared experiment runner:
 

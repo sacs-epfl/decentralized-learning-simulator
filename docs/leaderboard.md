@@ -526,7 +526,7 @@ algorithms. The earlier SGP/GT-DSGD/MoTEF/RelaySGD/AMSGrad tuning view remains
 available separately. AD-PSGD, DeTAG and SWIFT are absent from the active
 leaderboard's settings, curves, search views and rankings.
 
-The active catalog now points to the sixteen-algorithm extension below, which
+The sixteen-algorithm extension below
 preserves all of these completed results.
 
 AD-PSGD was stopped because its five 300-second tuning trials each scheduled
@@ -585,9 +585,59 @@ loss reference and earlier tuning views remain available, and the simulated
 budget picker still defaults to 900 seconds. Use a fresh output for each launch;
 the extension is suitable for detached background execution.
 
+## DSpodFL extension
+
+`experiments/leaderboard-cifar10-32-dspodfl.yaml` adds **DSpodFL** (`dspodfl`)
+to the completed sixteen-variant comparison. The existing implementation and
+its source audit are described in [DSpodFL](dspodfl.md). This is an LR-only
+screening on CIFAR-10/GNLeNet, not a reproduction of the paper's tuned
+experiments.
+
+The non-LR policy is fixed beforehand: a connected degree-4 regular graph,
+nominal SGD/link probabilities .5, capacity-based participation probabilities,
+and a 20 ms minimum iteration opportunity. The capacity policy uses no data or
+accuracy information. This topology and policy differ from the paper's
+random-geometric experiments.
+
+The search uses the same five LR candidates `[.003, .01, .03, .1, .3]`, 300
+simulated seconds each, seed 0, IID data and homogeneous hardware. Selection
+uses endpoint accuracy on the fixed 1,000-image validation subset. The chosen
+LR is frozen across all four data/hardware settings and seeds 10/11/12:
+**12 new 900-second test runs**. Local steps stay at 1. Evaluation uniformly
+averages all 32 clients' latest completed models and tests that global model
+on the full test set every 60 seconds. Worker slots alternate between both
+GPUs; each final setting has three runs. Simulated capacities are unchanged.
+
+```sh
+python scripts/extend_leaderboard.py \
+  experiments/leaderboard-cifar10-32-dspodfl.yaml \
+  --baseline-catalog experiments/leaderboard-sixteen-settings.json --plan
+CUDA_VISIBLE_DEVICES=0,1 python scripts/extend_leaderboard.py \
+  experiments/leaderboard-cifar10-32-dspodfl.yaml \
+  --baseline-catalog experiments/leaderboard-sixteen-settings.json \
+  --reuse-tuning output/leaderboard-cifar10-32-dspodfl-fspda/tuning
+```
+
+The detached launch reuses all five completed, raw-verified DSpodFL trials from
+an interrupted two-method attempt. Omit `--reuse-tuning` for a fresh search.
+FSPDA-SA was removed at the user's request after measured task throughput
+identified it as a runtime outlier; its implementation, partial trials and
+original configuration remain archived under
+`output/leaderboard-cifar10-32-dspodfl-fspda/`. See the backlog below. Neither
+its partial tuning results nor pending final runs appear in the active catalog.
+
+`experiments/leaderboard-sixteen-settings.json` captures the four completed
+source reports. All 192 previous runs are preserved. New combined reports are
+under `output/leaderboard-cifar10-32-dspodfl/settings/`: **17 variants and 51
+runs per setting** after completion. The active catalog points to these reports
+and adds **LR tuning · DSpodFL** alongside the earlier tuning views. Existing
+accuracy/loss curves, the centralized dashed reference lines and the default
+900-second budget remain available. Launch into a fresh output directory and
+detach the driver to survive SSH disconnection.
+
 ## Deferred algorithms: investigation backlog
 
-Updated 3 November 2026. These three algorithms are excluded from the active
+Updated 4 November 2026. These four algorithms are excluded from the active
 leaderboard at the user's request. The observations concern this implementation
 and CIFAR-10/GNLeNet configuration, not the algorithms' general merit. This is
 an investigation plan; the proposed experiments and optimizations have not run.
@@ -597,11 +647,40 @@ an investigation plan; the proposed experiments and optimizations have not run.
 | 1 | DeTAG | All five searched LRs were unusable: exploding finite loss or non-finite loss | Find the first unstable phase, check the numerical update against a reference, then test a smaller LR range |
 | 2 | AD-PSGD | About 497,000 executor tasks per 300-second trial; projected roughly 40 minutes of wall time | Profile passive gradient computation, model copies and separate gradient updates on a small saved workflow |
 | 3 | SWIFT | 480,000 client updates per 300-second trial; first trial still running after about 19 minutes | Reuse gradient-execution profiling, then measure packet/queue costs and cache staleness |
+| 4 | FSPDA-SA | 162,803 executor tasks per 300-second trial; measured early throughput projects 13–15 minutes per trial | Profile gradient/vector operations and model construction; investigate validated resident execution and measure a short CIFAR pilot before re-entry |
 
 AD-PSGD and SWIFT were interrupted before completing their trials. Their runtime
 observations do not establish completed-trial costs or accuracy. The AD-PSGD
 497,000 figure counts executor tasks; SWIFT's 480,000 figure counts client
 updates. These counts are different units and must not be compared directly.
+
+### FSPDA-SA: executor runtime
+
+The attempted 4 November batch is archived under
+`output/leaderboard-cifar10-32-dspodfl-fspda/`. It used the existing `fspda`
+implementation with a ring, Bernoulli edge probability .5, random coordinate
+retention .1 and fixed gains gamma=.1, eta=.01, beta=.1. Only the primal LR was
+searched. The implementation's paper/author-code differences are documented
+in [FSPDA-SA](fspda.md).
+
+Each 300-second tuning DAG has 162,803 tasks, versus 11,593 for DSpodFL.
+An early 20-second throughput sample measured about 199–212 tasks/second for
+four concurrent FSPDA-SA workers sharing one GPU. That projects roughly
+13–15 minutes per tuning trial and, by scaling the horizon, roughly 40–50
+minutes for a 900-second run. These are estimates under that shared workload,
+not completed-trial timings or guaranteed final-run costs. DSpodFL's first four
+trials completed in 60–63 seconds under the same batch. FSPDA-SA's trials were
+interrupted; the observations establish an execution-cost concern, not an
+accuracy or numerical-stability conclusion.
+
+Investigate the gradient backend, repeated model construction and tensor-vector
+packing/update operations using the saved DAG and executor timing counters.
+Separate actual executor overhead from legitimate additional local updates:
+sparse, overlapping communication lets FSPDA advance many more iterations per
+simulated second. Validate any resident or batched implementation against the
+scalar recurrence, preserve charged gradient durations and exact wire bytes,
+and measure both numerical equivalence and end-to-end wall time. Reconsider
+inclusion only after a short CIFAR pilot supports a manageable full-batch cost.
 
 ### DeTAG: numerical stability
 
