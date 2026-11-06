@@ -41,6 +41,12 @@ def load_algorithms(catalog):
             if link and (urlsplit(link['url']).scheme != 'https' or not urlsplit(link['url']).netloc):
                 raise ValueError('Paper and code links require absolute HTTPS URLs')
         entry['_benchmark'] = load_benchmark(path.parent / entry['config'], create_parser())
+        evaluation = entry.get('evaluation')
+        if evaluation is not None and (not isinstance(evaluation, dict)
+                or set(evaluation) != {'policy', 'primary_time'} or evaluation['policy'] != 'fixed_endpoint'
+                or type(evaluation['primary_time']) is not int
+                or evaluation['primary_time'] not in entry['_benchmark'].budgets):
+            raise ValueError('Fixed evaluation endpoint must be a declared budget')
         if entry['tuning_setting'] not in registry['scenarios']:
             raise ValueError('Unknown tuning setting')
     return registry
@@ -96,6 +102,11 @@ def pending_leaderboard(registry, setting):
 def annotate_leaderboard(document, registry):
     if registry:
         document = dict(document, algorithms=public_algorithms(registry), campaign_notice=registry['notice'])
+        policies = [entry.get('evaluation') for entry in registry['algorithms']]
+        if any(policy is not None for policy in policies):
+            if any(policy != policies[0] for policy in policies):
+                raise ValueError('Registered algorithms must use the same primary evaluation policy')
+            document['evaluation'] = policies[0]
     return document
 
 
@@ -286,6 +297,10 @@ def algorithm_document(entry, registry, setting):
                           f"{'Lowest mean endpoint validation NLL' if spec['metric']=='loss' else 'Highest mean endpoint validation accuracy'} at {spec['budget']} s across all tuning seeds; lower LR, then variant name, break exact ties"),
         ('Frozen evaluation checkpoint', f"{selection['selected_time']} simulated seconds" if selection and selection.get('selected_time') is not None else 'Not yet selected'),
     ]
+    if entry.get('evaluation', {}).get('policy') == 'fixed_endpoint':
+        parameters = [('Original validation-selected checkpoint' if key == 'Frozen evaluation checkpoint' else key, value)
+                      for key, value in parameters]
+        parameters.append(('Primary fixed evaluation endpoint', f"{entry['evaluation']['primary_time']} simulated seconds"))
     if options['algorithm'] == 'shatter':
         parameters[2:2] = [('Virtual nodes per real node', options['k']),
                            ('Total virtual nodes', options['peers']*options['k']),

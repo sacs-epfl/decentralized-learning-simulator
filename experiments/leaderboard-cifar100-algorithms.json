@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "CIFAR-100 / ResNet-18-GN · D-PSGD",
-  "notice": "CIFAR-100 / ResNet-18-GN: independent D-PSGD tuning on non-IID Dirichlet α = 0.1 / homogeneous hardware. Forty TPE configurations jointly tune LR in [0.001, 1] and H in {1, 5, 10, 15, 20}; three paired seeds and full 3,600-second budgets. Validation checkpoints every 300 simulated seconds. Freeze the winner and shared checkpoint for all four settings. Network: 100 Mbit/s per client, 10 ms latency; calibrated compute: 6 ms per minibatch. Three workers per GPU. No CIFAR-10 results are included.",
+  "notice": "CIFAR-100 / ResNet-18-GN: five-hour (18,000 simulated seconds) fixed-endpoint evaluations replace the earlier one-hour held-out runs. Reuse D-PSGD H=20 and LR=0.028495662538780223 from the completed 40-configuration, 3,600-second non-IID/homogeneous validation search; tuning is not repeated. Three paired evaluation seeds in each of the four settings; checkpoints every 300 seconds. Network: 100 Mbit/s per client, 10 ms latency; compute: 6 ms per minibatch. The original 3,600-second validation-selected checkpoint is provenance, not the new primary endpoint.",
   "scenarios": {
     "iid-uniform": {
       "partitioner": "iid",
@@ -116,8 +116,8 @@
         },
         {
           "parameter": "Comparison horizon",
-          "value": "3,600 simulated seconds; evaluations at 600 / 1,800 / 3,600 seconds",
-          "role": "The validation-only horizon pilot is still learning at 900 seconds. All TPE candidates receive the same full horizon; no test data selects the budget. Pilot scores are not imported into TPE."
+          "value": "18,000 simulated seconds (5 hours); hourly budget views",
+          "role": "Fixed endpoint requested after observing continued learning at one hour. Earlier held-out evaluation artifacts are removed and rerun from initialization with the same seeds and frozen parameters. Original tuning and its selected checkpoint remain recorded separately."
         }
       ],
       "limitations": [
@@ -127,7 +127,8 @@
         "Aggregation is an offline diagnostic with uniform client weights; its collection and evaluation costs are excluded from simulated protocol time.",
         "Results at different dataset/model combinations use different declared compute and network settings and are kept in separate leaderboards.",
         "Plain SGD uses zero momentum and weight decay, constant LR and no augmentation, matching the earlier comparison policy.",
-        "The training rule is the repository’s train-then-average variant of D-PSGD; no exact reproduction of the original paper setup is claimed."
+        "The training rule is the repository’s train-then-average variant of D-PSGD; no exact reproduction of the original paper setup is claimed.",
+        "The five-hour horizon was requested after examining the earlier test curves. This is an exploratory extension with hyperparameters selected under the original one-hour tuning budget, not a separately retuned five-hour optimum or untouched-test confirmation."
       ],
       "supplement": {
         "title": "Authors’ supplement",
@@ -140,8 +141,13 @@
         "4 November 2026: fresh non-IID TPE campaign, Dirichlet alpha 0.1, H in {1, 5, 10, 15, 20}. Hardware, LR range, 40 configurations, three paired tuning seeds, 900-second full budgets and shared-checkpoint objective are unchanged. Batch size 32, momentum 0 and weight decay 0 remain fixed. Previous IID campaign is archived and excluded from the active leaderboard; no previous scores are imported."
       ],
       "changelog": [
-        "6 November 2026: launch an independent CIFAR-100 / small-image ResNet-18-GN campaign for D-PSGD only. Reuse the 32-client graph, H/LR search, 40 configurations, three tuning seeds, 3,600-second budget selected after the validation horizon pilot; checkpoints every 300 seconds and four transfer-evaluation settings; import no previous scores. Calibrate compute to 6 ms per minibatch and declare 100 Mbit/s endpoint capacities."
-      ]
+        "6 November 2026: launch an independent CIFAR-100 / small-image ResNet-18-GN campaign for D-PSGD only. Reuse the 32-client graph, H/LR search, 40 configurations, three tuning seeds, 3,600-second budget selected after the validation horizon pilot; checkpoints every 300 seconds and four transfer-evaluation settings; import no previous scores. Calibrate compute to 6 ms per minibatch and declare 100 Mbit/s endpoint capacities.",
+        "6 November 2026: replace the one-hour held-out evaluation artifacts with five-hour evaluations across all four settings. Preserve the completed tuning and saved LR/H winner. Use a fixed 18,000-second primary endpoint; retain 300-second learning-curve checkpoints and original validation-selection provenance. No new tuning or test-based checkpoint selection."
+      ],
+      "evaluation": {
+        "policy": "fixed_endpoint",
+        "primary_time": 18000
+      }
     }
   ]
 }

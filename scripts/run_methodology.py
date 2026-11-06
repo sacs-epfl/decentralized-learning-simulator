@@ -5,6 +5,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import shutil
 import signal
 import sys
 
@@ -106,6 +107,79 @@ def graph_plan(benchmark):
     return graphs
 
 
+def reevaluate_campaign(registry, entry, *, replace_evaluations=False):
+    """Run a new horizon with saved hyperparameters; retain the original tuning."""
+    from dasklearn.benchmark import execute_benchmark
+    from dasklearn.experiment_runner import write_json
+    from dasklearn.leaderboard_details import scenario_benchmark
+    from dasklearn.lr_tuning import frozen_runs
+    benchmark = entry['_benchmark']
+    output = benchmark.output
+    selection = json.loads((output / 'selection.json').read_text())
+    previous = json.loads((output / 'resolved.json').read_text())
+    current = benchmark.manifest()
+    for key in ('network', 'seeds', 'evaluation_model', 'tuning'):
+        if previous[key] != current[key]:
+            raise ValueError(f'Frozen evaluation must preserve {key}')
+    old_runs = {run['name']: run for run in previous['runs']}
+    if set(old_runs) != {run['name'] for run in current['runs']}:
+        raise ValueError('Frozen evaluation must preserve run identities')
+    for run in current['runs']:
+        old = old_runs[run['name']]
+        old_options = {key: value for key, value in old['options'].items() if key not in {'duration', 'device'}}
+        new_options = {key: value for key, value in run['options'].items() if key not in {'duration', 'device'}}
+        if any(old[key] != run[key] for key in ('seed', 'variant')) or old_options != new_options:
+            raise ValueError('Frozen evaluation must preserve every numerical option except duration')
+    if selection['specification'] != benchmark.tuning or not frozen_runs(benchmark, selection):
+        raise ValueError('Saved selection must match the original tuning declaration')
+    directories = [output / ('evaluation' if setting == entry['tuning_setting'] else 'evaluation-' + setting)
+                   for setting in registry['scenarios']]
+    if any(path.is_symlink() for path in directories):
+        raise ValueError('Evaluation directories must not be symbolic links')
+    if any(path.exists() for path in directories) and not replace_evaluations:
+        raise ValueError('Existing evaluations require --replace-evaluations')
+    pipeline = dict(version=1, status='running', phase='evaluation', tuning=benchmark.tuning,
+                    selected=selection['selected'], final_seeds=benchmark.seeds,
+                    evaluation_budget=max(benchmark.budgets), tuning_reused=True,
+                    started_at=datetime.now(timezone.utc).isoformat())
+    campaign = dict(version=1, status='running', phase='frozen-parameter evaluation',
+                    selected_variant=selection['selected_variant'], selected_parameters=selection['selected_parameters'],
+                    evaluation_budget=max(benchmark.budgets), settings_completed=[], tuning_reused=True)
+    write_json(output / 'pipeline.json', pipeline)
+    write_json(output / 'campaign.json', campaign)
+    code = 0
+    try:
+        for path in directories:
+            if path.exists():
+                shutil.rmtree(path)
+        for name in ('leaderboard.json', 'leaderboard.csv'):
+            (output / name).unlink(missing_ok=True)
+        for setting in [entry['tuning_setting'], *[s for s in registry['scenarios'] if s != entry['tuning_setting']]]:
+            campaign['current_setting'] = setting
+            write_json(output / 'campaign.json', campaign)
+            scenario = scenario_benchmark(entry, registry, setting)
+            final = replace(scenario, output=output / ('evaluation' if setting == entry['tuning_setting'] else 'evaluation-' + setting),
+                            runs=frozen_runs(scenario, selection), tuning=None, selection=selection)
+            code = execute_benchmark(final)
+            if code:
+                break
+            campaign['settings_completed'].append(setting)
+    except KeyboardInterrupt:
+        code = 130
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        code = 1
+        campaign['error'] = str(exc)
+    status = 'completed' if code == 0 else 'interrupted' if code == 130 else 'failed'
+    campaign.update(status=status, phase='evaluation completed' if not code else 'evaluation stopped',
+                    finished_at=datetime.now(timezone.utc).isoformat())
+    pipeline.update(status=status, finished_at=campaign['finished_at'])
+    if code:
+        pipeline['error'] = campaign.setdefault('error', 'Frozen-parameter evaluation did not complete')
+    write_json(output / 'pipeline.json', pipeline)
+    write_json(output / 'campaign.json', campaign)
+    return code
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--catalog', type=Path, default=Path(__file__).resolve().parents[1] / 'experiments/leaderboard-settings.json')
@@ -115,9 +189,15 @@ def main(argv=None):
                         help='Maximum concurrent workers per GPU for new launches (default: 3)')
     parser.add_argument('--reuse-tuning', type=Path, help='Verify and reuse matching completed validation trials')
     parser.add_argument('--resume-tuning', action='store_true', help='Recover failed TPE tuning, retaining completed seeds and retrying incomplete seeds')
+    parser.add_argument('--evaluation-only', action='store_true', help='Reuse saved tuning and evaluate the configured horizon')
+    parser.add_argument('--replace-evaluations', action='store_true', help='Remove existing held-out evaluation artifacts before the evaluation-only run')
     args = parser.parse_args(argv)
     if args.workers_per_gpu < 1:
         parser.error('--workers-per-gpu must be positive')
+    if args.replace_evaluations and not args.evaluation_only:
+        parser.error('--replace-evaluations requires --evaluation-only')
+    if args.evaluation_only and (args.reuse_tuning or args.resume_tuning):
+        parser.error('--evaluation-only cannot change or recover tuning')
     from dasklearn.leaderboard_details import algorithm_entry, load_algorithms
     registry = load_algorithms(args.catalog)
     entry = algorithm_entry(registry, args.algorithm)
@@ -145,6 +225,7 @@ def main(argv=None):
                 tuning_setting=entry['tuning_setting'], evaluation_settings=list(registry['scenarios']), graphs=graphs,
                 reuse_tuning=str(args.reuse_tuning.resolve()) if args.reuse_tuning else None,
                 resume_tuning=args.resume_tuning)
+    plan.update(evaluation_only=args.evaluation_only, replace_evaluations=args.replace_evaluations)
     if args.plan:
         print(json.dumps(plan,indent=2,allow_nan=False))
         return 0
@@ -157,6 +238,8 @@ def main(argv=None):
         except BlockingIOError:
             parser.error('Another process already owns this campaign')
         write_json(launch / 'plan.json',plan)
+        if args.evaluation_only:
+            return reevaluate_campaign(registry, entry, replace_evaluations=args.replace_evaluations)
         return execute_campaign(registry,entry,reuse_tuning=args.reuse_tuning,resume_tuning=args.resume_tuning)
 
 

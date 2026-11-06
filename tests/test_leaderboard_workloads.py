@@ -23,7 +23,8 @@ def test_cifar100_campaign_keeps_search_protocol_and_changes_workload_capacities
     assert benchmark.runs[0].options['model'] == 'resnet18_gn'
     assert benchmark.network == dict(profile='uniform', bandwidth_bytes_per_second=12500000, compute_step_ms=6)
     assert benchmark.tuning['n_trials'] == 40 and benchmark.tuning['budget'] == 3600
-    assert benchmark.budgets == [600, 1800, 3600]
+    assert benchmark.budgets == [3600, 7200, 10800, 14400, 18000]
+    assert registry['algorithms'][0]['evaluation'] == dict(policy='fixed_endpoint', primary_time=18000)
     assert benchmark.tuning['evaluation_period'] == 300
     assert benchmark.tuning['seeds'] == [100, 101, 102] and benchmark.seeds == [110, 111, 112]
     assert benchmark.execution_devices == ['cuda:0', 'cuda:1'] * 3
@@ -88,6 +89,8 @@ def test_workload_routes_do_not_mix_algorithms_or_data(served_workloads):
         with urlopen(served_workloads + '/leaderboard.json' + suffix) as response:
             result = json.load(response)
         assert len(result['algorithms']) == count
+        if index == 1:
+            assert result['evaluation'] == dict(policy='fixed_endpoint', primary_time=18000)
         assert all(run['options']['dataset'] == dataset for run in result['runs'])
         row = next(row for row in result['tables'][-1]['rows'] if row['variant'] == 'dpsgd-kreg-log2')
         if index == 0:

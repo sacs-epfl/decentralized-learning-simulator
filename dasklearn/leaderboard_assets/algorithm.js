@@ -107,6 +107,9 @@ function render(data) {
   const method=adaptive ? `TPE adaptive search, at least ${search.n_startup_trials} startup configurations, batches of ${search.batch_size}. Search spaces: ${JSON.stringify(search.search_spaces)}.` : `Joint grid: local steps H ∈ {${localSteps.join(', ')}} × declared learning rates.`;
   $("tuning-rule").textContent=`${method} Each configuration uses ${search.seeds.length} seeds (${search.seeds.join(", ")}) and the full ${search.budget} simulated seconds per seed, without early stopping. Select the ${criterion} ${timing}; lower learning rate, then variant name${adaptive ? ' and candidate ID' : ''}, break between-candidate ties. Freeze all selected parameters and the checkpoint time for every evaluation setting.`;
   $("selected-pair").textContent=search.selected_variant ? `Frozen parameters: ${JSON.stringify(search.selected_parameters ?? {local_steps:search.selected_local_steps,learning_rate:search.selected_learning_rate})}${search.selected_time != null ? ', checkpoint = '+search.selected_time+' s' : ''}. Selected using validation data only.` : "No configuration has been selected. All trials must finish before selection and test evaluation.";
+  if (data.evaluation?.policy === "fixed_endpoint") {
+    $("selected-pair").textContent=$("selected-pair").textContent.replace(", checkpoint = ", ", original validation checkpoint = ") + ` Evaluation uses a fixed endpoint at ${data.evaluation.primary_time} s.`;
+  }
   $("boundary-note").hidden=!search.boundary_winner;
   const head=document.createElement("tr");
   const compression=demo ? [["demo_decay","Residual decay"],["demo_chunk","DCT block size"],["demo_topk","Coefficients / block"]] : [];

@@ -108,19 +108,21 @@ function render(data) {
   $("split").textContent = data.evaluation_split;
   $("updated").textContent = new Date(data.updated_at).toLocaleTimeString();
   const select = $("budget");
+  const primaryTime = data.evaluation?.primary_time ?? data.selection?.selected_time;
   const settingKey = `${selectedWorkload ?? ''}/${selectedSetting ?? data.name}`;
   if (renderedSetting !== settingKey || [...select.options].map(option => +option.value).join() !== data.budgets.join()) {
     const previous = renderedSetting === settingKey && budgetChosen ? +select.value : null;
     select.replaceChildren(...data.budgets.map(budget => new Option(`${budget} seconds`, budget)));
-    select.value = previous !== null && data.budgets.includes(previous) ? previous : data.budgets.includes(data.selection?.selected_time) ? data.selection.selected_time : data.budgets.includes(900) ? 900 : Math.max(...data.budgets);
+    select.value = previous !== null && data.budgets.includes(previous) ? previous : data.budgets.includes(primaryTime) ? primaryTime : data.budgets.includes(900) ? 900 : Math.max(...data.budgets);
   }
-  if (!budgetChosen && data.budgets.includes(data.selection?.selected_time)) select.value = data.selection.selected_time;
+  if (!budgetChosen && data.budgets.includes(primaryTime)) select.value = primaryTime;
   renderedSetting = settingKey;
   $("export").href = `/leaderboard.csv?setting=${encodeURIComponent(selectedSetting ?? "default")}${workloadSuffix()}`;
   const table = data.tables.find(table => table.budget === +select.value);
   $("budget-label").textContent = `${table.budget} s`;
   $("ranking-note").textContent = table.provisional ? "Provisional results · Official ranks appear after every variant has the full paired seed set. Partial or failed runs never receive a final rank." : "Complete paired comparison · Sorted by mean accuracy at the selected simulated budget. Small differences may fall within seed variation.";
-  if (data.selection?.selected_time != null) $("ranking-note").textContent += ` Primary evaluation uses the validation-selected checkpoint at ${data.selection.selected_time} s; other budget views describe the learning curve.`;
+  if (data.evaluation?.policy === "fixed_endpoint") $("ranking-note").textContent += ` Primary evaluation uses the fixed endpoint at ${primaryTime} s. Hyperparameters come from the earlier validation search; other budget views describe the learning curve.`;
+  else if (data.selection?.selected_time != null) $("ranking-note").textContent += ` Primary evaluation uses the validation-selected checkpoint at ${data.selection.selected_time} s; other budget views describe the learning curve.`;
   if (data.pipeline?.phase === "tuning") $("ranking-note").textContent = "Validation search trials · These candidate scores select learning rates. The algorithm comparison starts after selection, using fresh seeds and test data.";
   $("rows").replaceChildren(); $("targets").replaceChildren();
   for (const row of table.rows) {

@@ -4,6 +4,27 @@
 
 ### Dataset/model combinations (6 November 2026)
 
+The current CIFAR-100 held-out evaluations run for **five simulated hours
+(18,000 seconds)** with the original tuning winner, **H=20 and
+LR=0.028495662538780223**. This replaces the earlier one-hour held-out runs;
+their evaluation directories and duplicated root score files are removed.
+The complete 40-configuration tuning history, winning parameters and original
+3,600-second validation-selected checkpoint remain intact. The five-hour primary
+endpoint is explicitly fixed by the experiment request, not validation-selected
+or chosen from the extended test curve. All four data/hardware settings use
+seeds 110–112, hourly budget views and 300-second checkpoints. The extension
+follows inspection of prior test curves and remains exploratory.
+
+```sh
+python scripts/run_methodology.py --catalog experiments/leaderboard-cifar100-settings.json --algorithm dpsgd-kreg-log2 --evaluation-only --replace-evaluations
+```
+
+This mode requires the original `resolved.json` and `selection.json`, verifies
+that the tuning declaration and every numerical setting except duration are
+unchanged, and uses the ordinary campaign lock. It replaces only the four
+held-out evaluation directories and root score copies; it never reruns tuning.
+The sections below describe the original one-hour tuning and pilot setup.
+
 Serve `experiments/leaderboard-workloads.json` to expose the **Dataset / model**
 selector. It switches between the existing CIFAR-10/GNLeNet comparison and the
 new CIFAR-100/ResNet-18-GN D-PSGD campaign. Settings, algorithm details, JSON/CSV

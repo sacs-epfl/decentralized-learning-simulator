@@ -4,9 +4,11 @@
   "output": "../../output/leaderboard-v3/cifar100-resnet18-gn/dpsgd-kreg-log2-tpe-dirichlet01-h20",
   "benchmark": {
     "budgets": [
-      600,
-      1800,
-      3600
+      3600,
+      7200,
+      10800,
+      14400,
+      18000
     ],
     "seeds": [
       110,
