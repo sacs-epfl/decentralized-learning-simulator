@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "pilot_config": "experiments/methodology/cifar100-resnet18gn-h10-duration-pilot.json",
+  "dataset": "cifar100",
+  "model": "resnet18_gn",
+  "seed": 100,
+  "partitioner": "dirichlet",
+  "alpha": 0.1,
+  "learning_rate": 0.03,
+  "local_steps": 10,
+  "network": {
+    "profile": "uniform",
+    "bandwidth_bytes_per_second": 12500000,
+    "compute_step_ms": 6
+  },
+  "evaluation_split": "validation",
+  "status": "completed",
+  "wall_seconds": 623.6066188630648,
+  "curve": [
+    {
+      "time": 0,
+      "accuracy": 1.14,
+      "loss": 4.789997,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 0,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 300,
+      "accuracy": 2.86,
+      "loss": 4.538855,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 93851668084,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 600,
+      "accuracy": 3.3,
+      "loss": 4.375987,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 183873656052,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 900,
+      "accuracy": 6.04,
+      "loss": 4.20576,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 269843762906,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 1200,
+      "accuracy": 8.38,
+      "loss": 4.069699,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 357901033900,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 1500,
+      "accuracy": 8.98,
+      "loss": 3.976031,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 445057390982,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 1800,
+      "accuracy": 10.62,
+      "loss": 3.87895,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 533406249310,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 2100,
+      "accuracy": 11.28,
+      "loss": 3.812832,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 617443730677,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 2400,
+      "accuracy": 12.12,
+      "loss": 3.750099,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 706837883492,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 2700,
+      "accuracy": 12.82,
+      "loss": 3.699917,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 793830150656,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 3000,
+      "accuracy": 13.2,
+      "loss": 3.656762,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 881230795536,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 3300,
+      "accuracy": 14.24,
+      "loss": 3.60057,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 969967277370,
+      "peers": 32,
+      "evaluated_models": 1
+    },
+    {
+      "time": 3600,
+      "accuracy": 15.4,
+      "loss": 3.555335,
+      "worst_decile_accuracy": null,
+      "bytes_sent": 1056264789217,
+      "peers": 32,
+      "evaluated_models": 1
+    }
+  ],
+  "selected_campaign_budget": 3600,
+  "selection_note": "Initial finite comparison horizon: clear learning continues beyond 900 seconds; 3600 seconds is not a convergence claim. Full TPE imports no pilot observations.",
+  "provenance": {
+    "commit": "2e7301490a159bf645d6610706ceeb8481a961a1",
+    "dirty": true,
+    "source_sha256": "b98a8a75a1e9230bb84cf7d60612a43004cc01597a8ccedbc846e88065213d6e",
+    "python": "3.12.15",
+    "packages": {
+      "torch": "2.14.1+cu130",
+      "torchvision": "0.29.1+cu130",
+      "numpy": "2.5.4",
+      "datasets": "4.8.5",
+      "flwr-datasets": "0.6.1",
+      "transformers": "5.22.1",
+      "peft": "0.21.2",
+      "PyYAML": "6.0.3",
+      "optuna": "5.0.0"
+    }
+  }
+}

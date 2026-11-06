@@ -66,6 +66,11 @@ def create_model(dataset: str, architecture: Optional[str] = None, settings=None
             return tormodels.__dict__[architecture](num_classes=10)
         else:
             raise RuntimeError("Unknown model architecture for CIFAR10: %s" % architecture)
+    elif dataset == "cifar100":
+        if architecture != "resnet18_gn":
+            raise ValueError('CIFAR-100 requires the resnet18_gn architecture')
+        from dasklearn.models.cifar_resnet import resnet18_gn
+        return resnet18_gn(num_classes=100)
     elif dataset == "femnist":
         from dasklearn.models.femnist import CNN
         return CNN()

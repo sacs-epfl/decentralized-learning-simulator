@@ -34,7 +34,7 @@ def provenance(root):
         result = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
         return result.stdout.strip() if result.returncode == 0 else None
     packages = {}
-    for name in ("torch", "torchvision", "numpy", "datasets", "flwr-datasets", "transformers", "peft", "PyYAML"):
+    for name in ("torch", "torchvision", "numpy", "datasets", "flwr-datasets", "transformers", "peft", "PyYAML", "optuna"):
         try:
             packages[name] = version(name)
         except PackageNotFoundError:

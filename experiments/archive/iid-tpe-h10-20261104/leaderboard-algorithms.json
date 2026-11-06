@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "title": "Decentralized learning leaderboard",
+  "notice": "TPE campaign: jointly tune algorithm parameters on IID/homogeneous validation data. Each candidate receives three paired seeds and 900 simulated seconds per seed, without early stopping. Freeze the winning parameters and shared checkpoint for all four evaluation settings. Eight GPU workers; previous results are preserved separately.",
+  "scenarios": {
+    "iid-uniform": {
+      "partitioner": "iid",
+      "profile": "uniform"
+    },
+    "iid-heterogeneous": {
+      "partitioner": "iid",
+      "profile": "heterogeneous"
+    },
+    "dirichlet01-uniform": {
+      "partitioner": "dirichlet",
+      "profile": "uniform"
+    },
+    "dirichlet01-heterogeneous": {
+      "partitioner": "dirichlet",
+      "profile": "heterogeneous"
+    }
+  },
+  "algorithms": [
+    {
+      "id": "dpsgd-kreg-log2",
+      "label": "D-PSGD · k = log₂(n)",
+      "config": "../../methodology/dpsgd-kreg-tpe.json",
+      "tuning_setting": "iid-uniform",
+      "description": "Each client learns from its own data for a small number of minibatch updates, exchanges its model with five neighbors, and averages the received models with its own. Repeating this spreads learning through the network without a central server.",
+      "steps": [
+        "Perform H local SGD updates with minibatches of 32 examples.",
+        "Send the resulting model to each of the five fixed neighbors.",
+        "Wait for every neighbor’s model from the same round, then average all six models equally.",
+        "Begin the next local round; there is no global barrier."
+      ],
+      "paper": {
+        "title": "Can Decentralized Algorithms Outperform Centralized Algorithms? A Case Study for Decentralized Parallel Stochastic Gradient Descent",
+        "authors": "Xiangru Lian, Ce Zhang, Huan Zhang, Cho-Jui Hsieh, Wei Zhang, Ji Liu",
+        "venue": "NeurIPS 2017 · peer reviewed",
+        "url": "https://papers.neurips.cc/paper_files/paper/2017/hash/f75526659f31040afeb61cb7133e4e6d-Abstract.html"
+      },
+      "author_code": null,
+      "author_code_note": "No verified public authors’ code repository located. The paper’s official supplementary archive is linked separately; it has not been verified to contain code.",
+      "implementation_note": "This repository implements the train-then-average variant: x_next = W LocalSGD(x, H). At H = 1 this is W(x − ηg(x)); Algorithm 1 of the original paper uses Wx − ηg(x). The benchmark therefore measures this declared variant, not an exact reproduction of that algorithm.",
+      "implementation_files": [
+        "dasklearn/simulation/dpsgd/client.py",
+        "dasklearn/simulation/dpsgd/simulation.py"
+      ],
+      "parameter_notes": [
+        {
+          "parameter": "Graph degree k",
+          "value": "log₂(32) = 5",
+          "role": "Fixed by variant definition; not tuned."
+        },
+        {
+          "parameter": "Mixing weights",
+          "value": "1/6 for self and each of five neighbors",
+          "role": "Fixed, uniform weights on a regular graph."
+        },
+        {
+          "parameter": "Graph realization",
+          "value": "NetworkX random_regular_graph(5, 32, seed)",
+          "role": "Fixed within a run; identical across candidates at the same seed."
+        },
+        {
+          "parameter": "Synchronization",
+          "value": "Wait for same-round neighbor models",
+          "role": "No global round barrier; no stale-model substitution."
+        },
+        {
+          "parameter": "Batch size",
+          "value": 32,
+          "role": "Fixed per client and per SGD step."
+        },
+        {
+          "parameter": "Momentum / weight decay",
+          "value": "0 / 0",
+          "role": "Fixed; plain SGD."
+        },
+        {
+          "parameter": "Normalization / model size",
+          "value": "GroupNorm (2 groups per layer); 85,354 parameters",
+          "role": "GNLeNet for 32×32 CIFAR-10; about 0.34 MB of FP32 parameters."
+        },
+        {
+          "parameter": "Network scheduling",
+          "value": "Greedy endpoint bandwidth allocation; +10 ms one-way delivery delay per message",
+          "role": "A declared abstract resource model, not a calibrated TCP or routed-network simulation."
+        }
+      ],
+      "limitations": [
+        "Tuning on one scenario measures parameter transfer to the other scenarios; it does not estimate each scenario’s separately tuned optimum.",
+        "The evaluation is an offline, uniformly averaged global model; collection and evaluation costs are excluded from simulated protocol time.",
+        "The CIFAR-10 test set was already examined in the previous campaign. New seeds do not make it an untouched test set; this campaign remains exploratory with respect to that data.",
+        "A winning learning rate at either bound of the declared search range is flagged for review. No search is expanded silently.",
+        "Configured batch size is 32. The existing loader permits smaller batches at a partition boundary or on clients with fewer than 32 examples; it does not pad or sample extra examples.",
+        "The network is an uncalibrated abstraction: separate per-client upload/download caps, greedy queue-ordered allocation, and one fixed delivery delay per message. TCP dynamics, packet loss, jitter and shared physical links are not modeled. Network realism and allocation-order sensitivity need validation before drawing deployment-performance conclusions."
+      ],
+      "supplement": {
+        "title": "Authors’ supplement",
+        "url": "https://papers.neurips.cc/paper_files/paper/2017/file/f75526659f31040afeb61cb7133e4e6d-Supplemental.zip"
+      },
+      "protocol_amendments": [
+        "4 November 2026: preliminary trials were discarded at the user’s request before restarting. The fresh search selects the parameter pair and shared training checkpoint with the highest validation accuracy averaged across all three seeds. The selected time, learning rate and local-step count are frozen for fresh-seed evaluation in all settings.",
+        "The fresh search uses four workers per GPU (eight workers across two GPUs). This changes execution wall time and resource contention, but not modeled protocol capacities or allocated simulated-time budgets.",
+        "4 November 2026: TPE replaces the grid in a fresh output directory. The search declares 40 joint configurations, at least 12 startup configurations, sampler seed 20261104, and batches of three configurations sharing eight worker slots. Every configuration uses all three paired tuning seeds for the full 900-second budget. The validation objective is unchanged; no pruning is used. The original grid declaration and artifacts are preserved."
+      ]
+    }
+  ]
+}

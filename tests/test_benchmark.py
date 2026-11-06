@@ -1,4 +1,5 @@
 import csv
+from copy import deepcopy
 import io
 import json
 from pathlib import Path
@@ -12,7 +13,7 @@ import pytest
 
 from args import create_parser
 from dasklearn.algorithms import ALGORITHMS
-from dasklearn.benchmark import budget_metrics, leaderboard, load_benchmark, read_curve
+from dasklearn.benchmark import budget_metrics, checkpoint_budget_view, leaderboard, load_benchmark, read_curve
 from dasklearn.leaderboard_server import create_server
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,6 +104,29 @@ def test_partial_checkpoints_never_publish_or_fill_from_the_future(tmp_path):
     assert metrics["accuracy"] == 60 and metrics["bytes_sent"] == 500
     assert metrics["time_to_accuracy"] == {"40": 3, "80": None}
     assert budget_metrics(curve, 4, []) is None
+
+
+def test_checkpoint_view_uses_exact_600_second_scores_without_changing_saved_results(tmp_path):
+    benchmark = load_benchmark(config(tmp_path, runs=[dict(name='a'), dict(name='b')],
+        benchmark=dict(budgets=[60, 300, 900], seeds=[0, 1], evaluation_period=60)), create_parser())
+    suite = benchmark.manifest() | dict(status='completed')
+    for run in suite['runs']:
+        run.update(status='completed', wall_seconds=1, curve=[])
+        for stamp in benchmark.times:
+            accuracy = (95 if run['variant']=='a' else 40) if stamp==900 else (80 if run['variant']=='a' else 90)
+            run['curve'].append(dict(time=stamp, accuracy=accuracy+run['seed'], loss=1.,
+                                    worst_decile_accuracy=accuracy, bytes_sent=stamp*100))
+    document = leaderboard(suite)
+    before = deepcopy(document)
+    view = checkpoint_budget_view(document, 600, times=benchmark.times, seeds=benchmark.seeds)
+    assert document==before and view['budgets']==[60, 300, 600, 900]
+    rows = next(table['rows'] for table in view['tables'] if table['budget']==600)
+    assert rows[0]['variant']=='b' and rows[0]['rank']==1 and rows[0]['accuracy']['mean']==90.5
+    assert rows[1]['variant']=='a' and rows[1]['rank']==2 and rows[1]['accuracy']['mean']==80.5
+    assert view['tables'][-1]==document['tables'][-1]
+    assert view['tables'][-1]['rows'][0]['variant']=='a'
+    assert checkpoint_budget_view(view, 600, times=benchmark.times, seeds=benchmark.seeds) is view
+    assert checkpoint_budget_view(document, 600, times=[0, 900], seeds=benchmark.seeds) is document
 
 
 @pytest.mark.parametrize("bad", [dict(accuracy=float("nan")), dict(accuracy=101), dict(peer=3), dict(time=4)])

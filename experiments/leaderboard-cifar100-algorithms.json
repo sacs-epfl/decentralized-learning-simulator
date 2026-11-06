@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "title": "CIFAR-100 / ResNet-18-GN · D-PSGD",
+  "notice": "CIFAR-100 / ResNet-18-GN: independent D-PSGD tuning on non-IID Dirichlet α = 0.1 / homogeneous hardware. Forty TPE configurations jointly tune LR in [0.001, 1] and H in {1, 5, 10, 15, 20}; three paired seeds and full 3,600-second budgets. Validation checkpoints every 300 simulated seconds. Freeze the winner and shared checkpoint for all four settings. Network: 100 Mbit/s per client, 10 ms latency; calibrated compute: 6 ms per minibatch. Three workers per GPU. No CIFAR-10 results are included.",
+  "scenarios": {
+    "iid-uniform": {
+      "partitioner": "iid",
+      "profile": "uniform"
+    },
+    "iid-heterogeneous": {
+      "partitioner": "iid",
+      "profile": "heterogeneous"
+    },
+    "dirichlet01-uniform": {
+      "partitioner": "dirichlet",
+      "profile": "uniform"
+    },
+    "dirichlet01-heterogeneous": {
+      "partitioner": "dirichlet",
+      "profile": "heterogeneous"
+    }
+  },
+  "algorithms": [
+    {
+      "id": "dpsgd-kreg-log2",
+      "label": "D-PSGD · k = log₂(n)",
+      "config": "methodology/dpsgd-cifar100-resnet18gn-tpe-dirichlet01-h20.json",
+      "tuning_setting": "dirichlet01-uniform",
+      "description": "Each client learns from its own data for a small number of minibatch updates, exchanges its model with five neighbors, and averages the received models with its own. Repeating this spreads learning through the network without a central server.",
+      "steps": [
+        "Perform H local SGD updates with minibatches of 32 examples.",
+        "Send the resulting model to each of the five fixed neighbors.",
+        "Wait for every neighbor’s model from the same round, then average all six models equally.",
+        "Begin the next local round; there is no global barrier."
+      ],
+      "paper": {
+        "title": "Can Decentralized Algorithms Outperform Centralized Algorithms? A Case Study for Decentralized Parallel Stochastic Gradient Descent",
+        "authors": "Xiangru Lian, Ce Zhang, Huan Zhang, Cho-Jui Hsieh, Wei Zhang, Ji Liu",
+        "venue": "NeurIPS 2017 · peer reviewed",
+        "url": "https://papers.neurips.cc/paper_files/paper/2017/hash/f75526659f31040afeb61cb7133e4e6d-Abstract.html"
+      },
+      "author_code": null,
+      "author_code_note": "No verified public authors’ code repository located. The paper’s official supplementary archive is linked separately; it has not been verified to contain code.",
+      "implementation_note": "This repository implements the train-then-average variant: x_next = W LocalSGD(x, H). At H = 1 this is W(x − ηg(x)); Algorithm 1 of the original paper uses Wx − ηg(x). The benchmark therefore measures this declared variant, not an exact reproduction of that algorithm.",
+      "implementation_files": [
+        "dasklearn/simulation/dpsgd/client.py",
+        "dasklearn/simulation/dpsgd/simulation.py",
+        "dasklearn/models/cifar_resnet.py",
+        "dasklearn/datasets/cifar100.py"
+      ],
+      "parameter_notes": [
+        {
+          "parameter": "Graph degree k",
+          "value": "log₂(32) = 5",
+          "role": "Fixed by variant definition; not tuned."
+        },
+        {
+          "parameter": "Mixing weights",
+          "value": "1/6 for self and each of five neighbors",
+          "role": "Fixed, uniform weights on a regular graph."
+        },
+        {
+          "parameter": "Graph realization",
+          "value": "NetworkX random_regular_graph(5, 32, seed)",
+          "role": "Fixed within a run; identical across candidates at the same seed."
+        },
+        {
+          "parameter": "Synchronization",
+          "value": "Wait for same-round neighbor models",
+          "role": "No global round barrier; no stale-model substitution."
+        },
+        {
+          "parameter": "Batch size",
+          "value": 32,
+          "role": "Fixed per client and per SGD step."
+        },
+        {
+          "parameter": "Momentum / weight decay",
+          "value": "0 / 0",
+          "role": "Fixed; plain SGD."
+        },
+        {
+          "parameter": "Normalization / model size",
+          "value": "GroupNorm (2 groups per layer); 85,354 parameters",
+          "role": "GNLeNet for 32×32 CIFAR-10; about 0.34 MB of FP32 parameters."
+        },
+        {
+          "parameter": "Network scheduling",
+          "value": "Greedy endpoint bandwidth allocation; +10 ms one-way delivery delay per message",
+          "role": "A declared abstract resource model, not a calibrated TCP or routed-network simulation."
+        },
+        {
+          "parameter": "Dataset / model",
+          "value": "CIFAR-100 / ResNet-18-GN; 11,220,132 parameters",
+          "role": "Train from scratch. Native 32×32 images, 3×3 stride-1 stem, no initial max pooling; GroupNorm with 32 groups throughout and 100 output logits."
+        },
+        {
+          "parameter": "Preprocessing / splits",
+          "value": "45,000 train / 5,000 validation / 10,000 test",
+          "role": "Fine labels; fixed stratified holdout seed 1729 before client partitioning. RGB channel normalization mean (0.5071,0.4867,0.4408), std (0.2675,0.2565,0.2761). No augmentation, matching the earlier campaign policy."
+        },
+        {
+          "parameter": "Network",
+          "value": "100 Mbit/s (12,500,000 bytes/s) per client; 10 ms delivery latency",
+          "role": "Declared symmetric endpoint capacity, 12.5× the earlier workload bandwidth. Heterogeneous factors are normalized to the same arithmetic mean capacity, independently of compute factors."
+        },
+        {
+          "parameter": "Compute calibration",
+          "value": "6 ms per minibatch of 32",
+          "role": "Rounded up from the measured 5.514 ms median over three warm 20-step blocks on one RTX 5000 Ada GPU. This models an isolated worker, independently of execution contention. Artifact: experiments/methodology/calibration/cifar100-resnet18-gn.json."
+        },
+        {
+          "parameter": "Execution allocation",
+          "value": "3 workers per GPU; 6 total",
+          "role": "Two configurations per batch × three paired seeds. Resident scalar training; automatic multi-model training batching disabled for predictable memory use."
+        },
+        {
+          "parameter": "Comparison horizon",
+          "value": "3,600 simulated seconds; evaluations at 600 / 1,800 / 3,600 seconds",
+          "role": "The validation-only horizon pilot is still learning at 900 seconds. All TPE candidates receive the same full horizon; no test data selects the budget. Pilot scores are not imported into TPE."
+        }
+      ],
+      "limitations": [
+        "Parameters are tuned on non-IID/homogeneous validation data, then transferred to the other three settings; these are not separately tuned optima.",
+        "The forty-configuration search is finite; H is capped at 20 and LR is log-uniform in [0.001,1].",
+        "Compute is calibrated on a single warm GPU; modeled endpoint bandwidth and 10 ms latency are benchmark assumptions, not a measured deployment network.",
+        "Aggregation is an offline diagnostic with uniform client weights; its collection and evaluation costs are excluded from simulated protocol time.",
+        "Results at different dataset/model combinations use different declared compute and network settings and are kept in separate leaderboards.",
+        "Plain SGD uses zero momentum and weight decay, constant LR and no augmentation, matching the earlier comparison policy.",
+        "The training rule is the repository’s train-then-average variant of D-PSGD; no exact reproduction of the original paper setup is claimed."
+      ],
+      "supplement": {
+        "title": "Authors’ supplement",
+        "url": "https://papers.neurips.cc/paper_files/paper/2017/file/f75526659f31040afeb61cb7133e4e6d-Supplemental.zip"
+      },
+      "protocol_amendments": [
+        "4 November 2026: preliminary trials were discarded at the user’s request before restarting. The fresh search selects the parameter pair and shared training checkpoint with the highest validation accuracy averaged across all three seeds. The selected time, learning rate and local-step count are frozen for fresh-seed evaluation in all settings.",
+        "The fresh search uses four workers per GPU (eight workers across two GPUs). This changes execution wall time and resource contention, but not modeled protocol capacities or allocated simulated-time budgets.",
+        "4 November 2026: TPE replaces the grid in a fresh output directory. The search declares 40 joint configurations, at least 12 startup configurations, sampler seed 20261104, and batches of three configurations sharing eight worker slots. Every configuration uses all three paired tuning seeds for the full 900-second budget. The validation objective is unchanged; no pruning is used. The original grid declaration and artifacts are preserved.",
+        "4 November 2026: fresh non-IID TPE campaign, Dirichlet alpha 0.1, H in {1, 5, 10, 15, 20}. Hardware, LR range, 40 configurations, three paired tuning seeds, 900-second full budgets and shared-checkpoint objective are unchanged. Batch size 32, momentum 0 and weight decay 0 remain fixed. Previous IID campaign is archived and excluded from the active leaderboard; no previous scores are imported."
+      ],
+      "changelog": [
+        "6 November 2026: launch an independent CIFAR-100 / small-image ResNet-18-GN campaign for D-PSGD only. Reuse the 32-client graph, H/LR search, 40 configurations, three tuning seeds, 3,600-second budget selected after the validation horizon pilot; checkpoints every 300 seconds and four transfer-evaluation settings; import no previous scores. Calibrate compute to 6 ms per minibatch and declare 100 Mbit/s endpoint capacities."
+      ]
+    }
+  ]
+}

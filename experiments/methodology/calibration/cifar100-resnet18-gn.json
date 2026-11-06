@@ -1,0 +1,23 @@
+{
+  "dataset": "cifar100",
+  "model": "resnet18_gn",
+  "device": "NVIDIA RTX 5000 Ada Generation",
+  "batch_size": 32,
+  "parameter_count": 11220132,
+  "serialized_model_bytes": 44902202,
+  "step_seconds": [
+    0.005660952092148364,
+    0.00551365283317864,
+    0.005468237004242838
+  ],
+  "median_step_ms": 5.513652833178639,
+  "recommended_compute_step_ms": 6,
+  "validation_evaluation_seconds": 0.3295320072211325,
+  "validation_examples": 5000,
+  "test_examples": 10000,
+  "training_examples": 45000,
+  "min_partition_size": 936,
+  "max_partition_size": 2114,
+  "timestamp": "2026-11-06T09:18:22.726347+00:00",
+  "note": "Single worker warm GPU, 20-step local blocks, real native training path. Validation score is a throughput pilot, not used for tuning."
+}

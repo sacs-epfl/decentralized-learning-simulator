@@ -16,7 +16,7 @@ def create_parser():
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--local-steps', type=int, default=5)
 
-    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "femnist", "google_speech", "tiny_imagenet", "synthetic", "digits", "text", "vision"], help="Model/preprocessing preset; use --dataset-name to select the data source")
+    parser.add_argument('--dataset', type=str, default="cifar10", choices=["cifar10", "cifar100", "femnist", "google_speech", "tiny_imagenet", "synthetic", "digits", "text", "vision"], help="Model/preprocessing preset; use --dataset-name to select the data source")
     parser.add_argument('--partitioner', type=str, default="iid", choices=["iid", "natural", "shards", "dirichlet"])
     from dasklearn.datasets.huggingface import add_dataset_arguments
     add_dataset_arguments(parser)

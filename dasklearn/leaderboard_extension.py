@@ -16,6 +16,8 @@ def load_baselines(benchmark, catalog, *, allow_pending=False):
     """Reject incompatible or incomplete baselines before starting any training."""
     if benchmark.tuning is None:
         raise ValueError("An extension requires an equal-budget tuning specification")
+    if benchmark.tuning.get("method") == "tpe":
+        raise ValueError("TPE uses run_methodology.py or run_benchmark.py; legacy leaderboard extensions require a grid")
     _, entries = load_settings(catalog=catalog)
     additions = {run.variant for run in benchmark.runs}
     shared = ("dataset", "model", "peers", "dataset_base_path", "validation_set_fraction",

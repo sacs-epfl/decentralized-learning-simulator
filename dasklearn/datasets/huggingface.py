@@ -12,6 +12,7 @@ class FederatedData(Protocol):
 
 SOURCES = {
     "cifar10": "uoft-cs/cifar10",
+    "cifar100": "uoft-cs/cifar100",
     "femnist": "coscotuff/femnist",
     "google_speech": "google/speech_commands",
     "tiny_imagenet": "zh-plus/tiny-imagenet",
@@ -104,7 +105,8 @@ def load_splits(settings):
             raise ValueError("validation_set_fraction must be in (0, 1)")
         # A fixed holdout seed keeps tuning data the same across partition seeds.
         label = settings.label_column if settings.dataset == "text" else (
-            settings.label_column if settings.label_column != "label" else column_names(settings)[1])
+            settings.label_column if settings.label_column != "label" else
+            'fine_label' if settings.dataset == 'cifar100' else column_names(settings)[1])
         stratify = label if isinstance(splits["train"].features.get(label), ClassLabel) else None
         heldout = splits["train"].train_test_split(test_size=fraction, seed=1729, stratify_by_column=stratify)
         splits["train"], splits["validation"] = heldout["train"], heldout["test"]
@@ -113,7 +115,8 @@ def load_splits(settings):
         if settings.dataset == "google_speech":
             feature = "audio"
         source_feature = settings.feature_column or feature
-        source_label = settings.label_column if settings.label_column != "label" else label
+        source_label = settings.label_column if settings.label_column != "label" else (
+            'fine_label' if settings.dataset == 'cifar100' else label)
         renames = {old: new for old, new in ((source_feature, feature), (source_label, label)) if old != new}
         for name, split in splits.items():
             missing = {source_feature, source_label} - set(split.column_names)

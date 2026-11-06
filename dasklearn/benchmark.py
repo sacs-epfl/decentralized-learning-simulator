@@ -21,6 +21,13 @@ from dasklearn.experiments import CONTROL_OPTIONS, _name, read_document, validat
 from dasklearn.experiment_runner import _stop, provenance, write_json
 
 
+TUNABLE_OPTIONS = {"algorithm", "learning_rate", "momentum", "weight_decay", "batch_size", "local_steps",
+                   "synchronous", "topology", "k", "r", "el", "group_size", "averaging_steps", "sample_size",
+                   "chunks_in_sample", "success_fraction", "agg", "wait", "no_weights", "gl_period", "fl_weighting"}
+TUNABLE_PREFIXES = ("qgm_", "choco_", "swift_", "gt_dsgd_", "detag_", "relaysgd_", "sgp_", "damsgrad_",
+                    "fspda_", "motef_", "demo_", "dspod_", "teleportation_")
+
+
 @dataclass
 class BenchmarkRun:
     name: str
@@ -114,11 +121,6 @@ def load_benchmark(path, parser, *, output=None, budgets=None, seeds=None, varia
     entries = document.get("runs")
     if not isinstance(entries, list) or not entries:
         raise ValueError("A benchmark requires nonempty named runs")
-    tuning = {"algorithm", "learning_rate", "momentum", "weight_decay", "batch_size", "local_steps",
-              "synchronous", "topology", "k", "r", "el", "group_size", "averaging_steps", "sample_size",
-              "chunks_in_sample", "success_fraction", "agg", "wait", "no_weights", "gl_period", "fl_weighting"}
-    prefixes = ("qgm_", "choco_", "swift_", "gt_dsgd_", "detag_", "relaysgd_", "sgp_", "damsgrad_",
-                "fspda_", "motef_", "demo_", "dspod_", "teleportation_")
     runs, names = [], set()
     for entry in entries:
         if not isinstance(entry, dict) or set(entry) - {"name", "settings"}:
@@ -128,7 +130,7 @@ def load_benchmark(path, parser, *, output=None, budgets=None, seeds=None, varia
             raise ValueError("Run names must be unique")
         names.add(label)
         specific = validate_options(parser, entry.get("settings", {}), path.parent)
-        if any(key not in tuning and not key.startswith(prefixes) for key in specific):
+        if any(key not in TUNABLE_OPTIONS and not key.startswith(TUNABLE_PREFIXES) for key in specific):
             raise ValueError("Named runs may change algorithm/tuning/graph options only; put the fixed scenario in settings")
         options = defaults | base | specific
         if options["churn"] != "none" or options["traces"] != "none":
@@ -266,10 +268,11 @@ async def run_worker(resolved):
 
 class NonfiniteEvaluation(ValueError):
     """A valid checkpoint whose model evaluation produced nonfinite metrics."""
-    def __init__(self, stamp, curve):
+    def __init__(self, stamp, curve, *, budget_completed=False):
         super().__init__(f"Invalid benchmark evaluation row: nonfinite metrics at {stamp}s")
         self.stamp = stamp
         self.curve = curve
+        self.budget_completed = budget_completed
 
 
 def read_curve(directory, peers, times, *, strict=False, evaluation_model="local"):
@@ -288,6 +291,7 @@ def read_curve(directory, peers, times, *, strict=False, evaluation_model="local
             or any(network[b] < network[a] for a, b in zip(times, times[1:]))):
         raise ValueError("Invalid communication checkpoints")
     checkpoints = {}
+    nonfinite = set()
     def point(stamp, rows):
         values = sorted(accuracy for accuracy, _ in rows.values())
         return dict(time=stamp, accuracy=statistics.mean(values),
@@ -300,7 +304,7 @@ def read_curve(directory, peers, times, *, strict=False, evaluation_model="local
         curve = []
         for stamp in times:
             rows = checkpoints.get(stamp, {})
-            if stamp >= before or len(rows) != (1 if evaluation_model == "global" else peers):
+            if stamp >= before or stamp in nonfinite or len(rows) != (1 if evaluation_model == "global" else peers):
                 break
             curve.append(point(stamp, rows))
         return curve
@@ -320,8 +324,12 @@ def read_curve(directory, peers, times, *, strict=False, evaluation_model="local
             if peer in observations:
                 raise ValueError("Duplicate peer at a checkpoint")
             if not math.isfinite(loss) or not math.isfinite(accuracy):
-                raise NonfiniteEvaluation(stamp, prefix(stamp))
+                nonfinite.add(stamp)
             observations[peer] = accuracy, loss
+    if nonfinite:
+        stamp = min(nonfinite)
+        complete = all(len(checkpoints.get(time, {})) == (1 if evaluation_model == "global" else peers) for time in times)
+        raise NonfiniteEvaluation(stamp, prefix(stamp), budget_completed=complete)
     curve = []
     for stamp in times:
         rows = checkpoints.get(stamp, {})
@@ -400,10 +408,17 @@ def leaderboard(suite):
                 tables=tables, runs=suite["runs"])
 
 
-def save_results(output, suite):
-    result = leaderboard(suite)
-    write_json(output / "manifest.json", suite)
-    write_json(output / "leaderboard.json", result)
+def checkpoint_budget_view(document, budget, *, times, seeds):
+    """Add a read-only table from a scheduled checkpoint, preserving saved results."""
+    if budget in document['budgets'] or budget not in times or budget > max(document['budgets']):
+        return document
+    projected = leaderboard(document | dict(budgets=[budget], seeds=seeds))
+    return document | dict(budgets=sorted([*document['budgets'], budget]),
+                           tables=sorted([*document['tables'], *projected['tables']], key=lambda table: table['budget']))
+
+
+def leaderboard_csv(result):
+    """Serialize the same columns for saved runs and live registry comparisons."""
     columns = ["budget", "variant", "rank", "provisional", "seeds", "accuracy_mean", "accuracy_sd",
                "average_accuracy", "worst_decile_accuracy", "bytes_sent", "best_observed_accuracy", "execution_wall_seconds", "learning_rate"]
     buffer = io.StringIO()
@@ -419,8 +434,15 @@ def save_results(output, suite):
             for key in columns[7:-1]:
                 record[key] = row[key]["mean"] if row[key] else None
             writer.writerow(record)
+    return buffer.getvalue()
+
+
+def save_results(output, suite):
+    result = leaderboard(suite)
+    write_json(output / "manifest.json", suite)
+    write_json(output / "leaderboard.json", result)
     temporary = output / "leaderboard.csv.tmp"
-    temporary.write_text(buffer.getvalue())
+    temporary.write_text(leaderboard_csv(result))
     temporary.replace(output / "leaderboard.csv")
     return result
 
@@ -498,13 +520,20 @@ def execute_benchmark(benchmark, *, poll_seconds=1, on_update=None, allow_diverg
                     if code is not None:
                         finish(slot, "completed")
                 except NonfiniteEvaluation as exc:
-                    _stop(process)
                     if (allow_divergent_trials and benchmark.evaluation_model == "global"
-                            and record["options"]["evaluation_split"] == "validation"
-                            and exc.stamp == max(benchmark.times) and len(exc.curve) == len(benchmark.times) - 1):
-                        record.update(curve=exc.curve, divergence_time=exc.stamp, tuning_budget_completed=True)
-                        finish(slot, "diverged", "Nonfinite validation metrics at the exact tuning budget; candidate is ineligible")
+                            and record["options"]["evaluation_split"] == "validation"):
+                        record.update(curve=exc.curve, divergence_time=exc.stamp,
+                                      wall_seconds=time.monotonic() - job["started"])
+                        # Numerical divergence is an observation, not an early-stop rule.
+                        # Keep executing every SGD task and scheduled evaluation to the full budget.
+                        if code == 0 and exc.budget_completed:
+                            record.update(tuning_budget_completed=True, completed_budget=benchmark.times[-1])
+                            finish(slot, "diverged", "Nonfinite validation metrics; full tuning budget completed; candidate is ineligible")
+                        elif code is not None:
+                            _stop(process)
+                            finish(slot, "failed", "Divergent worker did not record every scheduled checkpoint")
                     else:
+                        _stop(process)
                         finish(slot, "failed", str(exc))
                 except (OSError, ValueError, KeyError, TypeError) as exc:
                     _stop(process)

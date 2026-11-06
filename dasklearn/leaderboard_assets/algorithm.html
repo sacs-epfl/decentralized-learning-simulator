@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Algorithm methodology · Decentralized learning</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/algorithm.js" defer></script>
+</head>
+<body><main class="detail-main">
+  <a class="crumb" id="back" href="/">← Back to leaderboard</a>
+  <div class="top"><div><div class="eyebrow">Algorithm / methodology &amp; tuning</div><h1 id="title">Loading algorithm…</h1></div><span class="badge" id="status" aria-live="polite">Connecting</span></div>
+  <p id="description"></p>
+  <div class="actions" id="paper-links"></div>
+  <p class="notice" id="citation"></p><p class="notice" id="code-note"></p>
+  <section><h2>How it works</h2><ol class="steps" id="steps"></ol><p class="notice-panel" id="implementation-note"></p><div class="actions" id="implementation-links"></div></section>
+  <section>
+    <div class="controls"><h2>Experiment parameters</h2><label>Displayed setting <select id="setting" aria-label="Experiment setting"></select></label></div>
+    <p class="notice" id="tuning-setting-note"></p>
+    <div class="scroll"><table class="method-table"><thead><tr><th scope="col">Parameter</th><th scope="col">Value</th></tr></thead><tbody id="parameters"></tbody></table></div>
+  </section>
+  <section><h2 id="parameter-notes-title">Fixed algorithm parameters</h2><div class="scroll"><table class="method-table"><thead><tr><th scope="col">Parameter</th><th scope="col">Value</th><th scope="col">Why / behavior</th></tr></thead><tbody id="fixed-parameters"></tbody></table></div></section>
+  <section>
+    <div class="top"><h2 id="search-title">Joint learning-rate and local-step search</h2><span class="badge" id="tuning-progress">Not started</span></div>
+    <p class="notice" id="tuning-rule"></p><p class="notice-panel" id="selected-pair">No parameter pair has been selected.</p>
+    <div id="optuna-progress" hidden>
+      <h3>Optuna progress</h3>
+      <div class="tuning-stats" id="optuna-stats" aria-live="polite"></div>
+      <p class="notice" id="optuna-best"></p>
+      <div id="optuna-chart" class="tuning-chart"></div>
+      <p class="notice" id="optuna-evidence">Each point requires all paired seeds to finish their full budget. Dots show each configuration’s score; the line shows the best score found so far. Suggestions update after a complete batch.</p>
+    </div>
+    <p class="notice error" id="boundary-note" hidden>The selected learning rate is at a bound of the declared search range. Review the range before interpreting this as a well-tuned optimum.</p>
+    <div class="scroll"><table><thead id="search-head"></thead><tbody id="search-rows"></tbody></table></div>
+    <p class="notice">Summary scores require every tuning seed for the pair. SD is sample standard deviation across seeds. Failed, interrupted and divergent trials stay visible; incomplete pairs cannot win. Blank cells mean no completed endpoint observation. Wall time / seed is the mean recorded runtime across seeds with timing data; running trials show their latest elapsed time.</p>
+    <details><summary>Individual tuning trials</summary><div class="scroll"><table><thead><tr><th>Local steps H</th><th>Learning rate</th><th>Seed</th><th>Wall time</th><th>Status</th><th>Validation accuracy %</th><th>Validation loss</th><th>Error</th></tr></thead><tbody id="trial-rows"></tbody></table></div></details>
+  </section>
+  <details><summary>Reproducible experiment configuration</summary><div class="actions"><a class="button" id="config-link" download>Download configuration</a></div><pre id="configuration"></pre></details>
+  <p class="notice" id="connection" role="status"></p>
+</main></body></html>

@@ -16,6 +16,7 @@ scikit-learn==1.9.1
 datasets>=3,<5
 flwr-datasets>=0.6,<0.7
 PyYAML>=6,<7
+optuna==5.0.0
 
 # Speech and legacy plotting support retained from main.
 librosa~=0.11.0

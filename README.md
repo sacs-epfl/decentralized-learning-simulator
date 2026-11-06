@@ -105,6 +105,13 @@ For paired, fixed-time rankings with live accuracy/traffic curves, use the
 [algorithm leaderboard](docs/leaderboard.md). Budgets are configurable simulated
 seconds; the offline example covers all registered algorithms:
 
+The multi-workload dashboard adds a dataset/model selector for CIFAR-10/GNLeNet
+and CIFAR-100/ResNet-18-GN:
+
+```sh
+python scripts/serve_leaderboard.py --catalog experiments/leaderboard-workloads.json --port 8768
+```
+
 ```sh
 python scripts/run_benchmark.py experiments/leaderboard.yaml
 # In another terminal:
@@ -161,6 +168,13 @@ records the SWIFT, AD-PSGD and DeTAG blockers and steps for re-entry.
 The [centralized reference](docs/leaderboard.md#step-budgeted-centralized-reference)
 tunes its LR, trains one node on all training data for a fixed SGD-step budget,
 and displays held-out accuracy/loss as dashed horizontal lines on the dashboard.
+The active leaderboard has been reset for a [fresh methodology campaign](docs/leaderboard.md#fresh-methodology-campaign-4-november-2026).
+It starts with D-PSGD on a fixed 5-regular graph, jointly tunes learning rate and
+local steps on IID/homogeneous validation data, and freezes the winner across four
+settings. Algorithm names now open pages with explanations, paper links, parameter
+tables and live tuning evidence. The previous catalog is preserved as
+`experiments/leaderboard-legacy-settings.json`.
+
 The [D-PSGD k-regular extension](docs/leaderboard.md#d-psgd-with-log2n-regular-topology)
 adds a separate seeded 5-regular graph variant for 32 clients, bringing the
 leaderboard to 16 algorithms while preserving D-PSGD-ring and prior results.

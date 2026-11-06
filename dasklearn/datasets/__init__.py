@@ -4,6 +4,9 @@ from dasklearn.session_settings import SessionSettings
 
 
 def create_dataset(settings: SessionSettings) -> FederatedData:
+    if settings.dataset == "cifar100":
+        from dasklearn.datasets.cifar100 import Cifar100Dataset
+        return Cifar100Dataset(settings)
     if settings.dataset == "vision":
         from dasklearn.datasets.vision import VisionDataset
         return VisionDataset(settings)

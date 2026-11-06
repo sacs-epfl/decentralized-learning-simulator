@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "name": "cifar100-resnet18gn-32-dpsgd-kreg-tpe-dirichlet01-h20-v1",
+  "output": "../../output/leaderboard-v3/cifar100-resnet18-gn/dpsgd-kreg-log2-tpe-dirichlet01-h20",
+  "benchmark": {
+    "budgets": [
+      600,
+      1800,
+      3600
+    ],
+    "seeds": [
+      110,
+      111,
+      112
+    ],
+    "evaluation_period": 300,
+    "evaluation_model": "global",
+    "execution_devices": [
+      "cuda:0",
+      "cuda:1",
+      "cuda:0",
+      "cuda:1",
+      "cuda:0",
+      "cuda:1"
+    ],
+    "accuracy_targets": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+    ],
+    "network": {
+      "profile": "uniform",
+      "bandwidth_bytes_per_second": 12500000,
+      "compute_step_ms": 6
+    }
+  },
+  "settings": {
+    "dataset": "cifar100",
+    "dataset_base_path": "../../data/cifar100",
+    "model": "resnet18_gn",
+    "device": "cuda:0",
+    "peers": 32,
+    "partitioner": "dirichlet",
+    "validation_set_fraction": 0.1,
+    "evaluation_split": "test",
+    "evaluation_examples": 0,
+    "batch_size": 32,
+    "momentum": 0,
+    "weight_decay": 0,
+    "network_latency_ms": 10,
+    "torch_threads": 4,
+    "synchronous": false,
+    "alpha": 0.1,
+    "training_batching": false
+  },
+  "runs": [
+    {
+      "name": "dpsgd-kreg-log2",
+      "settings": {
+        "algorithm": "dpsgd",
+        "topology": "kreg",
+        "k": 5,
+        "local_steps": 1
+      }
+    }
+  ],
+  "tuning": {
+    "method": "tpe",
+    "budget": 3600,
+    "seeds": [
+      100,
+      101,
+      102
+    ],
+    "evaluation_period": 300,
+    "evaluation_examples": 0,
+    "metric": "best_mean_accuracy",
+    "select_variant": true,
+    "n_trials": 40,
+    "n_startup_trials": 12,
+    "sampler_seed": 20261104,
+    "batch_size": 2,
+    "search_spaces": {
+      "dpsgd-kreg-log2": {
+        "local_steps": {
+          "type": "categorical",
+          "choices": [
+            1,
+            5,
+            10,
+            15,
+            20
+          ]
+        },
+        "learning_rate": {
+          "type": "float",
+          "low": 0.001,
+          "high": 1.0,
+          "log": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,420 @@
+{
+  "version": 1,
+  "title": "Decentralized learning leaderboard",
+  "notice": "Non-IID comparison: tune each algorithm independently on Dirichlet alpha 0.1 validation data with homogeneous hardware. Joint TPE search over learning rate and H in {1, 5, 10, 15, 20}; DeMo also tunes residual decay, DCT block size and coefficients per block (H is gradient accumulation for DeMo). Each algorithm receives 40 configurations, three paired seeds and full 900-second budgets. Freeze all winning parameters and the shared checkpoint for all four evaluation settings. New campaigns use three workers per GPU. Archived IID campaigns are excluded. DeMo is queued after the complete Epidemic Learning campaign.",
+  "scenarios": {
+    "iid-uniform": {
+      "partitioner": "iid",
+      "profile": "uniform"
+    },
+    "iid-heterogeneous": {
+      "partitioner": "iid",
+      "profile": "heterogeneous"
+    },
+    "dirichlet01-uniform": {
+      "partitioner": "dirichlet",
+      "profile": "uniform"
+    },
+    "dirichlet01-heterogeneous": {
+      "partitioner": "dirichlet",
+      "profile": "heterogeneous"
+    }
+  },
+  "algorithms": [
+    {
+      "id": "dpsgd-kreg-log2",
+      "label": "dpsgd-kreg-log2",
+      "config": "methodology/dpsgd-kreg-tpe-dirichlet01-h20.json",
+      "tuning_setting": "dirichlet01-uniform",
+      "description": "Each client learns from its own data for a small number of minibatch updates, exchanges its model with five neighbors, and averages the received models with its own. Repeating this spreads learning through the network without a central server.",
+      "steps": [
+        "Perform H local SGD updates with minibatches of 32 examples.",
+        "Send the resulting model to each of the five fixed neighbors.",
+        "Wait for every neighbor’s model from the same round, then average all six models equally.",
+        "Begin the next local round; there is no global barrier."
+      ],
+      "paper": {
+        "title": "Can Decentralized Algorithms Outperform Centralized Algorithms? A Case Study for Decentralized Parallel Stochastic Gradient Descent",
+        "authors": "Xiangru Lian, Ce Zhang, Huan Zhang, Cho-Jui Hsieh, Wei Zhang, Ji Liu",
+        "venue": "NeurIPS 2017 · peer reviewed",
+        "url": "https://papers.neurips.cc/paper_files/paper/2017/hash/f75526659f31040afeb61cb7133e4e6d-Abstract.html"
+      },
+      "author_code": null,
+      "author_code_note": "No verified public authors’ code repository located. The paper’s official supplementary archive is linked separately; it has not been verified to contain code.",
+      "implementation_note": "This repository implements the train-then-average variant: x_next = W LocalSGD(x, H). At H = 1 this is W(x − ηg(x)); Algorithm 1 of the original paper uses Wx − ηg(x). The benchmark therefore measures this declared variant, not an exact reproduction of that algorithm.",
+      "implementation_files": [
+        "dasklearn/simulation/dpsgd/client.py",
+        "dasklearn/simulation/dpsgd/simulation.py"
+      ],
+      "parameter_notes": [
+        {
+          "parameter": "Graph degree k",
+          "value": "log₂(32) = 5",
+          "role": "Fixed by variant definition; not tuned."
+        },
+        {
+          "parameter": "Mixing weights",
+          "value": "1/6 for self and each of five neighbors",
+          "role": "Fixed, uniform weights on a regular graph."
+        },
+        {
+          "parameter": "Graph realization",
+          "value": "NetworkX random_regular_graph(5, 32, seed)",
+          "role": "Fixed within a run; identical across candidates at the same seed."
+        },
+        {
+          "parameter": "Synchronization",
+          "value": "Wait for same-round neighbor models",
+          "role": "No global round barrier; no stale-model substitution."
+        },
+        {
+          "parameter": "Batch size",
+          "value": 32,
+          "role": "Fixed per client and per SGD step."
+        },
+        {
+          "parameter": "Momentum / weight decay",
+          "value": "0 / 0",
+          "role": "Fixed; plain SGD."
+        },
+        {
+          "parameter": "Normalization / model size",
+          "value": "GroupNorm (2 groups per layer); 85,354 parameters",
+          "role": "GNLeNet for 32×32 CIFAR-10; about 0.34 MB of FP32 parameters."
+        },
+        {
+          "parameter": "Network scheduling",
+          "value": "Greedy endpoint bandwidth allocation; +10 ms one-way delivery delay per message",
+          "role": "A declared abstract resource model, not a calibrated TCP or routed-network simulation."
+        }
+      ],
+      "limitations": [
+        "Tuning on one scenario measures parameter transfer to the other scenarios; it does not estimate each scenario’s separately tuned optimum.",
+        "The evaluation is an offline, uniformly averaged global model; collection and evaluation costs are excluded from simulated protocol time.",
+        "The CIFAR-10 test set was already examined in the previous campaign. New seeds do not make it an untouched test set; this campaign remains exploratory with respect to that data.",
+        "A winning learning rate at either bound of the declared search range is flagged for review. No search is expanded silently.",
+        "Configured batch size is 32. The existing loader permits smaller batches at a partition boundary or on clients with fewer than 32 examples; it does not pad or sample extra examples.",
+        "The network is an uncalibrated abstraction: separate per-client upload/download caps, greedy queue-ordered allocation, and one fixed delivery delay per message. TCP dynamics, packet loss, jitter and shared physical links are not modeled. Network realism and allocation-order sensitivity need validation before drawing deployment-performance conclusions."
+      ],
+      "supplement": {
+        "title": "Authors’ supplement",
+        "url": "https://papers.neurips.cc/paper_files/paper/2017/file/f75526659f31040afeb61cb7133e4e6d-Supplemental.zip"
+      },
+      "protocol_amendments": [
+        "4 November 2026: preliminary trials were discarded at the user’s request before restarting. The fresh search selects the parameter pair and shared training checkpoint with the highest validation accuracy averaged across all three seeds. The selected time, learning rate and local-step count are frozen for fresh-seed evaluation in all settings.",
+        "The fresh search uses four workers per GPU (eight workers across two GPUs). This changes execution wall time and resource contention, but not modeled protocol capacities or allocated simulated-time budgets.",
+        "4 November 2026: TPE replaces the grid in a fresh output directory. The search declares 40 joint configurations, at least 12 startup configurations, sampler seed 20261104, and batches of three configurations sharing eight worker slots. Every configuration uses all three paired tuning seeds for the full 900-second budget. The validation objective is unchanged; no pruning is used. The original grid declaration and artifacts are preserved.",
+        "4 November 2026: fresh non-IID TPE campaign, Dirichlet alpha 0.1, H in {1, 5, 10, 15, 20}. Hardware, LR range, 40 configurations, three paired tuning seeds, 900-second full budgets and shared-checkpoint objective are unchanged. Batch size 32, momentum 0 and weight decay 0 remain fixed. Previous IID campaign is archived and excluded from the active leaderboard; no previous scores are imported."
+      ]
+    },
+    {
+      "id": "shatter-k16-rlog2",
+      "label": "shatter-k16-rlog2",
+      "config": "methodology/shatter-k16-rlog2-tpe-dirichlet01-h20.json",
+      "tuning_setting": "dirichlet01-uniform",
+      "description": "Each real node trains its own model, divides it into 16 chunks, and exchanges those chunks through 16 virtual nodes. The 512 virtual nodes form a new random 5-regular graph each round. Each real node combines received chunks with its own to build the model for its next local training block.",
+      "steps": [
+        "Train H local SGD minibatches on each of the 32 real nodes.",
+        "Flatten the model state into 16 contiguous chunks; retain any remainder in the last chunk.",
+        "Draw the round’s seeded 5-regular graph over 512 virtual nodes. Each virtual node sends its assigned chunk along its five graph edges.",
+        "Wait for the same-round incoming chunks. Average each chunk index over its received copies and the real node’s own copy, then reconstruct the model.",
+        "Publish the reconstructed model and start the next local block. Virtual nodes share their real node’s bandwidth and compute resources."
+      ],
+      "paper": {
+        "title": "Noiseless Privacy-Preserving Decentralized Learning",
+        "authors": "Sayan Biswas, Mathieu Even, Anne-Marie Kermarrec, Laurent Massoulié, Rafael Pires, Rishi Sharma, Martijn de Vos",
+        "venue": "PoPETs 2025(1), 824–844 · peer reviewed",
+        "url": "https://petsymposium.org/popets/2025/popets-2025-0043.php"
+      },
+      "author_code": {
+        "title": "Official Shatter artifact",
+        "url": "https://github.com/sacs-epfl/shatter/tree/shatter-pets-2025"
+      },
+      "author_code_note": "The authors’ repository is linked by the publisher’s official artifact entry. These measurements use the local simulator implementation linked below.",
+      "implementation_note": "This is the existing real-node chunked-exchange specialization. Virtual nodes define graph endpoints and chunk routing; they are not separate training clients or independent GPU workers. The simulator retains real-node identities and does not implement the paper’s identity-hiding transport. These experiments measure learning and modeled communication, not privacy guarantees.",
+      "implementation_files": [
+        "dasklearn/simulation/shatter/client.py",
+        "dasklearn/simulation/shatter/simulation.py",
+        "dasklearn/simulation/shatter/round.py",
+        "dasklearn/simulation/conflux/chunk_manager.py"
+      ],
+      "parameter_notes": [
+        {
+          "parameter": "Real nodes n",
+          "value": 32,
+          "role": "Network size means real participants; virtual endpoints do not increase the dataset partitions."
+        },
+        {
+          "parameter": "Virtual nodes per real node k",
+          "value": 16,
+          "role": "Fixed; each virtual endpoint routes one of 16 model chunks."
+        },
+        {
+          "parameter": "Virtual graph size",
+          "value": 512,
+          "role": "32 real nodes × 16 virtual nodes."
+        },
+        {
+          "parameter": "Virtual graph degree r",
+          "value": "log₂(32) = 5",
+          "role": "Fixed by the requested variant. The graph has 512 vertices; its degree uses the 32 real nodes."
+        },
+        {
+          "parameter": "Topology schedule",
+          "value": "random_regular_graph(5, 512, seed + round − 1)",
+          "role": "Redrawn each round, with the same sequence across candidates at a paired seed. The initial graph for every tuning/evaluation seed is checked for connectivity."
+        },
+        {
+          "parameter": "Chunk mixing",
+          "value": "Equal average of received copies plus the local chunk",
+          "role": "Incoming counts can differ by chunk index; mixing weights are not a fixed 1/6."
+        },
+        {
+          "parameter": "Batch size",
+          "value": 32,
+          "role": "Fixed per real node and SGD step."
+        },
+        {
+          "parameter": "Momentum / weight decay",
+          "value": "0 / 0",
+          "role": "Fixed; plain SGD, matching D-PSGD."
+        },
+        {
+          "parameter": "Execution allocation",
+          "value": "3 workers per GPU; 6 total",
+          "role": "TPE batches contain two configurations × three paired seeds."
+        },
+        {
+          "parameter": "Modeled compute / network",
+          "value": "20 ms per SGD step; 1,000,000 bytes/s; 10 ms transfer latency",
+          "role": "Same physical capacities as the D-PSGD campaign. Chunking and reconstruction have zero simulated compute cost."
+        }
+      ],
+      "limitations": [
+        "Tuning on one scenario measures parameter transfer to the other scenarios; it does not estimate each scenario’s separately tuned optimum.",
+        "The evaluation is an offline, uniformly averaged global model; collection and evaluation costs are excluded from simulated protocol time.",
+        "The CIFAR-10 test set was already examined in the previous campaign. New seeds do not make it an untouched test set; this campaign remains exploratory with respect to that data.",
+        "The chunked simulator has protocol and integration checks, but no independent algorithm-level numerical oracle establishing equivalence to the full paper implementation.",
+        "Virtual identities are not anonymized, and privacy attacks are not evaluated. This benchmark does not establish the paper’s privacy guarantees.",
+        "Same-host virtual edges are local deliveries. Remote virtual edges share the physical real-node bandwidth cap; virtual nodes do not each receive an independent bandwidth allowance.",
+        "The network abstraction and zero-cost chunk/reconstruction operations are declared modeling choices; measured GPU wall time is reported separately."
+      ],
+      "protocol_amendments": [
+        "4 November 2026: add Shatter with 32 real nodes, 16 virtual nodes each, and r = log2(32) = 5 on the 512-node virtual graph, as explicitly confirmed by the user.",
+        "Joint TPE tuning on non-IID Dirichlet alpha 0.1 and homogeneous hardware: H in {1, 5, 10, 15, 20}, LR log-uniform in [.001, 1], 40 configurations, 12 random startup configurations, sampler seed 20261104, seeds 100/101/102 and full 900-second budgets. No prior scores or early stopping.",
+        "Use three workers per GPU, six total. Two configurations per TPE batch align six seed evaluations with six worker slots. Freeze parameters and one shared validation-selected checkpoint for evaluation seeds 110/111/112 in all four scenarios.",
+        "5 November 2026: correct handling of nonfinite intermediate validation metrics. Every tuning seed still executes its full 900-second budget and all scheduled checkpoints; any numerical divergence makes the configuration ineligible without aborting the search. Recover Shatter by verifying and replaying the saved proposals and scores, retaining 58 completed seed runs and rerunning only the two interrupted seeds. Original batch files and pre-recovery control snapshots are preserved. Reactivate Epidemic Learning after the recovered Shatter campaign completes all four evaluations. Search spaces, objective, seeds, budgets, batch size and worker allocation are unchanged."
+      ]
+    },
+    {
+      "id": "epidemic-kreg-log2",
+      "label": "epidemic-kreg-log2",
+      "config": "methodology/epidemic-kreg-log2-tpe-dirichlet01-h20.json",
+      "tuning_setting": "dirichlet01-uniform",
+      "description": "Each of 32 real nodes trains locally, exchanges its full model with five neighbors, and averages the received models with its own. A fresh random 5-regular graph is drawn each round, so information travels through changing neighborhoods.",
+      "steps": [
+        "Perform H local SGD updates with minibatches of 32 examples.",
+        "Draw the round’s seeded random 5-regular graph over the 32 real nodes.",
+        "Send the full trained model to each of the five neighbors.",
+        "Wait for all five same-round neighbor models and average them with the local model using equal weights.",
+        "Publish the averaged model and begin the next local block; there is no global round barrier."
+      ],
+      "paper": {
+        "title": "Epidemic Learning: Boosting Decentralized Learning with Randomized Communication",
+        "authors": "Martijn de Vos, Sadegh Farhadkhani, Rachid Guerraoui, Anne-Marie Kermarrec, Rafael Pires, Rishi Sharma",
+        "venue": "NeurIPS 2023 · peer reviewed",
+        "url": "https://papers.neurips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html"
+      },
+      "author_code": {
+        "title": "Authors’ Epidemic Learning release",
+        "url": "https://github.com/sacs-epfl/decentralizepy/releases/tag/epidemic-neurips-2023"
+      },
+      "author_code_note": "The code release is linked in the authors’ NeurIPS paper. These measurements use the local simulator implementation linked below.",
+      "implementation_note": "This campaign uses the existing EL-Oracle mode: a coordinated undirected regular graph redrawn each round, full-model exchange, and train-then-average local SGD. It is not the EL-Local mode with independently sampled outgoing neighbors. H local steps and the simulated network are declared benchmark choices; this is not an exact reproduction of the paper’s complete experimental setup.",
+      "implementation_files": [
+        "dasklearn/simulation/dpsgd/client.py",
+        "dasklearn/simulation/dpsgd/simulation.py",
+        "dasklearn/simulation/dpsgd/settings.py"
+      ],
+      "parameter_notes": [
+        {
+          "parameter": "Mode",
+          "value": "EL-Oracle",
+          "role": "Coordinated regular topology; no independent EL-Local neighbor sampling."
+        },
+        {
+          "parameter": "Real nodes n / graph degree k",
+          "value": "32 / log₂(32) = 5",
+          "role": "Fixed; full models are exchanged between real nodes."
+        },
+        {
+          "parameter": "Topology schedule",
+          "value": "random_regular_graph(5, 32, seed + round − 1)",
+          "role": "Redrawn every round; identical seeded schedule across candidates at the same seed."
+        },
+        {
+          "parameter": "Mixing weights",
+          "value": "1/6 for self and each of five neighbors",
+          "role": "Equal weights; the same local update and averaging rule as the fixed-topology D-PSGD baseline."
+        },
+        {
+          "parameter": "Execution allocation",
+          "value": "3 workers per GPU; 6 total",
+          "role": "Two configurations × three paired seeds per batch; starts after the Shatter campaign exits."
+        },
+        {
+          "parameter": "Batch size",
+          "value": 32,
+          "role": "Fixed per client and per SGD step."
+        },
+        {
+          "parameter": "Momentum / weight decay",
+          "value": "0 / 0",
+          "role": "Fixed; plain SGD."
+        },
+        {
+          "parameter": "Normalization / model size",
+          "value": "GroupNorm (2 groups per layer); 85,354 parameters",
+          "role": "GNLeNet for 32×32 CIFAR-10; about 0.34 MB of FP32 parameters."
+        },
+        {
+          "parameter": "Network scheduling",
+          "value": "Greedy endpoint bandwidth allocation; +10 ms one-way delivery delay per message",
+          "role": "A declared abstract resource model, not a calibrated TCP or routed-network simulation."
+        }
+      ],
+      "limitations": [
+        "Tuning on one scenario measures parameter transfer to the other scenarios; it does not estimate each scenario’s separately tuned optimum.",
+        "The evaluation is an offline, uniformly averaged global model; collection and evaluation costs are excluded from simulated protocol time.",
+        "The CIFAR-10 test set was already examined in the previous campaign. New seeds do not make it an untouched test set; this campaign remains exploratory with respect to that data.",
+        "A winning learning rate at either bound of the declared search range is flagged for review. No search is expanded silently.",
+        "Configured batch size is 32. The existing loader permits smaller batches at a partition boundary or on clients with fewer than 32 examples; it does not pad or sample extra examples.",
+        "The network is an uncalibrated abstraction: separate per-client upload/download caps, greedy queue-ordered allocation, and one fixed delivery delay per message. TCP dynamics, packet loss, jitter and shared physical links are not modeled. Network realism and allocation-order sensitivity need validation before drawing deployment-performance conclusions.",
+        "Regular topology generation is coordinated and has zero modeled compute or communication cost. This campaign measures EL-Oracle, not the fully decentralized neighbor selection of EL-Local."
+      ],
+      "protocol_amendments": [
+        "4 November 2026: queue an independent EL-Oracle campaign after Shatter tuning and all four evaluation settings finish successfully. Use 32 real nodes and a fresh random 5-regular graph each round, with seed + round − 1.",
+        "Tune on non-IID Dirichlet alpha 0.1 with homogeneous hardware, H in {1, 5, 10, 15, 20}, LR log-uniform in [.001, 1], 40 configurations including 12 startup configurations, seeds 100/101/102, full 900-second budgets and the same best shared-checkpoint mean validation accuracy objective. No early stopping or imported scores.",
+        "Use two configurations per batch and six worker slots, three per GPU. Freeze the winning parameters and one shared checkpoint for evaluation seeds 110/111/112 in all four settings.",
+        "5 November 2026: correct handling of nonfinite intermediate validation metrics. Every tuning seed still executes its full 900-second budget and all scheduled checkpoints; any numerical divergence makes the configuration ineligible without aborting the search. Recover Shatter by verifying and replaying the saved proposals and scores, retaining 58 completed seed runs and rerunning only the two interrupted seeds. Original batch files and pre-recovery control snapshots are preserved. Reactivate Epidemic Learning after the recovered Shatter campaign completes all four evaluations. Search spaces, objective, seeds, budgets, batch size and worker allocation are unchanged."
+      ]
+    },
+    {
+      "id": "demo",
+      "label": "DeMo",
+      "config": "methodology/demo-tpe-dirichlet01-h20.json",
+      "tuning_setting": "dirichlet01-uniform",
+      "description": "Each client accumulates gradients at the shared model, adds them to its private compression residual, and sends the largest DCT coefficients. A ring all-gather delivers every client packet; clients reconstruct the shared update and take a sign step.",
+      "steps": [
+        "Average H minibatch gradients at fixed model parameters; H does not perform local SGD updates.",
+        "Decay the private residual and add learning-rate-scaled gradients; transform into DCT blocks and retain the largest coefficients by magnitude.",
+        "Subtract the locally transmitted reconstruction from the residual, retaining unsent information for future rounds.",
+        "Run a 31-stage ring all-gather across 32 clients; charge packet indices, values, headers, physical bandwidth and per-transfer latency.",
+        "Average transmitted coefficients at collisions, reconstruct the update and take a learning-rate-scaled sign step. Publish locally after all packets arrive."
+      ],
+      "paper": {
+        "title": "DeMo: Decoupled Momentum Optimization",
+        "authors": "Bowen Peng, Jeffrey Quesnelle, Diederik P. Kingma (original 2024 release)",
+        "venue": "arXiv:2411.19870; original reference implementation",
+        "url": "https://arxiv.org/abs/2411.19870v1"
+      },
+      "author_code": {
+        "title": "Authors’ standalone DeMo optimizer",
+        "url": "https://github.com/bloc97/DeMo"
+      },
+      "author_code_note": "The authors’ repository identifies this as supplementary material for DeMo and provides the standalone demo.py optimizer.",
+      "implementation_note": "Existing reference-style Signum DeMo with private residuals and an explicit directed ring all-gather. H is fixed-weight gradient accumulation, not H local model updates. The ring is a benchmark transport choice; this is not a reproduction of the paper’s language-model experiments.",
+      "implementation_files": [
+        "dasklearn/optimizer/demo.py",
+        "dasklearn/functions.py",
+        "dasklearn/simulation/demo/client.py",
+        "dasklearn/simulation/demo/simulation.py",
+        "dasklearn/simulation/demo/settings.py"
+      ],
+      "parameter_notes": [
+        {
+          "parameter": "Learning rate",
+          "value": "Log-uniform [0.00001, 0.1]",
+          "role": "Jointly tuned. DeMo uses sign updates, so its learning-rate range is declared separately from plain SGD; it includes the earlier 0.001 baseline."
+        },
+        {
+          "parameter": "Gradient accumulation H",
+          "value": [
+            1,
+            5,
+            10,
+            15,
+            20
+          ],
+          "role": "Jointly tuned. Gradients are averaged over H minibatches at unchanged parameters; compute time charges all H minibatches."
+        },
+        {
+          "parameter": "Compression residual decay",
+          "value": [
+            0.0,
+            0.9,
+            0.99,
+            0.999,
+            0.9999
+          ],
+          "role": "Jointly tuned. Controls persistence of untransmitted information; separate from SGD momentum, which stays zero."
+        },
+        {
+          "parameter": "DCT block size",
+          "value": [
+            16,
+            32,
+            64,
+            128
+          ],
+          "role": "Jointly tuned maximum transform size per tensor dimension; actual block dimensions divide the tensor shape."
+        },
+        {
+          "parameter": "Coefficients per block",
+          "value": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32
+          ],
+          "role": "Jointly tuned top-k coefficient count, clipped to each actual block’s coefficient count. This is a count, not a percentage; actual packet bytes are charged."
+        },
+        {
+          "parameter": "Collective",
+          "value": "Fixed directed ring i → (i+1) mod 32; 31 stages",
+          "role": "All packets reach every node. Physical endpoint capacities are shared; no free broadcast or independent virtual bandwidth."
+        },
+        {
+          "parameter": "Batch size / SGD momentum / weight decay",
+          "value": "32 / 0 / 0",
+          "role": "Fixed. DeMo’s compression residual is tuned independently; no additional SGD momentum."
+        },
+        {
+          "parameter": "Execution allocation",
+          "value": "3 workers per GPU; 6 total",
+          "role": "Two configurations × three paired seeds per batch; starts after all Epidemic Learning tuning and evaluations succeed."
+        },
+        {
+          "parameter": "Modeled compute / network",
+          "value": "20 ms per minibatch; 1,000,000 bytes/s; 10 ms transfer latency",
+          "role": "Same capacities as other campaigns. DCT, compression and reconstruction add no modeled compute time; measured execution wall time is reported separately."
+        }
+      ],
+      "limitations": [
+        "Tuning on one scenario measures parameter transfer, not each scenario’s separately tuned optimum.",
+        "Forty configurations are a finite joint search over five parameters, not an exhaustive search or global optimum.",
+        "Gradient accumulation and sign updates differ from the local-SGD update rule of the other algorithms; H has an algorithm-specific meaning.",
+        "The ring all-gather requires stable membership and can be limited by slow participants and its 31 transfer stages.",
+        "The evaluation is an offline, uniformly averaged global model; collection and evaluation costs are excluded from simulated protocol time.",
+        "Compression compute costs are excluded from simulated protocol time; the network uses greedy endpoint scheduling and additive delivery latency.",
+        "The CIFAR-10 test set was examined in previous campaigns; these evaluations remain exploratory.",
+        "No previous scores or winning parameters are imported; the earlier DeMo runs motivate only the declared search range."
+      ],
+      "changelog": [
+        "5 November 2026: queue independent DeMo tuning after the complete Epidemic Learning campaign. Jointly search learning rate, gradient accumulation H, residual decay, DCT block size and coefficients per block. Use 40 TPE configurations, 12 startup configurations, paired tuning seeds 100/101/102, full 900-second budgets, and three workers per GPU. Freeze all five parameters and one shared validation-selected checkpoint for seeds 110/111/112 in all four data/hardware settings."
+      ]
+    }
+  ]
+}

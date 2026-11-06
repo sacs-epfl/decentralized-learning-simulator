@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "name": "cifar100-resnet18gn-dpsgd-horizon-pilot",
+  "output": "../../output/leaderboard-v3/cifar100-resnet18-gn-horizon-pilot",
+  "benchmark": {
+    "budgets": [
+      300,
+      600,
+      900,
+      1800
+    ],
+    "seeds": [
+      100
+    ],
+    "evaluation_period": 300,
+    "evaluation_model": "global",
+    "execution_devices": [
+      "cuda:0",
+      "cuda:1"
+    ],
+    "accuracy_targets": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+    ],
+    "network": {
+      "profile": "uniform",
+      "bandwidth_bytes_per_second": 12500000,
+      "compute_step_ms": 6
+    }
+  },
+  "settings": {
+    "dataset": "cifar100",
+    "dataset_base_path": "../../data/cifar100",
+    "model": "resnet18_gn",
+    "device": "cuda:0",
+    "peers": 32,
+    "partitioner": "dirichlet",
+    "validation_set_fraction": 0.1,
+    "evaluation_split": "validation",
+    "evaluation_examples": 0,
+    "batch_size": 32,
+    "momentum": 0,
+    "weight_decay": 0,
+    "network_latency_ms": 10,
+    "torch_threads": 4,
+    "synchronous": false,
+    "alpha": 0.1,
+    "training_batching": false
+  },
+  "runs": [
+    {
+      "name": "dpsgd-lr003",
+      "settings": {
+        "algorithm": "dpsgd",
+        "topology": "kreg",
+        "k": 5,
+        "local_steps": 20,
+        "learning_rate": 0.03
+      }
+    },
+    {
+      "name": "dpsgd-lr010",
+      "settings": {
+        "algorithm": "dpsgd",
+        "topology": "kreg",
+        "k": 5,
+        "local_steps": 20,
+        "learning_rate": 0.1
+      }
+    }
+  ]
+}

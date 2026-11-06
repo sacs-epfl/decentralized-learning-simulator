@@ -1,0 +1,6 @@
+{
+  "archived_at": "2026-11-04T15:50:37.684056+00:00",
+  "reason": "Superseded by non-IID Dirichlet alpha 0.1 TPE campaign with expanded local steps",
+  "results": "/mnt/data/mdevos/conflux/output/leaderboard-v2/dpsgd-kreg-log2-tpe",
+  "artifacts_preserved_in_place": true
+}

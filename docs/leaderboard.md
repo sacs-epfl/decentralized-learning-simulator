@@ -1,5 +1,382 @@
 # Algorithm leaderboard
 
+## Non-IID TPE methodology campaign (4 November 2026)
+
+### Dataset/model combinations (6 November 2026)
+
+Serve `experiments/leaderboard-workloads.json` to expose the **Dataset / model**
+selector. It switches between the existing CIFAR-10/GNLeNet comparison and the
+new CIFAR-100/ResNet-18-GN D-PSGD campaign. Settings, algorithm details, JSON/CSV
+exports, rankings and deep links retain the selected workload. Each workload
+has its own trusted catalog and results; different datasets are never combined
+in one ranking. The original single-workload catalogs remain supported.
+
+```sh
+python scripts/serve_leaderboard.py --catalog experiments/leaderboard-workloads.json --port 8768
+python scripts/run_methodology.py --catalog experiments/leaderboard-cifar100-settings.json --algorithm dpsgd-kreg-log2 --plan
+python scripts/run_methodology.py --catalog experiments/leaderboard-cifar100-settings.json --algorithm dpsgd-kreg-log2
+```
+
+The CIFAR-100 preset uses the 100 fine labels and a fixed stratified 10% training
+holdout before client partitioning: 45,000 train / 5,000 validation / 10,000 test.
+The downloaded source is `uoft-cs/cifar100`, saved under `data/cifar100` with source
+metadata. RGB channel mean/std are declared in `dasklearn/datasets/cifar100.py`.
+Images stay at 32×32 with no augmentation. `resnet18_gn` uses a 3×3 stride-1 stem,
+no initial max pool, 32-group GroupNorm throughout, 100 output logits and
+11,220,132 parameters. It is randomly initialized without pretrained weights.
+No running-statistic buffers are present, so the model also satisfies DeMo's
+existing model constraint; only D-PSGD is launched for this workload.
+
+Single-worker warm training calibration on an RTX 5000 Ada measured **5.514 ms
+per minibatch of 32**, rounded up to **6 ms** in the simulated compute model.
+The calibration artifact is
+`experiments/methodology/calibration/cifar100-resnet18-gn.json`. The new workload
+declares **100 Mbit/s = 12,500,000 bytes/s** per physical endpoint and retains
+10 ms delivery latency. This is 12.5× the old workload's bandwidth. It is a
+declared network scenario, not a measured deployment connection. The original
+CIFAR-10 capacities and results remain unchanged.
+
+The validation-only duration pilot in
+`experiments/methodology/cifar100-resnet18gn-h10-duration-pilot.json` fixes
+**H=10 and LR=0.03**, seed 100, and runs through 3,600 simulated seconds before
+the full campaign starts. This fixed-H pilot reached **6.04%, 10.62% and 15.40%**
+validation accuracy at 900, 1,800 and 3,600 seconds; its curve and provenance are
+saved in `experiments/methodology/calibration/cifar100-resnet18-gn-duration.json`.
+An initial H=20 pilot through 1,800 seconds is retained
+separately at `cifar100-resnet18gn-horizon-pilot.json`. Neither uses test data or
+contributes scores to TPE. In that initial pilot, validation accuracy was still
+improving at 900 seconds (10.12% at LR=0.03) and reached 14.76% at 1,800 seconds,
+motivating a **3,600-second initial comparison horizon**, rather than
+automatically copying 900 seconds. The
+benchmark reports 600 / 1,800 / 3,600 seconds with full validation/test checkpoints
+every 300 seconds; it does not claim that 3,600 seconds reaches convergence.
+
+D-PSGD keeps 32 clients, fixed seeded 5-regular graphs, non-IID alpha 0.1 /
+homogeneous validation tuning, H ∈ {1,5,10,15,20}, log-uniform LR ∈ [0.001,1],
+40 TPE configurations (12 startup), three paired tuning seeds 100–102, zero
+momentum/weight decay and batch size 32. Every seed executes the full declared
+budget. All selected parameters and one shared validation-selected checkpoint
+are frozen for seeds 110–112 in all four IID/non-IID and hardware settings.
+Two configurations per batch use six worker slots, three per GPU. Resident
+scalar training is enabled; multi-model training batching is disabled for this
+larger model. Tuning allocates 432,000 simulated seconds across 120 seed runs;
+the 12 evaluations allocate another 43,200 simulated seconds.
+
+The campaign declaration is
+`experiments/methodology/dpsgd-cifar100-resnet18gn-tpe-dirichlet01-h20.json`;
+results are isolated under
+`output/leaderboard-v3/cifar100-resnet18-gn/dpsgd-kreg-log2-tpe-dirichlet01-h20/`.
+Pilot/calibration data are in separate sibling artifacts. No previous winners
+or scores are reused, and all comparisons within the new workload share the
+same model, capacities and budget.
+
+The active catalog, `experiments/leaderboard-settings.json`, includes
+**D-PSGD, k = log2(n)**, **Shatter, 16 virtual nodes per real node,
+r = log2(n)**, **Epidemic Learning (EL-Oracle)** and **DeMo**.
+DeMo is queued after the full Epidemic Learning campaign and jointly tunes
+its three compression parameters alongside LR and gradient accumulation H.
+The Shatter degree uses the 32 real nodes: r = 5 on a graph
+of 512 virtual nodes. Previous results and their directories are preserved;
+`experiments/leaderboard-legacy-settings.json` serves the previous dashboard,
+including its centralized reference. No previous tuning scores or test results
+are imported into this campaign.
+
+Click the algorithm name to open `/algorithm/dpsgd-kreg-log2`. The page includes
+a plain-language description, peer-reviewed paper link, authors' code availability,
+the local simulator source, experiment parameters, fixed parameter rationale,
+the joint tuning table and all per-seed trials. Only verified authors' repositories
+may be labeled as authors' code. The official NeurIPS supplementary archive is
+linked separately; its code contents have not been verified.
+
+The executable declaration is `experiments/methodology/dpsgd-kreg-tpe-dirichlet01-h20.json` and the
+page metadata is `experiments/leaderboard-algorithms.json`. The campaign uses:
+
+| Choice | Declaration |
+| --- | --- |
+| Dataset / model | CIFAR-10 / GNLeNet; 45,000 training, 5,000 validation, 10,000 test images |
+| Clients / graph | 32 clients; fixed seeded random 5-regular graph, k = log2(32) |
+| Update rule | Train H local minibatches, then average the updated self/neighbor models |
+| Mixing / synchronization | Uniform weights 1/6; wait for same-round neighbors, no global barrier |
+| Joint search | Optuna TPE; H in {1, 5, 10, 15, 20}; LR sampled logarithmically in [.001, 1] |
+| Search policy | 40 configurations; 12 startup configurations; sampler seed 20261104; batches of 3 configurations; no pruning |
+| Fixed optimizer settings | Batch size 32 per client, momentum 0, weight decay 0, constant LR |
+| Tuning setting | Non-IID training data, Dirichlet alpha 0.1; homogeneous hardware |
+| Tuning seeds | 100, 101, 102; paired across all candidates |
+| Per-trial budget | 900 simulated seconds; full validation split every 60 seconds |
+| Selection | Highest validation accuracy averaged across seeds at one shared checkpoint in 60–900 s; earliest checkpoint breaks within-candidate ties; lower LR, then variant name and candidate ID, break between-candidate ties |
+| Search size | 40 configurations, 120 seed runs; 108,000 total allocated simulated seconds |
+| Evaluation | Freeze the winning pair AND checkpoint time for all four data/hardware settings; fresh seeds 110, 111, 112 |
+| Evaluation readout | Offline uniform parameter average of all clients; full test split, checkpoints every 60 seconds |
+| Capacities | Mean 20 ms per SGD step, 1,000,000 bytes/s per client, 10 ms latency per transfer |
+
+The runner checks connectivity for every declared graph seed and records the
+actual edges and spectral gaps in `output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20-launch/plan.json`.
+One graph is reused for every candidate at a given seed. Every trial must finish
+its budget before selection. Failed/incomplete searches block evaluation; non-finite
+endpoint candidates are retained as divergent and are ineligible. A variant with
+no finite candidate remains in the record; a finite joint candidate from another variant
+can still win. LR winners exactly on a range bound are visibly flagged without silently extending
+the range. This is a finite declared search, not a claim of a global optimum.
+
+```sh
+# Resolve the search and graph checks without training.
+python scripts/run_methodology.py --plan
+# Launch the complete search, then frozen-pair evaluation across all four settings.
+python scripts/run_methodology.py
+# Serve the active dashboard.
+python scripts/serve_leaderboard.py --catalog experiments/leaderboard-settings.json --port 8766
+# Inspect previous results separately.
+python scripts/serve_leaderboard.py --catalog experiments/leaderboard-legacy-settings.json --port 8767
+```
+
+The fresh search uses eight worker slots, four on each GPU. Preliminary tuning
+results were deleted at the user's request before this fresh run. The selection
+metric is `best_mean_accuracy`: maximize the mean across seeds at each shared
+checkpoint, then maximize across checkpoints and candidate pairs. This differs
+from averaging each seed's independent maximum. Initialization is displayed as a
+reference and is excluded from trained-checkpoint selection. All candidate seeds
+must have the complete declared checkpoint schedule. Divergent candidates remain
+ineligible, even if an earlier checkpoint was finite.
+
+The original 21-pair grid declaration remains at
+`experiments/methodology/dpsgd-kreg.json`, and its output under
+`output/leaderboard-v2/dpsgd-kreg-log2-anytime/` is preserved. TPE writes to the
+fresh `output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/` directory and imports no prior
+scores. Changing the catalog does not launch training. Install the updated
+requirements before running the campaign.
+
+The completed IID TPE campaign is archived through
+`experiments/archive/iid-tpe-h10-20261104/leaderboard-settings.json`; its
+artifacts remain in `output/leaderboard-v2/dpsgd-kreg-log2-tpe/`. The active
+catalog exposes only the new non-IID campaign and defaults to
+`dirichlet01-uniform`. Learning-rate range [.001, 1], three paired tuning
+seeds, 900-second budgets, batch size 32, zero momentum and zero weight
+decay are unchanged. No prior validation observations are imported.
+
+### Adaptive search configuration and progress
+
+New launches through `scripts/run_methodology.py` cap concurrency at **three
+workers per GPU** by default (six workers across the two configured GPUs).
+Existing campaigns keep their original allocation. The cap preserves smaller
+configured worker counts and CPU slots; `--workers-per-gpu` explicitly overrides
+it. The resolved worker list is recorded in the launch plan. Search batches,
+paired seeds, simulated budgets and validation selection rules are unchanged.
+
+Set `tuning.method: tpe` and replace `learning_rates` with `search_spaces`, keyed
+by the named runs. For example:
+
+```yaml
+tuning:
+  method: tpe
+  budget: 900
+  seeds: [100, 101, 102]
+  evaluation_period: 60
+  evaluation_examples: 0
+  metric: best_mean_accuracy
+  select_variant: true
+  n_trials: 40
+  n_startup_trials: 12
+  sampler_seed: 20261104
+  batch_size: 3
+  search_spaces:
+    dpsgd-kreg-log2:
+      learning_rate: {type: float, low: 0.001, high: 1.0, log: true}
+      local_steps: {type: categorical, choices: [1, 5, 10, 15, 20]}
+```
+
+Distributions support `float` and `int` bounds, optional `step` or logarithmic
+sampling, and categorical choices. Only algorithm parameters can vary; dataset,
+seed, duration, evaluation split, and other scenario settings stay fixed.
+Different named algorithms can declare different spaces. With
+`select_variant: false`, each named run gets its own study and the same declared
+configuration/seed/time allowance. With `select_variant: true`, variants of one
+algorithm share a study, and TPE also samples the variant. Algorithm-specific
+spaces are conditional on that variant.
+
+`batch_size` is configurations **per study**, each expanded over every tuning
+seed. Batches across studies share `benchmark.execution_devices`, so several
+algorithms and seed evaluations can execute concurrently without exceeding the
+declared worker slots. Repeated devices allow multiple workers on one GPU. There
+is a barrier between batches. The seeded sampler receives observations in fixed
+candidate order after every seed in the batch has finished; completion timing
+cannot change the suggestion order. A batch that crosses the startup threshold
+may contain extra random suggestions; the default 12/3 policy uses exactly 12.
+
+Every configuration runs the full duration, including divergent configurations
+that are eligible for the runner's existing full-budget divergence handling.
+Incomplete or failed seed groups block held-out evaluation. Full-budget
+divergence is recorded as an ineligible candidate and a worst-direction Optuna
+observation. There are no pruning calls or shortened training budgets.
+
+The algorithm detail page refreshes every two seconds and shows startup/adaptive
+sampling, suggested/completed configurations, running/completed seed evaluations,
+completed simulated-time allocations, the best provisional parameters and shared
+checkpoint, and a score-history chart. Dots are completed configuration scores;
+the line is the best score so far. Per-configuration tables expose all sampled
+parameters and per-seed results. No observations are synthesized while a search
+is planned.
+
+`tuning/search.json` records the sampler version and seed, policy, candidate
+parameters, sampling phases, paired observations and selected checkpoint times.
+`tuning/leaderboard.json` aggregates every proposed candidate; individual worker
+artifacts remain under `tuning/batch-*/runs/`. The final `selection.json` freezes
+every sampled parameter and checkpoint for fresh-seed evaluation in every scenario.
+New searches require fresh output directories. To recover a failed or interrupted
+TPE tuning phase, use `scripts/run_methodology.py --algorithm ALGORITHM --resume-tuning`.
+Recovery requires the original benchmark declaration and Optuna version. It
+snapshots the prior control files, replays and verifies saved proposals and scores
+in their original batch order, retains completed seed runs, and retries incomplete
+seeds in fresh recovery directories. Original batch artifacts remain unchanged.
+Selection and held-out evaluation still wait for the full declared search.
+Grid reuse is separate from TPE recovery. Reproducibility requires the same Optuna version,
+search declaration, batch size, and numerical results. TPE may propose a
+configuration more than once; each proposal counts against the fixed allowance.
+
+Nonfinite intermediate validation metrics do not stop a tuning worker. It executes
+all training tasks and every scheduled checkpoint through the full simulated-time
+budget, then the seed is marked divergent and the configuration is ineligible.
+The first divergence time and separately verified completed budget are recorded.
+Worker crashes, incomplete schedules, and held-out evaluation failures remain errors.
+
+The generic tuning pipeline's optional `tuning.select_variant: true` selects one
+variant/LR pair across variants of a single algorithm. It preserves each variant's
+candidate table, but sends only the winning variant to held-out evaluation. The
+campaign runner then carries exactly that pair to the remaining scenarios.
+A different algorithm may not be included in the same joint-selection group.
+
+### Shatter: 16 virtual nodes, r = log2(real nodes)
+
+The declaration is
+`experiments/methodology/shatter-k16-rlog2-tpe-dirichlet01-h20.json`; its details
+page is `/algorithm/shatter-k16-rlog2`. Run its independent campaign with:
+
+```sh
+python scripts/run_methodology.py --algorithm shatter-k16-rlog2 --plan
+python scripts/run_methodology.py --algorithm shatter-k16-rlog2
+```
+
+Each of 32 real nodes hosts 16 virtual endpoints, giving 512 graph vertices.
+The virtual graph is 5-regular and redrawn each round with seed `seed + round - 1`.
+The launch plan records and checks the initial graph for every tuning/evaluation
+seed; subsequent rounds follow that declared seed rule. Virtual endpoints route
+contiguous model chunks and share their host's physical bandwidth. Each chunk
+index is averaged over received copies plus the local copy. Chunk counts can
+differ, so these are not fixed 1/6 mixing weights.
+
+Shatter uses the same non-IID Dirichlet alpha 0.1 scenario, physical capacities,
+H choices, LR range, 40 configurations, 12 startup configurations, paired tuning
+seeds and full 900-second budgets as the D-PSGD campaign. Two configurations per
+TPE batch give six seed runs, matching three workers per GPU. The winning
+parameters and one shared checkpoint are frozen for evaluation seeds 110–112
+in all four scenarios. Results go to the separate
+`output/leaderboard-v2/shatter-k16-rlog2-tpe-dirichlet01-h20/` directory.
+
+The dashboard combines registered algorithms' held-out runs at read time.
+Completed D-PSGD measurements remain visible while Shatter is pending or tuning;
+unmeasured Shatter rows stay blank and official ranks wait for every paired seed.
+Scenario compatibility is checked, and JSON/CSV views include both algorithms.
+No underlying D-PSGD experiment files are rewritten. Each algorithm's details
+page continues to show its independent TPE history and declaration.
+
+This is the existing real-node chunked-exchange specialization; virtual nodes
+are not separate training clients. Its graph and chunk execution have protocol
+and integration tests. Identity-hiding transport and privacy-attack evaluation
+are outside this simulator, and the leaderboard makes no privacy-guarantee or
+complete paper-reproduction claim. The publisher's official artifact link
+identifies the authors' repository separately from the local implementation.
+
+### Epidemic Learning: a new regular graph each round
+
+`epidemic-kreg-log2` uses the existing **EL-Oracle** implementation: a fresh
+random 5-regular graph over the 32 real nodes each round, full-model exchanges,
+and equal averaging of self plus five neighbors. Graph seeds follow
+`seed + round - 1`, matching Shatter's topology schedule with real nodes as
+vertices. This is the coordinated regular-graph variant from the
+[Epidemic Learning paper](https://papers.neurips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html).
+Its declaration is `experiments/methodology/epidemic-kreg-log2-tpe-dirichlet01-h20.json`.
+It uses the same H/LR ranges, 40 configurations, 12 startup configurations,
+three paired seeds, full 900-second budgets, validation objective, physical
+hardware, and four frozen-parameter evaluation settings as Shatter.
+
+To queue it after the entire detached Shatter campaign:
+
+```sh
+python scripts/queue_methodology.py --after shatter-k16-rlog2 --algorithm epidemic-kreg-log2
+```
+
+Run the queue itself as a detached background process to survive terminal exit.
+The queue checks the predecessor's PID and creation time, waits for its exit,
+and requires successful tuning and all four evaluations before launching the
+successor with three workers per GPU. It fails visibly if the predecessor exits
+incompletely. A per-campaign lock prevents duplicate queue launches, and existing
+experiment output is never overwritten. Queue state and monitor logs live in
+the successor's sibling `-launch` directory; its campaign output is created only
+when execution begins. `/algorithm/epidemic-kreg-log2` shows the waiting state,
+then the ordinary live TPE progress. The leaderboard includes pending rows
+without adding invented scores.
+
+### DeMo: jointly tuned compression and gradient accumulation
+
+DeMo is queued after **all Epidemic Learning tuning and four evaluations**
+succeed. Its declaration is `experiments/methodology/demo-tpe-dirichlet01-h20.json`
+and its detail page is `/algorithm/demo`. The five-dimensional joint TPE search is:
+
+| Parameter | Declared search |
+| --- | --- |
+| Learning rate | Log-uniform [0.00001, 0.1] |
+| Gradient accumulation H | {1, 5, 10, 15, 20} minibatches |
+| Compression residual decay | {0, 0.9, 0.99, 0.999, 0.9999} |
+| Maximum DCT block dimension | {16, 32, 64, 128} |
+| Transmitted coefficients per block | {1, 2, 4, 8, 16, 32} |
+
+H averages gradients at fixed model parameters before one DeMo update; it does
+not perform H local SGD updates. Top-k is an absolute coefficient count clipped
+to the actual block size. Block dimensions divide each tensor dimension. Residual
+decay controls untransmitted information and is separate from SGD momentum.
+The LR range is specific to DeMo's sign updates and includes the earlier 0.001
+baseline. No earlier scores or winners are imported.
+
+The existing reference-style implementation uses a fixed directed ring all-gather
+with 31 stages for 32 clients. Every packet is forwarded to every client, with
+indices, values, metadata, endpoint bandwidth and per-transfer latency charged.
+The launch plan records the actual ring; it does not describe a random 5-regular
+graph. DCT/compression/reconstruction have zero modeled compute cost; wall time
+is recorded separately. Stable membership is required.
+
+DeMo receives the same 40 configurations, 12 startup configurations, validation
+objective, tuning scenario, seeds 100–102 and full 900-second budgets as the other
+campaigns: 120 tuning seed runs and 108,000 allocated simulated seconds. Two
+configurations per batch use six workers, three per GPU. All five selected
+parameters and the shared checkpoint are frozen for 12 test runs: seeds 110–112
+across IID/non-IID and homogeneous/heterogeneous hardware. These add 10,800
+allocated simulated seconds. The finite 40-configuration search is not exhaustive
+over the five-dimensional space. Output uses the fresh
+`output/leaderboard-v2/demo-tpe-dirichlet01-h20/` directory.
+
+```sh
+python scripts/run_methodology.py --algorithm demo --plan
+python scripts/queue_methodology.py --after epidemic-kreg-log2 --algorithm demo
+```
+
+The queue runs detached to survive terminal exit. Its state, monitor log and
+eventual campaign log live in the sibling `demo-tpe-dirichlet01-h20-launch/`
+directory. Pending dashboard rows have no invented measurements.
+
+These results measure transfer of parameters selected on one scenario, rather
+than each scenario's individually tuned optimum. The simulator's update order
+is a declared train-then-average variant and differs from Algorithm 1 in the
+original D-PSGD paper; see [the numerical contract](baseline-validation.md#d-psgd-preserve-train-then-average).
+The network abstraction uses greedy queued endpoint allocation and an additive
+one-way delivery delay per message. It is not a calibrated TCP simulation;
+contention, ordering sensitivity and calibration require a separate validation
+study before deployment-performance claims.
+The shared trainer resets optimizer state per local block; momentum stays zero
+in this campaign. Earlier campaigns already inspected the CIFAR-10 test set, so
+new random seeds do not make that dataset an untouched final test set.
+
+The sections below describe earlier campaigns and the underlying benchmark tools.
+
+
 Run a paired comparison of algorithms against one fixed learning and network
 scenario. Budgets are **simulated protocol seconds**, independent of the wall
 time needed to execute training. There is no special 900-second limit.

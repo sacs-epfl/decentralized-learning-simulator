@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "default": "dirichlet01-uniform",
+  "settings": [
+    {
+      "id": "iid-uniform",
+      "label": "IID · homogeneous hardware",
+      "output": "../output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/evaluation-iid-uniform"
+    },
+    {
+      "id": "iid-heterogeneous",
+      "label": "IID · heterogeneous hardware",
+      "output": "../output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/evaluation-iid-heterogeneous"
+    },
+    {
+      "id": "dirichlet01-uniform",
+      "label": "Non-IID (Dirichlet α = 0.1) · homogeneous hardware",
+      "output": "../output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/evaluation"
+    },
+    {
+      "id": "dirichlet01-heterogeneous",
+      "label": "Non-IID (Dirichlet α = 0.1) · heterogeneous hardware",
+      "output": "../output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/evaluation-dirichlet01-heterogeneous"
+    }
+  ],
+  "algorithms": "leaderboard-algorithms.json",
+  "default_workload": "cifar10-gnlenet",
+  "workloads": [
+    {
+      "id": "cifar10-gnlenet",
+      "label": "CIFAR-10 / GNLeNet",
+      "catalog": "leaderboard-settings.json"
+    },
+    {
+      "id": "cifar100-resnet18-gn",
+      "label": "CIFAR-100 / ResNet-18-GN",
+      "catalog": "leaderboard-cifar100-settings.json"
+    }
+  ]
+}

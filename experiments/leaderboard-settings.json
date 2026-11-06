@@ -1,49 +1,27 @@
 {
   "version": 1,
-  "default": "dirichlet01-heterogeneous",
-  "reference": {
-    "output": "../output/leaderboard-cifar10-centralized-minloss"
-  },
+  "default": "dirichlet01-uniform",
   "settings": [
     {
       "id": "iid-uniform",
       "label": "IID · homogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-dspodfl/settings/iid-uniform"
+      "output": "../output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/evaluation-iid-uniform"
     },
     {
       "id": "iid-heterogeneous",
       "label": "IID · heterogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-dspodfl/settings/iid-heterogeneous"
+      "output": "../output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/evaluation-iid-heterogeneous"
     },
     {
       "id": "dirichlet01-uniform",
       "label": "Non-IID (Dirichlet α = 0.1) · homogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-dspodfl/settings/dirichlet01-uniform"
+      "output": "../output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/evaluation"
     },
     {
       "id": "dirichlet01-heterogeneous",
       "label": "Non-IID (Dirichlet α = 0.1) · heterogeneous hardware",
-      "output": "../output/leaderboard-cifar10-32-dspodfl/settings/dirichlet01-heterogeneous"
-    },
-    {
-      "id": "additions-tuning",
-      "label": "LR tuning · five additions",
-      "output": "../output/leaderboard-cifar10-32-extended-sgp/tuning"
-    },
-    {
-      "id": "extra5-tuning",
-      "label": "LR tuning · five peer additions",
-      "output": "../output/leaderboard-cifar10-32-extended15/tuning"
-    },
-    {
-      "id": "dpsgd-kreg-tuning",
-      "label": "LR tuning · D-PSGD k-regular (k = 5)",
-      "output": "../output/leaderboard-cifar10-32-dpsgd-kreg/tuning"
-    },
-    {
-      "id": "dspodfl-tuning",
-      "label": "LR tuning · DSpodFL",
-      "output": "../output/leaderboard-cifar10-32-dspodfl/tuning"
+      "output": "../output/leaderboard-v2/dpsgd-kreg-log2-tpe-dirichlet01-h20/evaluation-dirichlet01-heterogeneous"
     }
-  ]
+  ],
+  "algorithms": "leaderboard-algorithms.json"
 }

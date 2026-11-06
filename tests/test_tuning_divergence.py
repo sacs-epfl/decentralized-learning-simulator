@@ -46,7 +46,7 @@ def test_nonfinite_checkpoint_reports_its_time_and_preserves_finite_prefix(tmp_p
 
 
 @pytest.mark.parametrize("mode", ["allowed", "disabled", "test", "early", "missing_prefix", "local", "worker_error"])
-def test_only_explicit_exact_budget_global_validation_divergence_is_an_outcome(tmp_path, monkeypatch, mode):
+def test_only_explicit_full_budget_global_validation_divergence_is_an_outcome(tmp_path, monkeypatch, mode):
     import dasklearn.benchmark as module
     benchmark = global_plan(tmp_path)
     trials = tuning_benchmark(benchmark)
@@ -61,18 +61,68 @@ def test_only_explicit_exact_budget_global_validation_divergence_is_an_outcome(t
 
     def nonfinite(*args, **kwargs):
         prefix = [] if mode == "missing_prefix" else [dict(time=0, accuracy=10, loss=2)]
-        raise NonfiniteEvaluation(0 if mode == "early" else 2, prefix)
+        raise NonfiniteEvaluation(0 if mode == "early" else 2, prefix, budget_completed=mode != 'missing_prefix')
 
     monkeypatch.setattr(module.subprocess, "Popen", Process)
     monkeypatch.setattr(module, "provenance", lambda root: {})
     monkeypatch.setattr(module, "_stop", lambda process: None)
     monkeypatch.setattr(module, "read_curve", nonfinite)
     code = execute_benchmark(trials, allow_divergent_trials=mode != "disabled")
-    assert code == (0 if mode == "allowed" else 1)
+    allowed = mode in {'allowed', 'early'}
+    assert code == (0 if allowed else 1)
     report = json.loads((trials.output / "leaderboard.json").read_text())
-    assert all(run["status"] == ("diverged" if mode == "allowed" else "failed") for run in report["runs"])
-    if mode == "allowed":
-        assert all(run["divergence_time"] == 2 and run["tuning_budget_completed"] for run in report["runs"])
+    assert all(run["status"] == ("diverged" if allowed else "failed") for run in report["runs"])
+    if allowed:
+        assert all(run['completed_budget'] == 2 and run["tuning_budget_completed"] for run in report["runs"])
+
+
+def test_intermediate_nonfinite_metrics_do_not_stop_a_running_worker(tmp_path, monkeypatch):
+    import dasklearn.benchmark as module
+    trials = replace(tuning_benchmark(global_plan(tmp_path)), times=[0, 1, 2])
+    processes, stopped = [], []
+    class Process:
+        def __init__(self, command, **kwargs):
+            self.directory = Path(command[-1]).parent
+            self.polls = 0
+            data = self.directory / 'data' / 'trial'
+            data.mkdir(parents=True)
+            self.csv = data / 'accuracies.csv'
+            self.csv.write_text('time,peer,accuracy,loss\n0,-1,10,2\n1,-1,10,nan\n')
+            (self.directory / 'network.json').write_text(json.dumps([dict(time=t, bytes_sent=t*100) for t in trials.times]))
+            processes.append(self)
+        def poll(self):
+            self.polls += 1
+            if self.polls == 1:
+                return None
+            with self.csv.open('a') as stream:
+                stream.write('2,-1,10,1\n')
+            return 0
+        def wait(self, timeout):
+            raise module.subprocess.TimeoutExpired('worker', timeout)
+    monkeypatch.setattr(module.subprocess, 'Popen', Process)
+    monkeypatch.setattr(module, 'provenance', lambda root: {})
+    monkeypatch.setattr(module, '_stop', stopped.append)
+    assert execute_benchmark(trials, allow_divergent_trials=True) == 0
+    assert processes and all(process.polls == 2 for process in processes)
+    assert not stopped
+    report = json.loads((trials.output / 'leaderboard.json').read_text())
+    assert all(row['status'] == 'diverged' and row['divergence_time'] == 1 and row['completed_budget'] == 2 for row in report['runs'])
+
+
+def test_real_divergent_workers_execute_every_scheduled_checkpoint(tmp_path):
+    from test_tpe_tuning import configuration as tpe_configuration
+    from dasklearn.tpe_tuning import tuning_suite
+    benchmark = tpe_configuration(tmp_path, budget=4, evaluation_period=1)
+    candidate = dict(id='unstable', variant='dpsgd', parameters=dict(learning_rate=1e20, local_steps=5))
+    trials = tuning_suite(benchmark, [candidate])
+    assert execute_benchmark(trials, allow_divergent_trials=True) == 0
+    report = json.loads((trials.output / 'leaderboard.json').read_text())
+    assert all(row['status'] == 'diverged' and row['completed_budget'] == 4 for row in report['runs'])
+    for row in report['runs']:
+        directory = trials.output / 'runs' / row['name']
+        with pytest.raises(NonfiniteEvaluation) as failure:
+            read_curve(directory, row['options']['peers'], trials.times, strict=True, evaluation_model='global')
+        assert failure.value.budget_completed and failure.value.stamp < trials.times[-1]
 
 
 def test_selection_excludes_divergent_candidates_without_replacing_their_lr_budget(tmp_path):
