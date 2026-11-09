@@ -41,9 +41,8 @@ def test_plan_has_exact_irregular_budgets_and_fixed_paired_scenario(tmp_path, mo
     assert all(run.options["duration"] == 5 and run.options["rounds"] == 0 for run in benchmark.runs)
     assert not benchmark.output.exists()
     example = load_benchmark(ROOT / "experiments/leaderboard.yaml", create_parser())
-    # MoTEF-VR is registered for execution but deliberately awaits runtime/LR
-    # screening before inclusion in the maintained leaderboard example.
-    assert {run.options["algorithm"] for run in example.runs} == set(ALGORITHMS) - {"motef-vr"}
+    # MoTEF-VR awaits screening; Conflux V2 is scoped to its CIFAR-10 campaign.
+    assert {run.options["algorithm"] for run in example.runs} == set(ALGORITHMS) - {"motef-vr", "conflux-v2"}
     assert len(example.runs) == 23 * 3
 
 

@@ -7,6 +7,7 @@ from importlib import import_module
 
 
 ALGORITHMS = {
+    "conflux-v2": ("conflux_v2", "ConfluxV2Settings", "ConfluxV2Simulation"),
     'damsgrad': ('damsgrad', 'DAMSGradSettings', 'DAMSGradSimulation'),
     'fspda': ('fspda', 'FSPDASettings', 'FSPDASimulation'),
     'motef-vr': ('motef_vr', 'MoTEFVRSettings', 'MoTEFVRSimulation'),

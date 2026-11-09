@@ -23,7 +23,7 @@ from dasklearn.experiment_runner import _stop, provenance, write_json
 
 TUNABLE_OPTIONS = {"algorithm", "learning_rate", "momentum", "weight_decay", "batch_size", "local_steps",
                    "synchronous", "topology", "k", "r", "el", "group_size", "averaging_steps", "sample_size",
-                   "chunks_in_sample", "success_fraction", "agg", "wait", "no_weights", "gl_period", "fl_weighting"}
+                   "chunks_in_sample", "relay_count", "immediate_uploads", "success_fraction", "agg", "wait", "no_weights", "gl_period", "fl_weighting"}
 TUNABLE_PREFIXES = ("qgm_", "choco_", "swift_", "gt_dsgd_", "detag_", "relaysgd_", "sgp_", "damsgrad_",
                     "fspda_", "motef_", "demo_", "dspod_", "teleportation_")
 

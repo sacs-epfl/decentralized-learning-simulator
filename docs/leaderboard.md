@@ -383,6 +383,55 @@ The queue runs detached to survive terminal exit. Its state, monitor log and
 eventual campaign log live in the sibling `demo-tpe-dirichlet01-h20-launch/`
 directory. Pending dashboard rows have no invented measurements.
 
+### Conflux V2: jointly tuned sample and reducer layout
+
+The original Conflux V2 averaging protocol is registered only for CIFAR-10 /
+GNLeNet, at `/algorithm/conflux-v2`. It uses the same 32 clients, 45,000 / 5,000 /
+10,000 train/validation/test split, batch size 32, zero momentum and weight decay,
+20 ms modeled SGD steps, 1,000,000 bytes/s endpoints and 10 ms transfer latency as
+the other CIFAR-10 campaigns. The separate FedOpt optimizer experiments are not
+included.
+
+The declaration `experiments/methodology/conflux-v2-tpe-dirichlet01-h20.json`
+jointly searches five parameters:
+
+| Parameter | Search space |
+| --- | --- |
+| Learning rate | Log-uniform [0.001, 1] |
+| Local SGD steps H | {1, 5, 10, 15, 20} |
+| Active training clients | {2, 4, 8, 16, 32} |
+| Model chunks | {1, 2, 4, 8, 16, 32} |
+| Reducer cap | {1, 2, 4, 8, 16, 32} |
+
+Every sample contributes fully (`success_fraction=1`) and uses immediate uploads.
+Placement assigns chunks greedily relative to public bandwidth and existing
+assigned chunk load, among the highest-bandwidth peers up to the reducer cap.
+Fewer owners can be used when the chunk count is below that cap. Trainers and
+reducers share endpoint bandwidth. The planner verifies declared homogeneous
+placements and seeded training samples rather than inventing a fixed graph.
+
+Tuning uses Dirichlet alpha 0.1 / homogeneous hardware, 40 TPE configurations,
+12 startup configurations, sampler seed 20261104, two configurations per batch,
+three workers per GPU, seeds 100/101/102 and full 900-second budgets. It selects
+the best mean validation accuracy at one shared 60-second checkpoint. All five
+parameters and that checkpoint are frozen for seeds 110/111/112 in the four
+IID/non-IID and homogeneous/heterogeneous evaluation settings. This is 120 tuning
+seed runs and 12 test seed runs. Results are isolated under
+`output/leaderboard-v2/conflux-v2-tpe-dirichlet01-h20/`.
+
+The offline readout averages every physical client's latest published checkpoint,
+including inactive clients' retained models; collection and evaluation costs are
+excluded. It differs from a readout of the latest sample aggregate. Stable
+membership, public static capacities and instantaneous chunk operations are
+limitations. Forty configurations are a finite five-parameter search, and
+transfer performance is not independently tuned per scenario. Earlier CIFAR-10
+test curves have been inspected, so this remains an exploratory comparison.
+
+```sh
+python scripts/run_methodology.py --algorithm conflux-v2 --plan
+python scripts/run_methodology.py --algorithm conflux-v2
+```
+
 ### Teleportation: jointly tuned active clients and token topology
 
 The independent CIFAR-10/GNLeNet campaign is declared in

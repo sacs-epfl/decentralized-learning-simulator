@@ -67,6 +67,8 @@ def graph_plan(benchmark):
     options = benchmark.runs[0].options
     n = options['peers']
     algorithm = options['algorithm']
+    if algorithm == 'conflux-v2':
+        return conflux_v2_plan(benchmark)
     if algorithm == 'teleportation':
         return teleportation_graph_plan(benchmark)
     if algorithm == 'demo':
@@ -107,6 +109,52 @@ def graph_plan(benchmark):
             record['spectral_gap'] = float(1-sorted(abs(value) for value in (eigenvalues+1)/(degree+1))[-2])
         graphs[str(seed)] = record
     return graphs
+
+
+def conflux_v2_plan(benchmark):
+    """Check sampled trainers and actual capacity-weighted chunk placement."""
+    from types import SimpleNamespace
+    from dasklearn.simulation.conflux_v2.client import ConfluxV2Client
+    options = benchmark.runs[0].options
+    space = benchmark.tuning.get('search_spaces', {}).get(benchmark.runs[0].variant, {})
+
+    def choices(name):
+        distribution = space.get(name)
+        if distribution is None:
+            return [options[name]]
+        if distribution.get('type') != 'categorical':
+            raise ValueError(f'Conflux V2 planning requires categorical {name}')
+        return distribution['choices']
+
+    if options['success_fraction'] != 1 or not options['immediate_uploads']:
+        raise ValueError('This Conflux V2 campaign requires full participation and immediate uploads')
+    for name in ('sample_size', 'chunks_in_sample', 'relay_count'):
+        for value in choices(name):
+            if type(value) is not int or value < 1 or name != 'chunks_in_sample' and value > options['peers']:
+                raise ValueError(f'Invalid Conflux V2 {name}')
+    plans = {}
+    for seed in benchmark.tuning['seeds'] + benchmark.seeds:
+        client = ConfluxV2Client.__new__(ConfluxV2Client)
+        config = SimpleNamespace(**(options | dict(seed=seed)))
+        client.simulator = SimpleNamespace(settings=config)
+        client.other_nodes_bws = dict.fromkeys(range(options['peers']), benchmark.network['bandwidth_bytes_per_second'])
+        samples, layouts = [], []
+        for size in choices('sample_size'):
+            config.sample_size = size
+            samples.append(dict(active_clients=size, first_sample=client.sample(1), next_sample=client.sample(2)))
+        for count in choices('chunks_in_sample'):
+            for limit in choices('relay_count'):
+                config.chunks_in_sample, config.relay_count = count, limit
+                leader, owners = client.layout(1)
+                if len(owners) != count or not 1 <= len(set(owners)) <= min(count, limit):
+                    raise ValueError('Invalid Conflux V2 chunk placement')
+                layouts.append(dict(chunks=count, reducer_cap=limit, leader=leader, owners=owners))
+        plans[str(seed)] = dict(real_nodes=options['peers'], samples=samples, layouts=layouts,
+            sampling='Seeded uniform sample without replacement each round',
+            placement='Capacity-weighted greedy chunk placement; equal-capacity roles rotate',
+            full_participation=True, immediate_uploads=True,
+            validation_scope='Declared homogeneous tuning placements and first two trainer samples; no fixed graph')
+    return plans
 
 
 def teleportation_graph_plan(benchmark):

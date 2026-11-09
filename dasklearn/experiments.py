@@ -202,6 +202,15 @@ def validate_run(options):
             raise ValueError(f"{field} must be nonnegative")
     if not 0 <= options["validation_set_fraction"] < 1:
         raise ValueError("validation_set_fraction must be in [0, 1)")
+    if options["algorithm"] == "conflux-v2":
+        if not 1 <= options["sample_size"] <= options["peers"]:
+            raise ValueError("Conflux V2 sample_size must be in [1, peers]")
+        if options["chunks_in_sample"] < 1 or options["relay_count"] < 0:
+            raise ValueError("Conflux V2 requires positive chunks and nonnegative relay_count")
+        if not 0 < options["success_fraction"] <= 1:
+            raise ValueError("Conflux V2 success_fraction must be in (0, 1]")
+        if options["churn"] != "none":
+            raise ValueError("Conflux V2 requires stable membership")
     if options["lora"]:
         from types import SimpleNamespace
         from dasklearn.lora import LoRASpec

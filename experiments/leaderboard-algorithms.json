@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Decentralized learning leaderboard",
-  "notice": "Non-IID comparison: tune each algorithm independently on Dirichlet alpha 0.1 validation data with homogeneous hardware. Joint TPE search over learning rate and H in {1, 5, 10, 15, 20}; Teleportation also tunes active-client count and token topology; DeMo also tunes residual decay, DCT block size and coefficients per block (H is gradient accumulation for DeMo). Each algorithm receives 40 configurations, three paired seeds and full 900-second budgets. Freeze all winning parameters and the shared checkpoint for all four evaluation settings. New campaigns use three workers per GPU. Archived IID campaigns are excluded.",
+  "notice": "Non-IID comparison: tune each algorithm independently on Dirichlet alpha 0.1 validation data with homogeneous hardware. Joint TPE search over learning rate and H in {1, 5, 10, 15, 20}; Conflux V2 also tunes active-client, chunk and reducer counts; Teleportation also tunes active-client count and token topology; DeMo also tunes residual decay, DCT block size and coefficients per block (H is gradient accumulation for DeMo). Each algorithm receives 40 configurations, three paired seeds and full 900-second budgets. Freeze all winning parameters and the shared checkpoint for all four evaluation settings. New campaigns use three workers per GPU. Archived IID campaigns are excluded.",
   "scenarios": {
     "iid-uniform": {
       "partitioner": "iid",
@@ -497,6 +497,67 @@
       ],
       "protocol_amendments": [
         "9 November 2026: add an independent Teleportation campaign to CIFAR-10/GNLeNet with 32 clients. Jointly tune learning rate, H, active-client count and token topology using 40 TPE configurations, 12 startup configurations, sampler seed 20261104, paired tuning seeds 100/101/102 and full 900-second budgets on Dirichlet alpha 0.1 / homogeneous hardware. Use two configurations per batch and three workers per GPU. Freeze all four winning parameters and one shared validation-selected checkpoint for evaluation seeds 110/111/112 in every data/hardware setting. Preserve all previous campaign artifacts."
+      ]
+    },
+    {
+      "id": "conflux-v2",
+      "label": "Conflux V2",
+      "config": "methodology/conflux-v2-tpe-dirichlet01-h20.json",
+      "tuning_setting": "dirichlet01-uniform",
+      "description": "A changing sample of clients trains from a common model. Bandwidth-aware reducers average separate model chunks and deliver the common result to the next training sample, overlapping uploads with training.",
+      "steps": [
+        "Choose a seeded uniform sample of clients and perform H local SGD steps from the common input model.",
+        "Upload each model chunk once to its capacity-weighted reducer as soon as local training finishes.",
+        "Each reducer waits for the full common contributor set and averages its chunk in a fixed order.",
+        "Deliver every reduced chunk to each next-sample recipient; reconstruct and publish the common model before training again."
+      ],
+      "paper": null,
+      "author_code": null,
+      "author_code_note": "In-repository research protocol; no separate peer-reviewed publication or external authors’ implementation is claimed.",
+      "implementation_note": "Ported from origin/conflux-v2 (99ee912), with the deterministic sample/layout cache from 3723378. Uses the existing task-reference, compute-serialization and charged transport APIs on main. This campaign uses full sample participation and immediate uploads; it does not include the separate FedOpt experiments.",
+      "implementation_files": [
+        "dasklearn/simulation/conflux_v2/client.py",
+        "dasklearn/simulation/conflux_v2/simulation.py",
+        "dasklearn/simulation/conflux_v2/settings.py"
+      ],
+      "parameter_notes": [
+        {
+          "parameter": "Learning rate / local steps H",
+          "value": "Log-uniform [0.001, 1] / {1, 5, 10, 15, 20}",
+          "role": "Joint validation-only TPE search, using the same allocated configurations and paired seeds as the other campaigns."
+        },
+        {
+          "parameter": "Active clients",
+          "value": "{2, 4, 8, 16, 32}",
+          "role": "Jointly tuned seeded sample without replacement from 32 physical clients."
+        },
+        {
+          "parameter": "Chunks / reducer cap",
+          "value": "{1, 2, 4, 8, 16, 32} each",
+          "role": "Jointly tuned independently. Capacity-weighted greedy placement; the reducer cap can exceed the number of actually used owners."
+        },
+        {
+          "parameter": "Success fraction / immediate uploads",
+          "value": "1 / enabled",
+          "role": "All selected clients contribute. Uploads overlap remaining training; no readiness/plan exchange is required."
+        },
+        {
+          "parameter": "Readout",
+          "value": "Uniform average of all physical clients’ latest published models",
+          "role": "Matches the leaderboard, including inactive retained checkpoints; differs from the latest sample aggregate."
+        }
+      ],
+      "limitations": [
+        "Forty configurations are a finite five-parameter search, not an exhaustive search or a guarantee of an optimum.",
+        "Stable membership and public static bandwidth capacities are required; coordinator/reducer failure recovery and membership changes are not implemented.",
+        "Chunking, reconstruction and reduction use zero simulated compute time, consistent with existing simulator conventions; network capacities are declared abstractions.",
+        "Reducers can also be trainers and share endpoint bandwidth. Sampling and reducer placement are deterministic public planning operations without discovery cost.",
+        "The offline readout averages all physical clients, including inactive retained checkpoints. Collection and evaluation costs are excluded.",
+        "Hyperparameters are tuned on one data/hardware setting and transferred unchanged to three others.",
+        "Earlier CIFAR-10 test curves have been inspected, so these evaluations remain exploratory. No earlier tuning scores or winners are imported."
+      ],
+      "protocol_amendments": [
+        "9 November 2026: independently tune Conflux V2 on CIFAR-10/GNLeNet with 32 clients. Jointly search LR, H, active-client count, chunks and reducer cap with 40 TPE configurations, 12 startup configurations, sampler seed 20261104, batches of two and three workers per GPU. Use full 900-second validation runs on seeds 100/101/102 and non-IID alpha 0.1 / homogeneous hardware. Freeze every selected parameter and one shared validation checkpoint before test evaluation on seeds 110/111/112 across all four settings."
       ]
     }
   ]

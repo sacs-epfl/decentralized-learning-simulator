@@ -175,6 +175,11 @@ settings. Algorithm names now open pages with explanations, paper links, paramet
 tables and live tuning evidence. The previous catalog is preserved as
 `experiments/leaderboard-legacy-settings.json`.
 
+The active CIFAR-10 campaign includes [original Conflux V2](docs/conflux-v2.md).
+Its validation-only TPE search jointly tunes LR, local steps, active clients,
+chunks and reducer cap, then freezes the winner for all four evaluation settings.
+Run `python scripts/run_methodology.py --algorithm conflux-v2` (`--plan` previews it).
+
 The active CIFAR-10 campaign also includes [Teleportation](docs/leaderboard.md#teleportation-jointly-tuned-active-clients-and-token-topology).
 It jointly tunes learning rate, local steps, active-client count and token topology,
 then freezes the winner for all four evaluation settings:

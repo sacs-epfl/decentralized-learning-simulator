@@ -316,6 +316,20 @@ def algorithm_document(entry, registry, setting):
                             ('DCT block size', 'demo_chunk'), ('Coefficients per block', 'demo_topk')]:
             value = chosen.options[name] if chosen else 'Joint search: ' + json.dumps(space.get(name, options[name]))
             parameters.append((label, value))
+    elif options['algorithm'] == 'conflux-v2':
+        parameters[1] = ('Total clients', options['peers'])
+        space = spec.get('search_spaces', {}).get(benchmark.runs[0].variant, {})
+        for label, name in [('Active clients', 'sample_size'), ('Model chunks', 'chunks_in_sample'),
+                            ('Reducer cap', 'relay_count')]:
+            value = chosen.options[name] if chosen else 'Joint search: ' + json.dumps(space.get(name, options[name]))
+            parameters.append((label, value))
+        parameters.extend([
+            ('Contributor fraction / immediate uploads', f"{options['success_fraction']} / {options['immediate_uploads']}"),
+            ('Reducer placement', 'Capacity-weighted greedy placement among the highest-bandwidth eligible peers; equal-capacity roles rotate'),
+            ('Update rule', 'Uniform contributor average per chunk; no reducer momentum or Adam'),
+        ])
+        parameters = [(key, 'Uniform parameter average of all clients’ latest published models, including inactive clients’ retained models; offline diagnostic'
+                       if key == 'Readout' else value) for key, value in parameters]
     elif options['algorithm'] == 'teleportation':
         parameters[1] = ('Total clients', options['peers'])
         space = spec.get('search_spaces', {}).get(benchmark.runs[0].variant, {})

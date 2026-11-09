@@ -32,7 +32,7 @@ def test_cifar100_campaign_keeps_search_protocol_and_changes_workload_capacities
     assert len(graph_plan(benchmark)) == 6
     default, workloads = load_workloads(ROOT / 'experiments/leaderboard-workloads.json')
     assert default == 'cifar10-gnlenet' and len(workloads) == 2
-    assert len(workloads['cifar10-gnlenet']['algorithms']['algorithms']) == 5
+    assert len(workloads['cifar10-gnlenet']['algorithms']['algorithms']) == 6
     assert len(workloads['cifar100-resnet18-gn']['algorithms']['algorithms']) == 1
 
 
@@ -80,7 +80,7 @@ def served_workloads(tmp_path):
 
 
 def test_workload_routes_do_not_mix_algorithms_or_data(served_workloads):
-    for index, dataset, count in [(0, 'cifar10', 5), (1, 'cifar100', 1)]:
+    for index, dataset, count in [(0, 'cifar10', 6), (1, 'cifar100', 1)]:
         suffix = f'?workload=workload-{index}'
         with urlopen(served_workloads + '/settings.json' + suffix) as response:
             settings = json.load(response)

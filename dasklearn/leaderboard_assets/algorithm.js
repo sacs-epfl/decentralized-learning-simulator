@@ -81,11 +81,11 @@ function render(data) {
   document.title=`${data.label} · Methodology`;
   $("title").textContent=data.label;$("description").textContent=data.description;
   $("status").textContent=`${data.phase} · ${data.status}`;
-  $("paper-links").replaceChildren(link("Read paper ↗",data.paper.url));
+  $("paper-links").replaceChildren(...(data.paper ? [link("Read paper ↗",data.paper.url)] : []));
   if(data.author_code) $("paper-links").append(link("Authors’ code ↗",data.author_code.url));
-  else {const button=document.createElement("button");button.textContent="Authors’ code · unverified";button.disabled=true;$("paper-links").append(button);}
+  else if(data.paper) {const button=document.createElement("button");button.textContent="Authors’ code · unverified";button.disabled=true;$("paper-links").append(button);}
   if(data.supplement)$("paper-links").append(link("Authors’ supplement ↗",data.supplement.url));
-  $("citation").textContent=`${data.paper.title} — ${data.paper.authors}. ${data.paper.venue}.`;
+  $("citation").textContent=data.paper ? `${data.paper.title} — ${data.paper.authors}. ${data.paper.venue}.` : "In-repository research protocol; no separate publication is claimed.";
   $("code-note").textContent=data.author_code_note ?? "";
   list("steps",data.steps);
   $("implementation-note").textContent=data.implementation_note;
@@ -95,8 +95,9 @@ function render(data) {
   const search=data.tuning;
   const demo=data.id === "demo";
   const teleportation=data.id === "teleportation";
-  $("parameter-notes-title").textContent=demo || teleportation ? "Algorithm parameters and search ranges" : "Fixed algorithm parameters";
-  $("search-title").textContent=demo ? "Joint learning-rate, accumulation and compression search" : teleportation ? "Joint learning-rate, local-step, active-client and topology search" : "Joint learning-rate and local-step search";
+  const conflux=data.id === "conflux-v2";
+  $("parameter-notes-title").textContent=demo || teleportation || conflux ? "Algorithm parameters and search ranges" : "Fixed algorithm parameters";
+  $("search-title").textContent=demo ? "Joint learning-rate, accumulation and compression search" : teleportation ? "Joint learning-rate, local-step, active-client and topology search" : conflux ? "Joint learning-rate, local-step, active-client, chunk and reducer search" : "Joint learning-rate and local-step search";
   const tuningData=search.partitioner === 'dirichlet' ? `non-IID data (Dirichlet α = ${search.alpha})` : 'IID data';
   $("tuning-setting-note").textContent=`Tuning uses ${tuningData} and ${search.hardware_profile === 'heterogeneous' ? 'heterogeneous' : 'homogeneous'} hardware. The displayed setting describes the subsequent evaluation; it does not start a separate search.`;
   renderOptuna(search);
@@ -113,7 +114,7 @@ function render(data) {
   }
   $("boundary-note").hidden=!search.boundary_winner;
   const head=document.createElement("tr");
-  const extraParameters=demo ? [["demo_decay","Residual decay"],["demo_chunk","DCT block size"],["demo_topk","Coefficients / block"]] : teleportation ? [["sample_size","Active clients"],["teleportation_topology","Topology"]] : [];
+  const extraParameters=demo ? [["demo_decay","Residual decay"],["demo_chunk","DCT block size"],["demo_topk","Coefficients / block"]] : teleportation ? [["sample_size","Active clients"],["teleportation_topology","Topology"]] : conflux ? [["sample_size","Active clients"],["chunks_in_sample","Chunks"],["relay_count","Reducer cap"]] : [];
   for(const label of [...(adaptive ? ["Candidate"] : []),demo ? "Accumulation H" : "Local steps H","Learning rate",...extraParameters.map(item=>item[1]),"Checkpoint s","Accuracy % ± SD","Loss ± SD","Seeds","Wall time / seed","Status"]){const th=document.createElement("th");th.scope="col";th.textContent=label;head.append(th);}
   $("search-head").replaceChildren(head);
   $("search-rows").replaceChildren(...search.groups.map(row=>{
