@@ -432,6 +432,30 @@ python scripts/run_methodology.py --algorithm conflux-v2 --plan
 python scripts/run_methodology.py --algorithm conflux-v2
 ```
 
+The completed 9 November 2026 campaign selected **LR=0.051598546094309986,
+H=15, two active clients, 32 chunks and a reducer cap of eight**, with the shared
+validation checkpoint at 900 seconds. All 120 validation runs and 12 held-out
+runs completed successfully, using clean source commit `69437c0` with identical
+source hashes across all batches and evaluation settings.
+
+Test accuracy at 900 seconds, mean ± sample standard deviation across seeds
+110/111/112, is:
+
+| Data / hardware | Conflux V2 accuracy | Rank among six algorithms |
+| --- | ---: | ---: |
+| IID / homogeneous | 76.80 ± 0.21% | 2 |
+| IID / heterogeneous | 77.55 ± 0.42% | 1 |
+| Non-IID / homogeneous | 70.85 ± 1.10% | 1 |
+| Non-IID / heterogeneous | 66.66 ± 1.09% | 1 |
+
+The [compact audited result](../experiments/methodology/results/conflux-v2-cifar10-gnlenet-20261109.json)
+retains the declaration, all candidate mean validation curves, selected parameters,
+per-seed test curves, four comparisons and source/package provenance. Raw run
+artifacts and validation logs remain in the campaign output and launch directories.
+The CPU regression rerun passed 1,085 tests with 25 CUDA checks skipped; the earlier
+GPU run passed those checks, and its sole generic-registry expectation failure was
+fixed and verified by the 62-test focused rerun.
+
 ### Teleportation: jointly tuned active clients and token topology
 
 The independent CIFAR-10/GNLeNet campaign is declared in

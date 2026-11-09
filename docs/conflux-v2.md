@@ -49,3 +49,9 @@ See [the campaign declaration](../experiments/methodology/conflux-v2-tpe-dirichl
 and [leaderboard methodology](leaderboard.md#conflux-v2-jointly-tuned-sample-and-reducer-layout).
 Numerical checks cover common averages, partial-contributor consistency, upload
 overlap, byte conservation, serialized training and cached execution equivalence.
+
+The completed campaign selected LR `0.051598546094309986`, H=15, two trainers,
+32 chunks and a reducer cap of eight. All four held-out settings reuse these
+values and the validation-selected 900-second checkpoint. See the
+[audited results](../experiments/methodology/results/conflux-v2-cifar10-gnlenet-20261109.json)
+for the complete search, per-seed test curves and source provenance.

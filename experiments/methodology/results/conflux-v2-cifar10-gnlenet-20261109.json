@@ -1,0 +1,5551 @@
+{
+  "version": 1,
+  "algorithm": "conflux-v2",
+  "variant": "Original averaging protocol; full participation and immediate uploads",
+  "dataset": "cifar10",
+  "model": "gnlenet",
+  "peers": 32,
+  "output": "output/leaderboard-v2/conflux-v2-tpe-dirichlet01-h20",
+  "config": "experiments/methodology/conflux-v2-tpe-dirichlet01-h20.json",
+  "config_sha256": "e3dba186c18b5ca870441b133908ef7d19c76ccb6d03f9aed48ef81ac5e56b8c",
+  "protocol": {
+    "version": 1,
+    "name": "cifar10-32-conflux-v2-tpe-dirichlet01-h20-v1",
+    "output": "../../output/leaderboard-v2/conflux-v2-tpe-dirichlet01-h20",
+    "benchmark": {
+      "budgets": [
+        60,
+        300,
+        900
+      ],
+      "seeds": [
+        110,
+        111,
+        112
+      ],
+      "evaluation_period": 60,
+      "evaluation_model": "global",
+      "execution_devices": [
+        "cuda:0",
+        "cuda:1",
+        "cuda:0",
+        "cuda:1",
+        "cuda:0",
+        "cuda:1"
+      ],
+      "accuracy_targets": [
+        30,
+        40,
+        50,
+        60,
+        70,
+        80
+      ],
+      "network": {
+        "profile": "uniform",
+        "bandwidth_bytes_per_second": 1000000,
+        "compute_step_ms": 20
+      }
+    },
+    "settings": {
+      "dataset": "cifar10",
+      "dataset_base_path": "../../data/cifar10",
+      "model": "gnlenet",
+      "device": "cuda:0",
+      "peers": 32,
+      "partitioner": "dirichlet",
+      "validation_set_fraction": 0.1,
+      "evaluation_split": "test",
+      "evaluation_examples": 0,
+      "batch_size": 32,
+      "momentum": 0,
+      "weight_decay": 0,
+      "network_latency_ms": 10,
+      "torch_threads": 4,
+      "synchronous": false,
+      "alpha": 0.1
+    },
+    "runs": [
+      {
+        "name": "conflux-v2",
+        "settings": {
+          "algorithm": "conflux-v2",
+          "sample_size": 8,
+          "chunks_in_sample": 8,
+          "relay_count": 8,
+          "immediate_uploads": true,
+          "success_fraction": 1,
+          "local_steps": 1
+        }
+      }
+    ],
+    "tuning": {
+      "method": "tpe",
+      "budget": 900,
+      "seeds": [
+        100,
+        101,
+        102
+      ],
+      "evaluation_period": 60,
+      "evaluation_examples": 0,
+      "metric": "best_mean_accuracy",
+      "select_variant": true,
+      "n_trials": 40,
+      "n_startup_trials": 12,
+      "sampler_seed": 20261104,
+      "batch_size": 2,
+      "search_spaces": {
+        "conflux-v2": {
+          "local_steps": {
+            "type": "categorical",
+            "choices": [
+              1,
+              5,
+              10,
+              15,
+              20
+            ]
+          },
+          "learning_rate": {
+            "type": "float",
+            "low": 0.001,
+            "high": 1.0,
+            "log": true
+          },
+          "sample_size": {
+            "type": "categorical",
+            "choices": [
+              2,
+              4,
+              8,
+              16,
+              32
+            ]
+          },
+          "chunks_in_sample": {
+            "type": "categorical",
+            "choices": [
+              1,
+              2,
+              4,
+              8,
+              16,
+              32
+            ]
+          },
+          "relay_count": {
+            "type": "categorical",
+            "choices": [
+              1,
+              2,
+              4,
+              8,
+              16,
+              32
+            ]
+          }
+        }
+      }
+    }
+  },
+  "tuning_provenance": {
+    "commit": "69437c0bf813783f6b4c8a96eb5a370c3a6b26dd",
+    "dirty": false,
+    "source_sha256": "29ba25ed94e5ca2b1192da2521225f248ca115e77d15c3e4d186eb819065893b",
+    "python": "3.12.15",
+    "packages": {
+      "torch": "2.14.1+cu130",
+      "torchvision": "0.29.1+cu130",
+      "numpy": "2.5.4",
+      "datasets": "4.8.5",
+      "flwr-datasets": "0.6.1",
+      "transformers": "5.22.1",
+      "peft": "0.21.2",
+      "PyYAML": "6.0.3",
+      "optuna": "5.0.0"
+    }
+  },
+  "evaluation_provenances": {
+    "evaluation-iid-uniform": {
+      "commit": "69437c0bf813783f6b4c8a96eb5a370c3a6b26dd",
+      "dirty": false,
+      "source_sha256": "29ba25ed94e5ca2b1192da2521225f248ca115e77d15c3e4d186eb819065893b",
+      "python": "3.12.15",
+      "packages": {
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "numpy": "2.5.4",
+        "datasets": "4.8.5",
+        "flwr-datasets": "0.6.1",
+        "transformers": "5.22.1",
+        "peft": "0.21.2",
+        "PyYAML": "6.0.3",
+        "optuna": "5.0.0"
+      }
+    },
+    "evaluation-iid-heterogeneous": {
+      "commit": "69437c0bf813783f6b4c8a96eb5a370c3a6b26dd",
+      "dirty": false,
+      "source_sha256": "29ba25ed94e5ca2b1192da2521225f248ca115e77d15c3e4d186eb819065893b",
+      "python": "3.12.15",
+      "packages": {
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "numpy": "2.5.4",
+        "datasets": "4.8.5",
+        "flwr-datasets": "0.6.1",
+        "transformers": "5.22.1",
+        "peft": "0.21.2",
+        "PyYAML": "6.0.3",
+        "optuna": "5.0.0"
+      }
+    },
+    "evaluation": {
+      "commit": "69437c0bf813783f6b4c8a96eb5a370c3a6b26dd",
+      "dirty": false,
+      "source_sha256": "29ba25ed94e5ca2b1192da2521225f248ca115e77d15c3e4d186eb819065893b",
+      "python": "3.12.15",
+      "packages": {
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "numpy": "2.5.4",
+        "datasets": "4.8.5",
+        "flwr-datasets": "0.6.1",
+        "transformers": "5.22.1",
+        "peft": "0.21.2",
+        "PyYAML": "6.0.3",
+        "optuna": "5.0.0"
+      }
+    },
+    "evaluation-dirichlet01-heterogeneous": {
+      "commit": "69437c0bf813783f6b4c8a96eb5a370c3a6b26dd",
+      "dirty": false,
+      "source_sha256": "29ba25ed94e5ca2b1192da2521225f248ca115e77d15c3e4d186eb819065893b",
+      "python": "3.12.15",
+      "packages": {
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "numpy": "2.5.4",
+        "datasets": "4.8.5",
+        "flwr-datasets": "0.6.1",
+        "transformers": "5.22.1",
+        "peft": "0.21.2",
+        "PyYAML": "6.0.3",
+        "optuna": "5.0.0"
+      }
+    }
+  },
+  "selected_candidate": "tpe00030",
+  "selected_parameters": {
+    "local_steps": 15,
+    "learning_rate": 0.051598546094309986,
+    "sample_size": 2,
+    "chunks_in_sample": 32,
+    "relay_count": 8
+  },
+  "selected_time": 900,
+  "validation_mean_accuracy": 71.48666666666666,
+  "candidates": [
+    {
+      "id": "tpe00000",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 20,
+        "learning_rate": 0.011585838501689047,
+        "sample_size": 2,
+        "chunks_in_sample": 16,
+        "relay_count": 2
+      },
+      "mean_score": 69.45333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 42.32
+        },
+        {
+          "time": 120,
+          "accuracy": 49.61333333333334
+        },
+        {
+          "time": 180,
+          "accuracy": 54.766666666666666
+        },
+        {
+          "time": 240,
+          "accuracy": 58.33333333333333
+        },
+        {
+          "time": 300,
+          "accuracy": 60.32
+        },
+        {
+          "time": 360,
+          "accuracy": 62.193333333333335
+        },
+        {
+          "time": 420,
+          "accuracy": 63.553333333333335
+        },
+        {
+          "time": 480,
+          "accuracy": 65.29333333333334
+        },
+        {
+          "time": 540,
+          "accuracy": 66.55333333333333
+        },
+        {
+          "time": 600,
+          "accuracy": 66.79333333333334
+        },
+        {
+          "time": 660,
+          "accuracy": 67.53333333333333
+        },
+        {
+          "time": 720,
+          "accuracy": 67.98666666666666
+        },
+        {
+          "time": 780,
+          "accuracy": 68.68666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 68.66
+        },
+        {
+          "time": 900,
+          "accuracy": 69.45333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00001",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 1,
+        "learning_rate": 0.9004577682379823,
+        "sample_size": 32,
+        "chunks_in_sample": 8,
+        "relay_count": 8
+      },
+      "mean_score": 26.513333333333332,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 10.84
+        },
+        {
+          "time": 120,
+          "accuracy": 13.326666666666666
+        },
+        {
+          "time": 180,
+          "accuracy": 14.72
+        },
+        {
+          "time": 240,
+          "accuracy": 16.006666666666668
+        },
+        {
+          "time": 300,
+          "accuracy": 16.746666666666666
+        },
+        {
+          "time": 360,
+          "accuracy": 19.413333333333334
+        },
+        {
+          "time": 420,
+          "accuracy": 21.54
+        },
+        {
+          "time": 480,
+          "accuracy": 22.19333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 23.866666666666667
+        },
+        {
+          "time": 600,
+          "accuracy": 24.286666666666665
+        },
+        {
+          "time": 660,
+          "accuracy": 25.08
+        },
+        {
+          "time": 720,
+          "accuracy": 25.419999999999998
+        },
+        {
+          "time": 780,
+          "accuracy": 26.513333333333332
+        },
+        {
+          "time": 840,
+          "accuracy": 25.473333333333333
+        },
+        {
+          "time": 900,
+          "accuracy": 25.24666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00002",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 20,
+        "learning_rate": 0.2415732876847296,
+        "sample_size": 16,
+        "chunks_in_sample": 1,
+        "relay_count": 16
+      },
+      "mean_score": 58.54666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 22.786666666666665
+        },
+        {
+          "time": 120,
+          "accuracy": 30.226666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 36.2
+        },
+        {
+          "time": 240,
+          "accuracy": 39.74
+        },
+        {
+          "time": 300,
+          "accuracy": 43.83333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 47.413333333333334
+        },
+        {
+          "time": 420,
+          "accuracy": 47.54666666666667
+        },
+        {
+          "time": 480,
+          "accuracy": 50.873333333333335
+        },
+        {
+          "time": 540,
+          "accuracy": 51.82
+        },
+        {
+          "time": 600,
+          "accuracy": 53.39333333333333
+        },
+        {
+          "time": 660,
+          "accuracy": 54.42666666666667
+        },
+        {
+          "time": 720,
+          "accuracy": 55.64666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 56.63333333333333
+        },
+        {
+          "time": 840,
+          "accuracy": 58.026666666666664
+        },
+        {
+          "time": 900,
+          "accuracy": 58.54666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00003",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 5,
+        "learning_rate": 0.03975697512269939,
+        "sample_size": 16,
+        "chunks_in_sample": 16,
+        "relay_count": 8
+      },
+      "mean_score": 65.11333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 31.466666666666665
+        },
+        {
+          "time": 120,
+          "accuracy": 39.379999999999995
+        },
+        {
+          "time": 180,
+          "accuracy": 45.766666666666666
+        },
+        {
+          "time": 240,
+          "accuracy": 47.71333333333333
+        },
+        {
+          "time": 300,
+          "accuracy": 51.86666666666667
+        },
+        {
+          "time": 360,
+          "accuracy": 53.63333333333333
+        },
+        {
+          "time": 420,
+          "accuracy": 55.72
+        },
+        {
+          "time": 480,
+          "accuracy": 57.84
+        },
+        {
+          "time": 540,
+          "accuracy": 58.82
+        },
+        {
+          "time": 600,
+          "accuracy": 59.906666666666666
+        },
+        {
+          "time": 660,
+          "accuracy": 61.13333333333333
+        },
+        {
+          "time": 720,
+          "accuracy": 62.49333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 63.54
+        },
+        {
+          "time": 840,
+          "accuracy": 63.56
+        },
+        {
+          "time": 900,
+          "accuracy": 65.11333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00004",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 20,
+        "learning_rate": 0.004235181432568093,
+        "sample_size": 4,
+        "chunks_in_sample": 32,
+        "relay_count": 16
+      },
+      "mean_score": 67.56,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 45.46666666666667
+        },
+        {
+          "time": 120,
+          "accuracy": 52.04
+        },
+        {
+          "time": 180,
+          "accuracy": 56.04
+        },
+        {
+          "time": 240,
+          "accuracy": 58.54
+        },
+        {
+          "time": 300,
+          "accuracy": 60.93333333333334
+        },
+        {
+          "time": 360,
+          "accuracy": 61.46
+        },
+        {
+          "time": 420,
+          "accuracy": 63.906666666666666
+        },
+        {
+          "time": 480,
+          "accuracy": 65.08666666666667
+        },
+        {
+          "time": 540,
+          "accuracy": 64.96666666666667
+        },
+        {
+          "time": 600,
+          "accuracy": 64.82666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 66.5
+        },
+        {
+          "time": 720,
+          "accuracy": 66.54666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 66.22
+        },
+        {
+          "time": 840,
+          "accuracy": 67.56
+        },
+        {
+          "time": 900,
+          "accuracy": 67.32
+        }
+      ]
+    },
+    {
+      "id": "tpe00005",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 10,
+        "learning_rate": 0.00865808808937675,
+        "sample_size": 16,
+        "chunks_in_sample": 16,
+        "relay_count": 32
+      },
+      "mean_score": 67.16666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 42.22666666666667
+        },
+        {
+          "time": 120,
+          "accuracy": 48.42
+        },
+        {
+          "time": 180,
+          "accuracy": 52.82666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 55.6
+        },
+        {
+          "time": 300,
+          "accuracy": 58.61333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 59.68
+        },
+        {
+          "time": 420,
+          "accuracy": 61.31333333333333
+        },
+        {
+          "time": 480,
+          "accuracy": 61.81333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 63.89333333333334
+        },
+        {
+          "time": 600,
+          "accuracy": 63.913333333333334
+        },
+        {
+          "time": 660,
+          "accuracy": 64.77333333333333
+        },
+        {
+          "time": 720,
+          "accuracy": 65.82666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 66.52
+        },
+        {
+          "time": 840,
+          "accuracy": 67.08666666666667
+        },
+        {
+          "time": 900,
+          "accuracy": 67.16666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00006",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.18837590713762467,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 4
+      },
+      "mean_score": 68.87333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 36.2
+        },
+        {
+          "time": 120,
+          "accuracy": 43.78666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 50.36
+        },
+        {
+          "time": 240,
+          "accuracy": 53.373333333333335
+        },
+        {
+          "time": 300,
+          "accuracy": 57.35333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 59.38
+        },
+        {
+          "time": 420,
+          "accuracy": 61.43333333333334
+        },
+        {
+          "time": 480,
+          "accuracy": 62.45333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 64.73333333333333
+        },
+        {
+          "time": 600,
+          "accuracy": 66.41333333333334
+        },
+        {
+          "time": 660,
+          "accuracy": 66.56
+        },
+        {
+          "time": 720,
+          "accuracy": 67.16666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 68.05333333333333
+        },
+        {
+          "time": 840,
+          "accuracy": 68.02
+        },
+        {
+          "time": 900,
+          "accuracy": 68.87333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00007",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 20,
+        "learning_rate": 0.05569799522199866,
+        "sample_size": 8,
+        "chunks_in_sample": 2,
+        "relay_count": 2
+      },
+      "mean_score": 67.81333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 37.24
+        },
+        {
+          "time": 120,
+          "accuracy": 46.08
+        },
+        {
+          "time": 180,
+          "accuracy": 50.39333333333333
+        },
+        {
+          "time": 240,
+          "accuracy": 53.906666666666666
+        },
+        {
+          "time": 300,
+          "accuracy": 56.18
+        },
+        {
+          "time": 360,
+          "accuracy": 58.339999999999996
+        },
+        {
+          "time": 420,
+          "accuracy": 60.913333333333334
+        },
+        {
+          "time": 480,
+          "accuracy": 61.9
+        },
+        {
+          "time": 540,
+          "accuracy": 62.873333333333335
+        },
+        {
+          "time": 600,
+          "accuracy": 64.65333333333334
+        },
+        {
+          "time": 660,
+          "accuracy": 65.32666666666667
+        },
+        {
+          "time": 720,
+          "accuracy": 66.58
+        },
+        {
+          "time": 780,
+          "accuracy": 66.39333333333333
+        },
+        {
+          "time": 840,
+          "accuracy": 67.10666666666667
+        },
+        {
+          "time": 900,
+          "accuracy": 67.81333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00008",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 1,
+        "learning_rate": 0.13264980255328618,
+        "sample_size": 2,
+        "chunks_in_sample": 8,
+        "relay_count": 16
+      },
+      "mean_score": 48.093333333333334,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 15.526666666666667
+        },
+        {
+          "time": 120,
+          "accuracy": 21.546666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 23.88
+        },
+        {
+          "time": 240,
+          "accuracy": 29.14
+        },
+        {
+          "time": 300,
+          "accuracy": 31.486666666666668
+        },
+        {
+          "time": 360,
+          "accuracy": 34.84
+        },
+        {
+          "time": 420,
+          "accuracy": 36.526666666666664
+        },
+        {
+          "time": 480,
+          "accuracy": 39.28
+        },
+        {
+          "time": 540,
+          "accuracy": 38.233333333333334
+        },
+        {
+          "time": 600,
+          "accuracy": 40.96666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 42.82666666666667
+        },
+        {
+          "time": 720,
+          "accuracy": 44.93333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 46.27333333333333
+        },
+        {
+          "time": 840,
+          "accuracy": 47.04666666666667
+        },
+        {
+          "time": 900,
+          "accuracy": 48.093333333333334
+        }
+      ]
+    },
+    {
+      "id": "tpe00009",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 1,
+        "learning_rate": 0.010243395064333208,
+        "sample_size": 32,
+        "chunks_in_sample": 4,
+        "relay_count": 32
+      },
+      "mean_score": 45.46666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 24.58
+        },
+        {
+          "time": 120,
+          "accuracy": 29.406666666666666
+        },
+        {
+          "time": 180,
+          "accuracy": 32.94
+        },
+        {
+          "time": 240,
+          "accuracy": 34.62
+        },
+        {
+          "time": 300,
+          "accuracy": 36.72
+        },
+        {
+          "time": 360,
+          "accuracy": 37.28666666666667
+        },
+        {
+          "time": 420,
+          "accuracy": 36.906666666666666
+        },
+        {
+          "time": 480,
+          "accuracy": 39.6
+        },
+        {
+          "time": 540,
+          "accuracy": 38.58
+        },
+        {
+          "time": 600,
+          "accuracy": 40.446666666666665
+        },
+        {
+          "time": 660,
+          "accuracy": 42.86
+        },
+        {
+          "time": 720,
+          "accuracy": 42.45333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 44.88
+        },
+        {
+          "time": 840,
+          "accuracy": 41.52
+        },
+        {
+          "time": 900,
+          "accuracy": 45.46666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00010",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.058849248618161584,
+        "sample_size": 2,
+        "chunks_in_sample": 4,
+        "relay_count": 16
+      },
+      "mean_score": 69.94666666666666,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 35.480000000000004
+        },
+        {
+          "time": 120,
+          "accuracy": 44.28
+        },
+        {
+          "time": 180,
+          "accuracy": 50.733333333333334
+        },
+        {
+          "time": 240,
+          "accuracy": 55.77333333333333
+        },
+        {
+          "time": 300,
+          "accuracy": 58.13333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 62.07333333333334
+        },
+        {
+          "time": 420,
+          "accuracy": 63.379999999999995
+        },
+        {
+          "time": 480,
+          "accuracy": 64.01333333333334
+        },
+        {
+          "time": 540,
+          "accuracy": 66.88666666666667
+        },
+        {
+          "time": 600,
+          "accuracy": 67.18666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 68.67999999999999
+        },
+        {
+          "time": 720,
+          "accuracy": 69.06
+        },
+        {
+          "time": 780,
+          "accuracy": 68.88
+        },
+        {
+          "time": 840,
+          "accuracy": 69.94666666666666
+        },
+        {
+          "time": 900,
+          "accuracy": 69.94
+        }
+      ]
+    },
+    {
+      "id": "tpe00011",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.005151740339164488,
+        "sample_size": 2,
+        "chunks_in_sample": 8,
+        "relay_count": 16
+      },
+      "mean_score": 67.12,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 42.20666666666667
+        },
+        {
+          "time": 120,
+          "accuracy": 47.559999999999995
+        },
+        {
+          "time": 180,
+          "accuracy": 53.49333333333333
+        },
+        {
+          "time": 240,
+          "accuracy": 55.906666666666666
+        },
+        {
+          "time": 300,
+          "accuracy": 57.46
+        },
+        {
+          "time": 360,
+          "accuracy": 60.019999999999996
+        },
+        {
+          "time": 420,
+          "accuracy": 60.70666666666666
+        },
+        {
+          "time": 480,
+          "accuracy": 63.12
+        },
+        {
+          "time": 540,
+          "accuracy": 63.906666666666666
+        },
+        {
+          "time": 600,
+          "accuracy": 64.96666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 66.21333333333334
+        },
+        {
+          "time": 720,
+          "accuracy": 66.44666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 66.74666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 67.12
+        },
+        {
+          "time": 900,
+          "accuracy": 66.76
+        }
+      ]
+    },
+    {
+      "id": "tpe00012",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.055571577883348156,
+        "sample_size": 2,
+        "chunks_in_sample": 4,
+        "relay_count": 16
+      },
+      "mean_score": 70.32000000000001,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 35.89333333333334
+        },
+        {
+          "time": 120,
+          "accuracy": 44.46666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 50.446666666666665
+        },
+        {
+          "time": 240,
+          "accuracy": 55.64666666666667
+        },
+        {
+          "time": 300,
+          "accuracy": 57.94
+        },
+        {
+          "time": 360,
+          "accuracy": 61.88666666666666
+        },
+        {
+          "time": 420,
+          "accuracy": 62.86
+        },
+        {
+          "time": 480,
+          "accuracy": 63.67333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 66.58
+        },
+        {
+          "time": 600,
+          "accuracy": 67.22666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 68.64
+        },
+        {
+          "time": 720,
+          "accuracy": 68.82000000000001
+        },
+        {
+          "time": 780,
+          "accuracy": 68.65333333333334
+        },
+        {
+          "time": 840,
+          "accuracy": 70.13333333333334
+        },
+        {
+          "time": 900,
+          "accuracy": 70.32000000000001
+        }
+      ]
+    },
+    {
+      "id": "tpe00013",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 20,
+        "learning_rate": 0.001366260515205075,
+        "sample_size": 8,
+        "chunks_in_sample": 16,
+        "relay_count": 4
+      },
+      "mean_score": 60.0,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 33.913333333333334
+        },
+        {
+          "time": 120,
+          "accuracy": 40.446666666666665
+        },
+        {
+          "time": 180,
+          "accuracy": 45.42
+        },
+        {
+          "time": 240,
+          "accuracy": 47.839999999999996
+        },
+        {
+          "time": 300,
+          "accuracy": 48.86
+        },
+        {
+          "time": 360,
+          "accuracy": 50.660000000000004
+        },
+        {
+          "time": 420,
+          "accuracy": 52.38
+        },
+        {
+          "time": 480,
+          "accuracy": 53.559999999999995
+        },
+        {
+          "time": 540,
+          "accuracy": 54.88666666666667
+        },
+        {
+          "time": 600,
+          "accuracy": 54.96
+        },
+        {
+          "time": 660,
+          "accuracy": 57.28
+        },
+        {
+          "time": 720,
+          "accuracy": 58.07333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 58.53333333333333
+        },
+        {
+          "time": 840,
+          "accuracy": 58.67333333333333
+        },
+        {
+          "time": 900,
+          "accuracy": 60.0
+        }
+      ]
+    },
+    {
+      "id": "tpe00014",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.0211048095481442,
+        "sample_size": 2,
+        "chunks_in_sample": 4,
+        "relay_count": 32
+      },
+      "mean_score": 69.57333333333334,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 38.68
+        },
+        {
+          "time": 120,
+          "accuracy": 46.306666666666665
+        },
+        {
+          "time": 180,
+          "accuracy": 51.77333333333333
+        },
+        {
+          "time": 240,
+          "accuracy": 57.026666666666664
+        },
+        {
+          "time": 300,
+          "accuracy": 59.04666666666667
+        },
+        {
+          "time": 360,
+          "accuracy": 62.38
+        },
+        {
+          "time": 420,
+          "accuracy": 63.22666666666667
+        },
+        {
+          "time": 480,
+          "accuracy": 63.693333333333335
+        },
+        {
+          "time": 540,
+          "accuracy": 66.18
+        },
+        {
+          "time": 600,
+          "accuracy": 66.86666666666666
+        },
+        {
+          "time": 660,
+          "accuracy": 67.70666666666666
+        },
+        {
+          "time": 720,
+          "accuracy": 68.24666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 68.66666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 69.18
+        },
+        {
+          "time": 900,
+          "accuracy": 69.57333333333334
+        }
+      ]
+    },
+    {
+      "id": "tpe00015",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.05096662433897362,
+        "sample_size": 2,
+        "chunks_in_sample": 2,
+        "relay_count": 16
+      },
+      "mean_score": 69.44,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 36.34666666666667
+        },
+        {
+          "time": 120,
+          "accuracy": 45.63333333333333
+        },
+        {
+          "time": 180,
+          "accuracy": 49.14666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 55.53333333333333
+        },
+        {
+          "time": 300,
+          "accuracy": 56.85333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 58.85333333333333
+        },
+        {
+          "time": 420,
+          "accuracy": 61.74
+        },
+        {
+          "time": 480,
+          "accuracy": 62.98
+        },
+        {
+          "time": 540,
+          "accuracy": 65.07333333333334
+        },
+        {
+          "time": 600,
+          "accuracy": 66.74
+        },
+        {
+          "time": 660,
+          "accuracy": 66.84
+        },
+        {
+          "time": 720,
+          "accuracy": 68.28
+        },
+        {
+          "time": 780,
+          "accuracy": 69.07333333333334
+        },
+        {
+          "time": 840,
+          "accuracy": 69.44
+        },
+        {
+          "time": 900,
+          "accuracy": 68.88666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00016",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 5,
+        "learning_rate": 0.03942436259246157,
+        "sample_size": 2,
+        "chunks_in_sample": 4,
+        "relay_count": 16
+      },
+      "mean_score": 65.66666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 30.69333333333333
+        },
+        {
+          "time": 120,
+          "accuracy": 37.74666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 44.00666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 46.35333333333333
+        },
+        {
+          "time": 300,
+          "accuracy": 50.553333333333335
+        },
+        {
+          "time": 360,
+          "accuracy": 52.3
+        },
+        {
+          "time": 420,
+          "accuracy": 55.60666666666666
+        },
+        {
+          "time": 480,
+          "accuracy": 56.913333333333334
+        },
+        {
+          "time": 540,
+          "accuracy": 59.07333333333333
+        },
+        {
+          "time": 600,
+          "accuracy": 60.86666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 61.593333333333334
+        },
+        {
+          "time": 720,
+          "accuracy": 62.86666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 63.11333333333333
+        },
+        {
+          "time": 840,
+          "accuracy": 64.52666666666667
+        },
+        {
+          "time": 900,
+          "accuracy": 65.66666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00017",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.07267180005362833,
+        "sample_size": 32,
+        "chunks_in_sample": 4,
+        "relay_count": 16
+      },
+      "mean_score": 63.74666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 30.333333333333336
+        },
+        {
+          "time": 120,
+          "accuracy": 38.46666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 43.38666666666666
+        },
+        {
+          "time": 240,
+          "accuracy": 46.906666666666666
+        },
+        {
+          "time": 300,
+          "accuracy": 49.99333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 52.46666666666667
+        },
+        {
+          "time": 420,
+          "accuracy": 54.46666666666667
+        },
+        {
+          "time": 480,
+          "accuracy": 56.026666666666664
+        },
+        {
+          "time": 540,
+          "accuracy": 57.513333333333335
+        },
+        {
+          "time": 600,
+          "accuracy": 59.160000000000004
+        },
+        {
+          "time": 660,
+          "accuracy": 60.38666666666667
+        },
+        {
+          "time": 720,
+          "accuracy": 61.24
+        },
+        {
+          "time": 780,
+          "accuracy": 62.166666666666664
+        },
+        {
+          "time": 840,
+          "accuracy": 62.946666666666665
+        },
+        {
+          "time": 900,
+          "accuracy": 63.74666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00018",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 10,
+        "learning_rate": 0.12839348676559367,
+        "sample_size": 2,
+        "chunks_in_sample": 16,
+        "relay_count": 2
+      },
+      "mean_score": 67.72,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 32.27333333333333
+        },
+        {
+          "time": 120,
+          "accuracy": 39.58
+        },
+        {
+          "time": 180,
+          "accuracy": 46.839999999999996
+        },
+        {
+          "time": 240,
+          "accuracy": 50.3
+        },
+        {
+          "time": 300,
+          "accuracy": 55.07333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 56.193333333333335
+        },
+        {
+          "time": 420,
+          "accuracy": 59.68666666666667
+        },
+        {
+          "time": 480,
+          "accuracy": 61.300000000000004
+        },
+        {
+          "time": 540,
+          "accuracy": 62.58
+        },
+        {
+          "time": 600,
+          "accuracy": 64.05333333333333
+        },
+        {
+          "time": 660,
+          "accuracy": 64.55333333333333
+        },
+        {
+          "time": 720,
+          "accuracy": 66.18666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 67.72
+        },
+        {
+          "time": 840,
+          "accuracy": 67.54666666666667
+        },
+        {
+          "time": 900,
+          "accuracy": 67.57333333333334
+        }
+      ]
+    },
+    {
+      "id": "tpe00019",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 20,
+        "learning_rate": 0.3267675607040056,
+        "sample_size": 4,
+        "chunks_in_sample": 4,
+        "relay_count": 2
+      },
+      "mean_score": 61.31333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 25.073333333333334
+        },
+        {
+          "time": 120,
+          "accuracy": 34.22666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 40.39333333333333
+        },
+        {
+          "time": 240,
+          "accuracy": 45.626666666666665
+        },
+        {
+          "time": 300,
+          "accuracy": 47.54
+        },
+        {
+          "time": 360,
+          "accuracy": 49.96666666666667
+        },
+        {
+          "time": 420,
+          "accuracy": 52.79333333333334
+        },
+        {
+          "time": 480,
+          "accuracy": 52.53333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 55.553333333333335
+        },
+        {
+          "time": 600,
+          "accuracy": 57.18
+        },
+        {
+          "time": 660,
+          "accuracy": 57.47333333333333
+        },
+        {
+          "time": 720,
+          "accuracy": 58.46
+        },
+        {
+          "time": 780,
+          "accuracy": 59.519999999999996
+        },
+        {
+          "time": 840,
+          "accuracy": 60.78666666666667
+        },
+        {
+          "time": 900,
+          "accuracy": 61.31333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00020",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 5,
+        "learning_rate": 0.8186720505984312,
+        "sample_size": 32,
+        "chunks_in_sample": 4,
+        "relay_count": 16
+      },
+      "mean_score": 13.653333333333334,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 12.433333333333334
+        },
+        {
+          "time": 120,
+          "accuracy": 12.7
+        },
+        {
+          "time": 180,
+          "accuracy": 11.226666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 11.22
+        },
+        {
+          "time": 300,
+          "accuracy": 12.02
+        },
+        {
+          "time": 360,
+          "accuracy": 13.04
+        },
+        {
+          "time": 420,
+          "accuracy": 12.386666666666667
+        },
+        {
+          "time": 480,
+          "accuracy": 12.773333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 11.926666666666666
+        },
+        {
+          "time": 600,
+          "accuracy": 13.653333333333334
+        },
+        {
+          "time": 660,
+          "accuracy": 12.766666666666667
+        },
+        {
+          "time": 720,
+          "accuracy": 13.206666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 12.906666666666666
+        },
+        {
+          "time": 840,
+          "accuracy": 12.833333333333334
+        },
+        {
+          "time": 900,
+          "accuracy": 12.293333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00021",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.3711734487327135,
+        "sample_size": 2,
+        "chunks_in_sample": 2,
+        "relay_count": 16
+      },
+      "mean_score": 59.20666666666666,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 22.4
+        },
+        {
+          "time": 120,
+          "accuracy": 33.32666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 35.94
+        },
+        {
+          "time": 240,
+          "accuracy": 42.64666666666667
+        },
+        {
+          "time": 300,
+          "accuracy": 44.35333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 46.28
+        },
+        {
+          "time": 420,
+          "accuracy": 50.12
+        },
+        {
+          "time": 480,
+          "accuracy": 51.07333333333334
+        },
+        {
+          "time": 540,
+          "accuracy": 54.059999999999995
+        },
+        {
+          "time": 600,
+          "accuracy": 55.65333333333333
+        },
+        {
+          "time": 660,
+          "accuracy": 55.74
+        },
+        {
+          "time": 720,
+          "accuracy": 57.18666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 58.82666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 58.35333333333333
+        },
+        {
+          "time": 900,
+          "accuracy": 59.20666666666666
+        }
+      ]
+    },
+    {
+      "id": "tpe00022",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.015623855232749395,
+        "sample_size": 2,
+        "chunks_in_sample": 16,
+        "relay_count": 32
+      },
+      "mean_score": 70.30666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 43.20666666666666
+        },
+        {
+          "time": 120,
+          "accuracy": 50.473333333333336
+        },
+        {
+          "time": 180,
+          "accuracy": 56.12
+        },
+        {
+          "time": 240,
+          "accuracy": 59.093333333333334
+        },
+        {
+          "time": 300,
+          "accuracy": 62.2
+        },
+        {
+          "time": 360,
+          "accuracy": 63.86666666666667
+        },
+        {
+          "time": 420,
+          "accuracy": 64.88666666666666
+        },
+        {
+          "time": 480,
+          "accuracy": 65.61333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 67.28666666666668
+        },
+        {
+          "time": 600,
+          "accuracy": 67.81333333333333
+        },
+        {
+          "time": 660,
+          "accuracy": 68.5
+        },
+        {
+          "time": 720,
+          "accuracy": 69.12666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 69.16
+        },
+        {
+          "time": 840,
+          "accuracy": 68.91333333333334
+        },
+        {
+          "time": 900,
+          "accuracy": 70.30666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00023",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.018472798149861722,
+        "sample_size": 16,
+        "chunks_in_sample": 4,
+        "relay_count": 1
+      },
+      "mean_score": 51.153333333333336,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 21.006666666666668
+        },
+        {
+          "time": 120,
+          "accuracy": 26.98
+        },
+        {
+          "time": 180,
+          "accuracy": 32.78666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 36.54
+        },
+        {
+          "time": 300,
+          "accuracy": 38.053333333333335
+        },
+        {
+          "time": 360,
+          "accuracy": 39.11333333333333
+        },
+        {
+          "time": 420,
+          "accuracy": 41.88666666666666
+        },
+        {
+          "time": 480,
+          "accuracy": 44.12
+        },
+        {
+          "time": 540,
+          "accuracy": 46.96
+        },
+        {
+          "time": 600,
+          "accuracy": 46.08
+        },
+        {
+          "time": 660,
+          "accuracy": 46.666666666666664
+        },
+        {
+          "time": 720,
+          "accuracy": 49.63333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 49.06666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 49.94
+        },
+        {
+          "time": 900,
+          "accuracy": 51.153333333333336
+        }
+      ]
+    },
+    {
+      "id": "tpe00024",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.020991499693062066,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 16
+      },
+      "mean_score": 70.73333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 42.913333333333334
+        },
+        {
+          "time": 120,
+          "accuracy": 50.85333333333333
+        },
+        {
+          "time": 180,
+          "accuracy": 55.9
+        },
+        {
+          "time": 240,
+          "accuracy": 59.053333333333335
+        },
+        {
+          "time": 300,
+          "accuracy": 61.66
+        },
+        {
+          "time": 360,
+          "accuracy": 63.81333333333333
+        },
+        {
+          "time": 420,
+          "accuracy": 65.52000000000001
+        },
+        {
+          "time": 480,
+          "accuracy": 67.25333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 68.21333333333334
+        },
+        {
+          "time": 600,
+          "accuracy": 68.52666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 69.13333333333334
+        },
+        {
+          "time": 720,
+          "accuracy": 69.59333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 70.15333333333334
+        },
+        {
+          "time": 840,
+          "accuracy": 69.78
+        },
+        {
+          "time": 900,
+          "accuracy": 70.73333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00025",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.0035187283146553717,
+        "sample_size": 2,
+        "chunks_in_sample": 16,
+        "relay_count": 32
+      },
+      "mean_score": 67.38666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 41.77333333333333
+        },
+        {
+          "time": 120,
+          "accuracy": 48.4
+        },
+        {
+          "time": 180,
+          "accuracy": 53.28666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 55.24
+        },
+        {
+          "time": 300,
+          "accuracy": 58.946666666666665
+        },
+        {
+          "time": 360,
+          "accuracy": 60.32
+        },
+        {
+          "time": 420,
+          "accuracy": 61.70666666666666
+        },
+        {
+          "time": 480,
+          "accuracy": 61.906666666666666
+        },
+        {
+          "time": 540,
+          "accuracy": 64.22666666666667
+        },
+        {
+          "time": 600,
+          "accuracy": 64.06
+        },
+        {
+          "time": 660,
+          "accuracy": 64.73333333333333
+        },
+        {
+          "time": 720,
+          "accuracy": 65.83333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 65.91333333333333
+        },
+        {
+          "time": 840,
+          "accuracy": 65.25333333333333
+        },
+        {
+          "time": 900,
+          "accuracy": 67.38666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00026",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.016254652716371634,
+        "sample_size": 8,
+        "chunks_in_sample": 32,
+        "relay_count": 16
+      },
+      "mean_score": 70.06666666666666,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 44.36
+        },
+        {
+          "time": 120,
+          "accuracy": 53.74666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 58.24
+        },
+        {
+          "time": 240,
+          "accuracy": 61.839999999999996
+        },
+        {
+          "time": 300,
+          "accuracy": 63.54
+        },
+        {
+          "time": 360,
+          "accuracy": 64.83333333333333
+        },
+        {
+          "time": 420,
+          "accuracy": 66.49333333333334
+        },
+        {
+          "time": 480,
+          "accuracy": 67.51333333333334
+        },
+        {
+          "time": 540,
+          "accuracy": 67.62
+        },
+        {
+          "time": 600,
+          "accuracy": 68.61999999999999
+        },
+        {
+          "time": 660,
+          "accuracy": 68.95333333333333
+        },
+        {
+          "time": 720,
+          "accuracy": 69.22666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 69.66666666666666
+        },
+        {
+          "time": 840,
+          "accuracy": 70.06666666666666
+        },
+        {
+          "time": 900,
+          "accuracy": 69.14
+        }
+      ]
+    },
+    {
+      "id": "tpe00027",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.004562524564437633,
+        "sample_size": 32,
+        "chunks_in_sample": 4,
+        "relay_count": 16
+      },
+      "mean_score": 57.38,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 32.54666666666667
+        },
+        {
+          "time": 120,
+          "accuracy": 38.60666666666666
+        },
+        {
+          "time": 180,
+          "accuracy": 42.406666666666666
+        },
+        {
+          "time": 240,
+          "accuracy": 45.373333333333335
+        },
+        {
+          "time": 300,
+          "accuracy": 47.54
+        },
+        {
+          "time": 360,
+          "accuracy": 49.14666666666667
+        },
+        {
+          "time": 420,
+          "accuracy": 50.61333333333334
+        },
+        {
+          "time": 480,
+          "accuracy": 52.06666666666667
+        },
+        {
+          "time": 540,
+          "accuracy": 52.940000000000005
+        },
+        {
+          "time": 600,
+          "accuracy": 54.093333333333334
+        },
+        {
+          "time": 660,
+          "accuracy": 54.906666666666666
+        },
+        {
+          "time": 720,
+          "accuracy": 55.75333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 56.38666666666666
+        },
+        {
+          "time": 840,
+          "accuracy": 56.82
+        },
+        {
+          "time": 900,
+          "accuracy": 57.38
+        }
+      ]
+    },
+    {
+      "id": "tpe00028",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.014981392154857501,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 70.49333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 43.7
+        },
+        {
+          "time": 120,
+          "accuracy": 50.553333333333335
+        },
+        {
+          "time": 180,
+          "accuracy": 55.72666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 59.08
+        },
+        {
+          "time": 300,
+          "accuracy": 61.45333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 63.96
+        },
+        {
+          "time": 420,
+          "accuracy": 64.9
+        },
+        {
+          "time": 480,
+          "accuracy": 66.64
+        },
+        {
+          "time": 540,
+          "accuracy": 67.84
+        },
+        {
+          "time": 600,
+          "accuracy": 68.34666666666666
+        },
+        {
+          "time": 660,
+          "accuracy": 68.79333333333334
+        },
+        {
+          "time": 720,
+          "accuracy": 69.74666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 69.51333333333334
+        },
+        {
+          "time": 840,
+          "accuracy": 69.96666666666667
+        },
+        {
+          "time": 900,
+          "accuracy": 70.49333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00029",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.14980466119472605,
+        "sample_size": 2,
+        "chunks_in_sample": 16,
+        "relay_count": 32
+      },
+      "mean_score": 69.78,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 37.22
+        },
+        {
+          "time": 120,
+          "accuracy": 43.72666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 51.306666666666665
+        },
+        {
+          "time": 240,
+          "accuracy": 54.9
+        },
+        {
+          "time": 300,
+          "accuracy": 59.74666666666666
+        },
+        {
+          "time": 360,
+          "accuracy": 61.4
+        },
+        {
+          "time": 420,
+          "accuracy": 63.61333333333333
+        },
+        {
+          "time": 480,
+          "accuracy": 63.74666666666667
+        },
+        {
+          "time": 540,
+          "accuracy": 65.89999999999999
+        },
+        {
+          "time": 600,
+          "accuracy": 66.61333333333333
+        },
+        {
+          "time": 660,
+          "accuracy": 66.80666666666667
+        },
+        {
+          "time": 720,
+          "accuracy": 68.34
+        },
+        {
+          "time": 780,
+          "accuracy": 68.00666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 68.37333333333333
+        },
+        {
+          "time": 900,
+          "accuracy": 69.78
+        }
+      ]
+    },
+    {
+      "id": "tpe00030",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.051598546094309986,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 71.48666666666666,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 41.800000000000004
+        },
+        {
+          "time": 120,
+          "accuracy": 49.053333333333335
+        },
+        {
+          "time": 180,
+          "accuracy": 54.99333333333333
+        },
+        {
+          "time": 240,
+          "accuracy": 58.2
+        },
+        {
+          "time": 300,
+          "accuracy": 61.20666666666666
+        },
+        {
+          "time": 360,
+          "accuracy": 64.16
+        },
+        {
+          "time": 420,
+          "accuracy": 65.47333333333333
+        },
+        {
+          "time": 480,
+          "accuracy": 67.32666666666667
+        },
+        {
+          "time": 540,
+          "accuracy": 68.66666666666667
+        },
+        {
+          "time": 600,
+          "accuracy": 69.56
+        },
+        {
+          "time": 660,
+          "accuracy": 69.74
+        },
+        {
+          "time": 720,
+          "accuracy": 70.63333333333334
+        },
+        {
+          "time": 780,
+          "accuracy": 70.54
+        },
+        {
+          "time": 840,
+          "accuracy": 71.10000000000001
+        },
+        {
+          "time": 900,
+          "accuracy": 71.48666666666666
+        }
+      ]
+    },
+    {
+      "id": "tpe00031",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 1,
+        "learning_rate": 0.021276731904101995,
+        "sample_size": 2,
+        "chunks_in_sample": 8,
+        "relay_count": 8
+      },
+      "mean_score": 53.086666666666666,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 22.613333333333333
+        },
+        {
+          "time": 120,
+          "accuracy": 27.08
+        },
+        {
+          "time": 180,
+          "accuracy": 30.433333333333334
+        },
+        {
+          "time": 240,
+          "accuracy": 35.14666666666667
+        },
+        {
+          "time": 300,
+          "accuracy": 37.13333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 40.446666666666665
+        },
+        {
+          "time": 420,
+          "accuracy": 41.486666666666665
+        },
+        {
+          "time": 480,
+          "accuracy": 44.79333333333334
+        },
+        {
+          "time": 540,
+          "accuracy": 44.22666666666667
+        },
+        {
+          "time": 600,
+          "accuracy": 46.28
+        },
+        {
+          "time": 660,
+          "accuracy": 48.733333333333334
+        },
+        {
+          "time": 720,
+          "accuracy": 50.21333333333333
+        },
+        {
+          "time": 780,
+          "accuracy": 51.28666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 52.593333333333334
+        },
+        {
+          "time": 900,
+          "accuracy": 53.086666666666666
+        }
+      ]
+    },
+    {
+      "id": "tpe00032",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.038980440635626994,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 70.99333333333334,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 42.28666666666666
+        },
+        {
+          "time": 120,
+          "accuracy": 49.22666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 55.1
+        },
+        {
+          "time": 240,
+          "accuracy": 58.45333333333333
+        },
+        {
+          "time": 300,
+          "accuracy": 61.06
+        },
+        {
+          "time": 360,
+          "accuracy": 64.02
+        },
+        {
+          "time": 420,
+          "accuracy": 65.26666666666667
+        },
+        {
+          "time": 480,
+          "accuracy": 66.84
+        },
+        {
+          "time": 540,
+          "accuracy": 68.3
+        },
+        {
+          "time": 600,
+          "accuracy": 68.91333333333334
+        },
+        {
+          "time": 660,
+          "accuracy": 69.04666666666667
+        },
+        {
+          "time": 720,
+          "accuracy": 69.93333333333334
+        },
+        {
+          "time": 780,
+          "accuracy": 70.06666666666666
+        },
+        {
+          "time": 840,
+          "accuracy": 70.66
+        },
+        {
+          "time": 900,
+          "accuracy": 70.99333333333334
+        }
+      ]
+    },
+    {
+      "id": "tpe00033",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 5,
+        "learning_rate": 0.007808999201530958,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 66.71333333333334,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 39.03333333333333
+        },
+        {
+          "time": 120,
+          "accuracy": 45.333333333333336
+        },
+        {
+          "time": 180,
+          "accuracy": 48.21333333333333
+        },
+        {
+          "time": 240,
+          "accuracy": 52.013333333333335
+        },
+        {
+          "time": 300,
+          "accuracy": 56.12
+        },
+        {
+          "time": 360,
+          "accuracy": 56.406666666666666
+        },
+        {
+          "time": 420,
+          "accuracy": 59.06666666666667
+        },
+        {
+          "time": 480,
+          "accuracy": 61.43333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 61.38666666666666
+        },
+        {
+          "time": 600,
+          "accuracy": 61.92
+        },
+        {
+          "time": 660,
+          "accuracy": 64.12
+        },
+        {
+          "time": 720,
+          "accuracy": 64.46000000000001
+        },
+        {
+          "time": 780,
+          "accuracy": 66.21333333333334
+        },
+        {
+          "time": 840,
+          "accuracy": 66.71333333333334
+        },
+        {
+          "time": 900,
+          "accuracy": 66.22
+        }
+      ]
+    },
+    {
+      "id": "tpe00034",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.021491388418592335,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 70.77333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 43.04
+        },
+        {
+          "time": 120,
+          "accuracy": 50.38
+        },
+        {
+          "time": 180,
+          "accuracy": 56.14666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 59.28666666666667
+        },
+        {
+          "time": 300,
+          "accuracy": 61.58
+        },
+        {
+          "time": 360,
+          "accuracy": 64.32666666666667
+        },
+        {
+          "time": 420,
+          "accuracy": 65.24666666666667
+        },
+        {
+          "time": 480,
+          "accuracy": 67.15333333333334
+        },
+        {
+          "time": 540,
+          "accuracy": 68.21333333333332
+        },
+        {
+          "time": 600,
+          "accuracy": 68.79333333333334
+        },
+        {
+          "time": 660,
+          "accuracy": 69.00666666666666
+        },
+        {
+          "time": 720,
+          "accuracy": 69.78
+        },
+        {
+          "time": 780,
+          "accuracy": 69.54666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 70.13333333333333
+        },
+        {
+          "time": 900,
+          "accuracy": 70.77333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00035",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 5,
+        "learning_rate": 0.16026506742086455,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 65.78666666666666,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 28.913333333333334
+        },
+        {
+          "time": 120,
+          "accuracy": 37.43333333333333
+        },
+        {
+          "time": 180,
+          "accuracy": 41.34
+        },
+        {
+          "time": 240,
+          "accuracy": 46.24
+        },
+        {
+          "time": 300,
+          "accuracy": 50.626666666666665
+        },
+        {
+          "time": 360,
+          "accuracy": 52.22
+        },
+        {
+          "time": 420,
+          "accuracy": 55.06
+        },
+        {
+          "time": 480,
+          "accuracy": 58.08
+        },
+        {
+          "time": 540,
+          "accuracy": 58.49333333333333
+        },
+        {
+          "time": 600,
+          "accuracy": 59.96666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 62.413333333333334
+        },
+        {
+          "time": 720,
+          "accuracy": 63.36666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 65.35333333333332
+        },
+        {
+          "time": 840,
+          "accuracy": 65.72
+        },
+        {
+          "time": 900,
+          "accuracy": 65.78666666666666
+        }
+      ]
+    },
+    {
+      "id": "tpe00036",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 1,
+        "learning_rate": 0.39170258198858976,
+        "sample_size": 2,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 41.54,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 11.926666666666668
+        },
+        {
+          "time": 120,
+          "accuracy": 16.62
+        },
+        {
+          "time": 180,
+          "accuracy": 20.7
+        },
+        {
+          "time": 240,
+          "accuracy": 25.273333333333333
+        },
+        {
+          "time": 300,
+          "accuracy": 25.713333333333335
+        },
+        {
+          "time": 360,
+          "accuracy": 27.333333333333332
+        },
+        {
+          "time": 420,
+          "accuracy": 29.966666666666665
+        },
+        {
+          "time": 480,
+          "accuracy": 31.926666666666666
+        },
+        {
+          "time": 540,
+          "accuracy": 33.333333333333336
+        },
+        {
+          "time": 600,
+          "accuracy": 35.84666666666667
+        },
+        {
+          "time": 660,
+          "accuracy": 37.35333333333333
+        },
+        {
+          "time": 720,
+          "accuracy": 38.86
+        },
+        {
+          "time": 780,
+          "accuracy": 40.126666666666665
+        },
+        {
+          "time": 840,
+          "accuracy": 41.24666666666666
+        },
+        {
+          "time": 900,
+          "accuracy": 41.54
+        }
+      ]
+    },
+    {
+      "id": "tpe00037",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.05600396590112542,
+        "sample_size": 4,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 70.94666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 45.31333333333333
+        },
+        {
+          "time": 120,
+          "accuracy": 52.833333333333336
+        },
+        {
+          "time": 180,
+          "accuracy": 58.3
+        },
+        {
+          "time": 240,
+          "accuracy": 60.86666666666667
+        },
+        {
+          "time": 300,
+          "accuracy": 64.16
+        },
+        {
+          "time": 360,
+          "accuracy": 66.09333333333333
+        },
+        {
+          "time": 420,
+          "accuracy": 66.94666666666666
+        },
+        {
+          "time": 480,
+          "accuracy": 68.33333333333333
+        },
+        {
+          "time": 540,
+          "accuracy": 68.84
+        },
+        {
+          "time": 600,
+          "accuracy": 69.31333333333333
+        },
+        {
+          "time": 660,
+          "accuracy": 69.86666666666666
+        },
+        {
+          "time": 720,
+          "accuracy": 70.46666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 70.60666666666667
+        },
+        {
+          "time": 840,
+          "accuracy": 70.42666666666666
+        },
+        {
+          "time": 900,
+          "accuracy": 70.94666666666667
+        }
+      ]
+    },
+    {
+      "id": "tpe00038",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.03620395299020898,
+        "sample_size": 16,
+        "chunks_in_sample": 32,
+        "relay_count": 8
+      },
+      "mean_score": 68.82666666666667,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 36.906666666666666
+        },
+        {
+          "time": 120,
+          "accuracy": 48.86666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 53.333333333333336
+        },
+        {
+          "time": 240,
+          "accuracy": 56.66
+        },
+        {
+          "time": 300,
+          "accuracy": 59.15333333333333
+        },
+        {
+          "time": 360,
+          "accuracy": 61.11333333333333
+        },
+        {
+          "time": 420,
+          "accuracy": 63.166666666666664
+        },
+        {
+          "time": 480,
+          "accuracy": 64.07333333333334
+        },
+        {
+          "time": 540,
+          "accuracy": 65.13333333333333
+        },
+        {
+          "time": 600,
+          "accuracy": 66.20666666666666
+        },
+        {
+          "time": 660,
+          "accuracy": 67.13333333333334
+        },
+        {
+          "time": 720,
+          "accuracy": 67.4
+        },
+        {
+          "time": 780,
+          "accuracy": 67.67333333333333
+        },
+        {
+          "time": 840,
+          "accuracy": 68.82666666666667
+        },
+        {
+          "time": 900,
+          "accuracy": 68.45333333333333
+        }
+      ]
+    },
+    {
+      "id": "tpe00039",
+      "status": "completed",
+      "parameters": {
+        "local_steps": 15,
+        "learning_rate": 0.09592914542812755,
+        "sample_size": 2,
+        "chunks_in_sample": 8,
+        "relay_count": 8
+      },
+      "mean_score": 69.73333333333333,
+      "mean_validation_curve": [
+        {
+          "time": 60,
+          "accuracy": 35.63333333333333
+        },
+        {
+          "time": 120,
+          "accuracy": 43.74666666666667
+        },
+        {
+          "time": 180,
+          "accuracy": 51.82666666666667
+        },
+        {
+          "time": 240,
+          "accuracy": 54.88666666666667
+        },
+        {
+          "time": 300,
+          "accuracy": 58.14
+        },
+        {
+          "time": 360,
+          "accuracy": 61.413333333333334
+        },
+        {
+          "time": 420,
+          "accuracy": 62.526666666666664
+        },
+        {
+          "time": 480,
+          "accuracy": 65.32
+        },
+        {
+          "time": 540,
+          "accuracy": 66.49333333333334
+        },
+        {
+          "time": 600,
+          "accuracy": 67.75333333333333
+        },
+        {
+          "time": 660,
+          "accuracy": 68.64666666666666
+        },
+        {
+          "time": 720,
+          "accuracy": 68.96666666666667
+        },
+        {
+          "time": 780,
+          "accuracy": 69.3
+        },
+        {
+          "time": 840,
+          "accuracy": 69.73333333333333
+        },
+        {
+          "time": 900,
+          "accuracy": 69.58666666666667
+        }
+      ]
+    }
+  ],
+  "campaign": {
+    "version": 1,
+    "status": "completed",
+    "phase": "evaluation completed",
+    "selected_variant": "conflux-v2",
+    "selected_learning_rate": 0.051598546094309986,
+    "settings_completed": [
+      "dirichlet01-uniform",
+      "iid-uniform",
+      "iid-heterogeneous",
+      "dirichlet01-heterogeneous"
+    ],
+    "current_setting": "dirichlet01-heterogeneous",
+    "finished_at": "2026-11-09T11:32:09.563607+00:00"
+  },
+  "results": {
+    "iid-uniform": {
+      "validation_selected_checkpoint": {
+        "accuracy": {
+          "mean": 76.79666666666667,
+          "sd": 0.20792626898334143
+        },
+        "loss": {
+          "mean": 0.84796,
+          "sd": 0.021863216506269118
+        },
+        "bytes_sent": {
+          "mean": 1689969623.6666667,
+          "sd": 1510430.2852354138
+        }
+      },
+      "endpoint_900": {
+        "accuracy": {
+          "mean": 76.79666666666667,
+          "sd": 0.20792626898334143
+        },
+        "loss": {
+          "mean": 0.84796,
+          "sd": 0.021863216506269118
+        },
+        "bytes_sent": {
+          "mean": 1689969623.6666667,
+          "sd": 1510430.2852354138
+        }
+      },
+      "comparison_at_900": [
+        {
+          "variant": "teleportation",
+          "rank": 1,
+          "accuracy": {
+            "mean": 77.14,
+            "sd": 0.3117691453623933
+          },
+          "loss": {
+            "mean": 0.77759,
+            "sd": 0.01204821825001522
+          },
+          "complete": true
+        },
+        {
+          "variant": "conflux-v2",
+          "rank": 2,
+          "accuracy": {
+            "mean": 76.79666666666667,
+            "sd": 0.20792626898334143
+          },
+          "loss": {
+            "mean": 0.84796,
+            "sd": 0.021863216506269118
+          },
+          "complete": true
+        },
+        {
+          "variant": "epidemic-kreg-log2",
+          "rank": 3,
+          "accuracy": {
+            "mean": 76.36,
+            "sd": 0.10816653826392378
+          },
+          "loss": {
+            "mean": 0.7273373333333333,
+            "sd": 0.006070299361096916
+          },
+          "complete": true
+        },
+        {
+          "variant": "dpsgd-kreg-log2",
+          "rank": 4,
+          "accuracy": {
+            "mean": 76.06333333333333,
+            "sd": 0.2538372181799435
+          },
+          "loss": {
+            "mean": 0.79356,
+            "sd": 0.0066425068310088774
+          },
+          "complete": true
+        },
+        {
+          "variant": "shatter-k16-rlog2",
+          "rank": 5,
+          "accuracy": {
+            "mean": 75.91,
+            "sd": 0.03999999999999915
+          },
+          "loss": {
+            "mean": 0.7901813333333333,
+            "sd": 0.014687189565513658
+          },
+          "complete": true
+        },
+        {
+          "variant": "demo",
+          "rank": 6,
+          "accuracy": {
+            "mean": 73.87,
+            "sd": 0.752861208988752
+          },
+          "loss": {
+            "mean": 0.951892,
+            "sd": 0.02340284657899546
+          },
+          "complete": true
+        }
+      ],
+      "runs": [
+        {
+          "name": "conflux-v2-s110",
+          "seed": 110,
+          "status": "completed",
+          "wall_seconds": 85.24129908764735,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 10.09,
+              "loss": 2.510497,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 59.6,
+              "loss": 1.135119,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 112748607,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 69.05,
+              "loss": 0.881383,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 225875868,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 73.13,
+              "loss": 0.781365,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 338611702,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 75.4,
+              "loss": 0.723266,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 449822592,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 76.41,
+              "loss": 0.702814,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 562537753,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 76.66,
+              "loss": 0.688634,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 676430360,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 76.88,
+              "loss": 0.689828,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 789786699,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 77.13,
+              "loss": 0.696764,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 903308898,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 77.2,
+              "loss": 0.700369,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1017109450,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 76.85,
+              "loss": 0.724083,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1129249932,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 76.78,
+              "loss": 0.745988,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1241135400,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 76.99,
+              "loss": 0.768735,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1354021238,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 76.61,
+              "loss": 0.802154,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1467496786,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 76.46,
+              "loss": 0.831051,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1579270701,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 76.95,
+              "loss": 0.85919,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1691704740,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        },
+        {
+          "name": "conflux-v2-s111",
+          "seed": 111,
+          "status": "completed",
+          "wall_seconds": 78.34204039722681,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 13.27,
+              "loss": 2.549295,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 59.01,
+              "loss": 1.151383,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 112670077,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 69.25,
+              "loss": 0.88991,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 224497618,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 73.43,
+              "loss": 0.78017,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 337178907,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 75.5,
+              "loss": 0.724057,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 450792955,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 76.51,
+              "loss": 0.698383,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 562964856,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 76.74,
+              "loss": 0.691721,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 675687211,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 76.99,
+              "loss": 0.686944,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 786586961,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 77.2,
+              "loss": 0.700136,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 899136045,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 77.39,
+              "loss": 0.710533,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1011728909,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 77.54,
+              "loss": 0.716115,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1124018994,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 77.32,
+              "loss": 0.745557,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1237661446,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 77.05,
+              "loss": 0.767258,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1351079580,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 76.75,
+              "loss": 0.796224,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1463894498,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 76.52,
+              "loss": 0.827596,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1576312337,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 76.56,
+              "loss": 0.861926,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1688949003,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        },
+        {
+          "name": "conflux-v2-s112",
+          "seed": 112,
+          "status": "completed",
+          "wall_seconds": 83.36573955137283,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 12.32,
+              "loss": 2.456153,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 60.8,
+              "loss": 1.122993,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 112757572,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 69.74,
+              "loss": 0.869425,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 226559104,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 73.86,
+              "loss": 0.763111,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 339972258,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 75.51,
+              "loss": 0.704006,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 452527750,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 76.72,
+              "loss": 0.681619,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 564858029,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 77.52,
+              "loss": 0.673673,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 678292956,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 77.58,
+              "loss": 0.665015,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 791590187,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 77.69,
+              "loss": 0.667666,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 902461615,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 77.66,
+              "loss": 0.681369,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1014906083,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 77.82,
+              "loss": 0.696656,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1127122161,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 77.76,
+              "loss": 0.710152,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1239452530,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 77.44,
+              "loss": 0.741265,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1351651571,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 77.38,
+              "loss": 0.760658,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1463912071,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 77.47,
+              "loss": 0.789373,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1577187367,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 76.88,
+              "loss": 0.822764,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1689255128,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        }
+      ]
+    },
+    "iid-heterogeneous": {
+      "validation_selected_checkpoint": {
+        "accuracy": {
+          "mean": 77.55,
+          "sd": 0.4161730409336954
+        },
+        "loss": {
+          "mean": 0.6876446666666667,
+          "sd": 0.0163916290323242
+        },
+        "bytes_sent": {
+          "mean": 906838335.3333334,
+          "sd": 49518404.97879509
+        }
+      },
+      "endpoint_900": {
+        "accuracy": {
+          "mean": 77.55,
+          "sd": 0.4161730409336954
+        },
+        "loss": {
+          "mean": 0.6876446666666667,
+          "sd": 0.0163916290323242
+        },
+        "bytes_sent": {
+          "mean": 906838335.3333334,
+          "sd": 49518404.97879509
+        }
+      },
+      "comparison_at_900": [
+        {
+          "variant": "conflux-v2",
+          "rank": 1,
+          "accuracy": {
+            "mean": 77.55,
+            "sd": 0.4161730409336954
+          },
+          "loss": {
+            "mean": 0.6876446666666667,
+            "sd": 0.0163916290323242
+          },
+          "complete": true
+        },
+        {
+          "variant": "teleportation",
+          "rank": 2,
+          "accuracy": {
+            "mean": 77.00333333333334,
+            "sd": 0.3066485501895177
+          },
+          "loss": {
+            "mean": 0.6862603333333334,
+            "sd": 0.011569363091083867
+          },
+          "complete": true
+        },
+        {
+          "variant": "demo",
+          "rank": 3,
+          "accuracy": {
+            "mean": 75.10666666666667,
+            "sd": 0.09073771725877018
+          },
+          "loss": {
+            "mean": 0.8094483333333333,
+            "sd": 0.024365997400749555
+          },
+          "complete": true
+        },
+        {
+          "variant": "dpsgd-kreg-log2",
+          "rank": 4,
+          "accuracy": {
+            "mean": 72.19333333333333,
+            "sd": 0.7452739988308595
+          },
+          "loss": {
+            "mean": 0.804247,
+            "sd": 0.016782516289281513
+          },
+          "complete": true
+        },
+        {
+          "variant": "epidemic-kreg-log2",
+          "rank": 5,
+          "accuracy": {
+            "mean": 70.72,
+            "sd": 1.4215836239912174
+          },
+          "loss": {
+            "mean": 0.8434510000000001,
+            "sd": 0.03199862951752776
+          },
+          "complete": true
+        },
+        {
+          "variant": "shatter-k16-rlog2",
+          "rank": 6,
+          "accuracy": {
+            "mean": 69.50333333333333,
+            "sd": 1.7028309761492317
+          },
+          "loss": {
+            "mean": 0.870015,
+            "sd": 0.04890530874046293
+          },
+          "complete": true
+        }
+      ],
+      "runs": [
+        {
+          "name": "conflux-v2-s110",
+          "seed": 110,
+          "status": "completed",
+          "wall_seconds": 48.8579508732073,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 10.09,
+              "loss": 2.510497,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 49.67,
+              "loss": 1.458323,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 56087342,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 59.95,
+              "loss": 1.129471,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 115010551,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 65.97,
+              "loss": 0.964026,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 175447775,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 69.62,
+              "loss": 0.870837,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 231622298,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 71.34,
+              "loss": 0.825108,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 287689897,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 73.33,
+              "loss": 0.773877,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 347225615,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 74.21,
+              "loss": 0.746443,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 401621584,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 75.19,
+              "loss": 0.72069,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 457107893,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 75.66,
+              "loss": 0.712666,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 516016340,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 76.31,
+              "loss": 0.701567,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 569364330,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 76.63,
+              "loss": 0.696667,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 628127522,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 77.11,
+              "loss": 0.688901,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 684922674,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 77.14,
+              "loss": 0.682345,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 739253790,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 77.23,
+              "loss": 0.687298,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 799637572,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 77.29,
+              "loss": 0.693461,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 852858477,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        },
+        {
+          "name": "conflux-v2-s111",
+          "seed": 111,
+          "status": "completed",
+          "wall_seconds": 49.22632401995361,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 13.27,
+              "loss": 2.549295,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 48.57,
+              "loss": 1.443321,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 53608382,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 59.73,
+              "loss": 1.131902,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 116753419,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 66.36,
+              "loss": 0.965897,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 178588157,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 70.03,
+              "loss": 0.86822,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 243054444,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 72.54,
+              "loss": 0.801583,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 305741383,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 74.12,
+              "loss": 0.76481,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 362721090,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 75.18,
+              "loss": 0.737162,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 423663456,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 75.82,
+              "loss": 0.716833,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 483094950,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 76.15,
+              "loss": 0.700816,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 548850295,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 76.3,
+              "loss": 0.694572,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 618488152,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 76.67,
+              "loss": 0.693693,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 679376759,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 77.11,
+              "loss": 0.687473,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 741646051,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 76.82,
+              "loss": 0.686713,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 798751665,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 77.1,
+              "loss": 0.69284,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 860001252,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 77.33,
+              "loss": 0.700335,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 917497202,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        },
+        {
+          "name": "conflux-v2-s112",
+          "seed": 112,
+          "status": "completed",
+          "wall_seconds": 52.60893790284172,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 12.32,
+              "loss": 2.456153,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 51.83,
+              "loss": 1.356135,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 64517206,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 62.32,
+              "loss": 1.071885,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 127828922,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 67.81,
+              "loss": 0.923041,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 189799889,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 71.23,
+              "loss": 0.835525,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 252318774,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 73.16,
+              "loss": 0.776553,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 313874972,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 74.67,
+              "loss": 0.737133,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 379828540,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 75.6,
+              "loss": 0.707826,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 441330034,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 76.22,
+              "loss": 0.692903,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 505960525,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 76.83,
+              "loss": 0.68139,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 569755360,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 77.06,
+              "loss": 0.673894,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 631596867,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 77.17,
+              "loss": 0.667153,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 694836480,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 77.92,
+              "loss": 0.663992,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 760418733,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 77.78,
+              "loss": 0.661365,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 824197825,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 77.59,
+              "loss": 0.663634,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 888756882,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 78.03,
+              "loss": 0.669138,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 950159327,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        }
+      ]
+    },
+    "dirichlet01-uniform": {
+      "validation_selected_checkpoint": {
+        "accuracy": {
+          "mean": 70.85333333333334,
+          "sd": 1.1018318080965537
+        },
+        "loss": {
+          "mean": 0.9087316666666667,
+          "sd": 0.03850789037760092
+        },
+        "bytes_sent": {
+          "mean": 1689985835,
+          "sd": 1538367.224136357
+        }
+      },
+      "endpoint_900": {
+        "accuracy": {
+          "mean": 70.85333333333334,
+          "sd": 1.1018318080965537
+        },
+        "loss": {
+          "mean": 0.9087316666666667,
+          "sd": 0.03850789037760092
+        },
+        "bytes_sent": {
+          "mean": 1689985835,
+          "sd": 1538367.224136357
+        }
+      },
+      "comparison_at_900": [
+        {
+          "variant": "conflux-v2",
+          "rank": 1,
+          "accuracy": {
+            "mean": 70.85333333333334,
+            "sd": 1.1018318080965537
+          },
+          "loss": {
+            "mean": 0.9087316666666667,
+            "sd": 0.03850789037760092
+          },
+          "complete": true
+        },
+        {
+          "variant": "teleportation",
+          "rank": 2,
+          "accuracy": {
+            "mean": 69.51333333333334,
+            "sd": 0.35697805721546993
+          },
+          "loss": {
+            "mean": 0.9130406666666666,
+            "sd": 0.02899087384563169
+          },
+          "complete": true
+        },
+        {
+          "variant": "shatter-k16-rlog2",
+          "rank": 3,
+          "accuracy": {
+            "mean": 68.46333333333334,
+            "sd": 1.0387171575233265
+          },
+          "loss": {
+            "mean": 0.9745483333333333,
+            "sd": 0.0417264701278856
+          },
+          "complete": true
+        },
+        {
+          "variant": "epidemic-kreg-log2",
+          "rank": 4,
+          "accuracy": {
+            "mean": 67.77333333333333,
+            "sd": 0.8803029781463526
+          },
+          "loss": {
+            "mean": 0.9464596666666667,
+            "sd": 0.028150312366532128
+          },
+          "complete": true
+        },
+        {
+          "variant": "dpsgd-kreg-log2",
+          "rank": 5,
+          "accuracy": {
+            "mean": 67.73666666666666,
+            "sd": 0.8200812967830252
+          },
+          "loss": {
+            "mean": 0.9802496666666667,
+            "sd": 0.03220703440761555
+          },
+          "complete": true
+        },
+        {
+          "variant": "demo",
+          "rank": 6,
+          "accuracy": {
+            "mean": 66.01333333333334,
+            "sd": 1.6350025484179944
+          },
+          "loss": {
+            "mean": 0.9947323333333333,
+            "sd": 0.04381871066488986
+          },
+          "complete": true
+        }
+      ],
+      "runs": [
+        {
+          "name": "conflux-v2-s110",
+          "seed": 110,
+          "status": "completed",
+          "wall_seconds": 83.75639377906919,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 10.09,
+              "loss": 2.510497,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 42.48,
+              "loss": 1.557163,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 112757615,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 50.52,
+              "loss": 1.34074,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 225876238,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 51.95,
+              "loss": 1.292795,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 338650413,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 58.71,
+              "loss": 1.14062,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 449858564,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 59.62,
+              "loss": 1.114634,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 562582737,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 63.56,
+              "loss": 1.01814,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 676503336,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 63.2,
+              "loss": 1.024066,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 789876369,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 64.37,
+              "loss": 0.994079,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 903398672,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 66.98,
+              "loss": 0.924008,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1017127369,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 67.89,
+              "loss": 0.909918,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1129239274,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 68.32,
+              "loss": 0.902655,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1241094605,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 69.74,
+              "loss": 0.876955,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1353984301,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 70.5,
+              "loss": 0.881715,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1467579608,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 70.47,
+              "loss": 0.877696,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1579316279,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 70.78,
+              "loss": 0.886001,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1691753374,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        },
+        {
+          "name": "conflux-v2-s111",
+          "seed": 111,
+          "status": "completed",
+          "wall_seconds": 85.89036237774417,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 13.27,
+              "loss": 2.549295,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 38.03,
+              "loss": 1.653678,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 112670077,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 49.75,
+              "loss": 1.373367,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 224497618,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 52.56,
+              "loss": 1.305719,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 337178907,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 57.4,
+              "loss": 1.194634,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 450792955,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 59.15,
+              "loss": 1.158975,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 562964856,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 63.35,
+              "loss": 1.052208,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 675687211,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 65.84,
+              "loss": 0.987685,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 786586961,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 66.15,
+              "loss": 0.972181,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 899136045,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 67.32,
+              "loss": 0.965492,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1011728909,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 68.03,
+              "loss": 0.973392,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1124018994,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 67.86,
+              "loss": 0.960522,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1237661446,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 67.81,
+              "loss": 0.973424,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1351079580,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 67.43,
+              "loss": 0.991664,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1463894498,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 69.88,
+              "loss": 0.902161,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1576312337,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 69.79,
+              "loss": 0.953193,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1688949003,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        },
+        {
+          "name": "conflux-v2-s112",
+          "seed": 112,
+          "status": "completed",
+          "wall_seconds": 84.76372556062415,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 12.32,
+              "loss": 2.456153,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 43.29,
+              "loss": 1.557017,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 112757572,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 51.59,
+              "loss": 1.322307,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 226559104,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 57.85,
+              "loss": 1.166213,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 339972258,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 62.12,
+              "loss": 1.063181,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 452527750,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 62.67,
+              "loss": 1.042106,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 564858029,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 64.85,
+              "loss": 0.984093,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 678292956,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 66.34,
+              "loss": 0.956931,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 791590187,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 68.07,
+              "loss": 0.90914,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 902461615,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 68.85,
+              "loss": 0.905996,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1014906083,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 69.08,
+              "loss": 0.906386,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1127122161,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 70.09,
+              "loss": 0.889179,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1239452530,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 69.83,
+              "loss": 0.900182,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1351651571,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 71.35,
+              "loss": 0.868021,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1463912071,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 70.9,
+              "loss": 0.893737,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1577187367,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 71.99,
+              "loss": 0.887001,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 1689255128,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        }
+      ]
+    },
+    "dirichlet01-heterogeneous": {
+      "validation_selected_checkpoint": {
+        "accuracy": {
+          "mean": 66.65666666666667,
+          "sd": 1.085234229709577
+        },
+        "loss": {
+          "mean": 0.9587086666666667,
+          "sd": 0.014911767176741085
+        },
+        "bytes_sent": {
+          "mean": 906815777.6666666,
+          "sd": 49488809.81312721
+        }
+      },
+      "endpoint_900": {
+        "accuracy": {
+          "mean": 66.65666666666667,
+          "sd": 1.085234229709577
+        },
+        "loss": {
+          "mean": 0.9587086666666667,
+          "sd": 0.014911767176741085
+        },
+        "bytes_sent": {
+          "mean": 906815777.6666666,
+          "sd": 49488809.81312721
+        }
+      },
+      "comparison_at_900": [
+        {
+          "variant": "conflux-v2",
+          "rank": 1,
+          "accuracy": {
+            "mean": 66.65666666666667,
+            "sd": 1.085234229709577
+          },
+          "loss": {
+            "mean": 0.9587086666666667,
+            "sd": 0.014911767176741085
+          },
+          "complete": true
+        },
+        {
+          "variant": "demo",
+          "rank": 2,
+          "accuracy": {
+            "mean": 64.47,
+            "sd": 0.9638983348880702
+          },
+          "loss": {
+            "mean": 1.0238033333333334,
+            "sd": 0.02507694459724579
+          },
+          "complete": true
+        },
+        {
+          "variant": "teleportation",
+          "rank": 3,
+          "accuracy": {
+            "mean": 64.08,
+            "sd": 1.8332212086924984
+          },
+          "loss": {
+            "mean": 1.0142986666666667,
+            "sd": 0.04448926307923449
+          },
+          "complete": true
+        },
+        {
+          "variant": "dpsgd-kreg-log2",
+          "rank": 4,
+          "accuracy": {
+            "mean": 59.69,
+            "sd": 2.4116177143154336
+          },
+          "loss": {
+            "mean": 1.1318413333333335,
+            "sd": 0.07198504889442905
+          },
+          "complete": true
+        },
+        {
+          "variant": "epidemic-kreg-log2",
+          "rank": 5,
+          "accuracy": {
+            "mean": 57.74,
+            "sd": 4.099841460349411
+          },
+          "loss": {
+            "mean": 1.1804083333333333,
+            "sd": 0.10245408406858815
+          },
+          "complete": true
+        },
+        {
+          "variant": "shatter-k16-rlog2",
+          "rank": 6,
+          "accuracy": {
+            "mean": 56.596666666666664,
+            "sd": 4.422356083959471
+          },
+          "loss": {
+            "mean": 1.2004636666666666,
+            "sd": 0.1128112561818781
+          },
+          "complete": true
+        }
+      ],
+      "runs": [
+        {
+          "name": "conflux-v2-s110",
+          "seed": 110,
+          "status": "completed",
+          "wall_seconds": 50.07391960127279,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 10.09,
+              "loss": 2.510497,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 30.26,
+              "loss": 1.878986,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 56087342,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 42.65,
+              "loss": 1.557855,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 115010551,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 45.23,
+              "loss": 1.441212,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 175447775,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 49.71,
+              "loss": 1.343954,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 231622298,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 52.37,
+              "loss": 1.278405,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 287689897,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 53.7,
+              "loss": 1.249358,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 347225615,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 53.81,
+              "loss": 1.24596,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 401621584,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 59.1,
+              "loss": 1.134043,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 457107893,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 58.46,
+              "loss": 1.147998,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 516016340,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 60.65,
+              "loss": 1.110043,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 569364330,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 60.53,
+              "loss": 1.091747,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 628127522,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 64.03,
+              "loss": 1.016124,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 684922674,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 64.14,
+              "loss": 1.016558,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 739253790,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 61.86,
+              "loss": 1.067691,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 799637572,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 65.41,
+              "loss": 0.975885,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 852858477,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        },
+        {
+          "name": "conflux-v2-s111",
+          "seed": 111,
+          "status": "completed",
+          "wall_seconds": 49.20365508599207,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 13.27,
+              "loss": 2.549295,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 27.81,
+              "loss": 1.905972,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 53608382,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 37.6,
+              "loss": 1.622903,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 116753419,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 44.72,
+              "loss": 1.520192,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 178588157,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 47.53,
+              "loss": 1.411876,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 243054444,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 52.72,
+              "loss": 1.315363,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 305741383,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 53.13,
+              "loss": 1.27872,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 362721090,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 55.49,
+              "loss": 1.246126,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 423663456,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 58.65,
+              "loss": 1.168001,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 483094950,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 60.03,
+              "loss": 1.130937,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 548850295,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 59.3,
+              "loss": 1.145565,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 618488152,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 63.14,
+              "loss": 1.057367,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 679376759,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 64.22,
+              "loss": 1.025463,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 741646051,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 65.94,
+              "loss": 0.995597,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 798751665,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 66.48,
+              "loss": 0.955872,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 860001252,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 67.17,
+              "loss": 0.949076,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 917497202,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        },
+        {
+          "name": "conflux-v2-s112",
+          "seed": 112,
+          "status": "completed",
+          "wall_seconds": 52.90252012712881,
+          "curve": [
+            {
+              "time": 0,
+              "accuracy": 12.32,
+              "loss": 2.456153,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 0,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 60,
+              "accuracy": 31.9,
+              "loss": 1.844624,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 64512024,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 120,
+              "accuracy": 44.69,
+              "loss": 1.501588,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 127823798,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 180,
+              "accuracy": 49.71,
+              "loss": 1.367806,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 189792861,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 240,
+              "accuracy": 53.27,
+              "loss": 1.276817,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 252325488,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 300,
+              "accuracy": 56.56,
+              "loss": 1.189351,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 313887315,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 360,
+              "accuracy": 59.44,
+              "loss": 1.126358,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 379838803,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 420,
+              "accuracy": 61.72,
+              "loss": 1.07587,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 441322461,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 480,
+              "accuracy": 61.5,
+              "loss": 1.066037,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 505944355,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 540,
+              "accuracy": 63.93,
+              "loss": 1.027463,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 569742074,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 600,
+              "accuracy": 64.65,
+              "loss": 0.985265,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 631603772,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 660,
+              "accuracy": 65.41,
+              "loss": 0.99238,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 694817370,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 720,
+              "accuracy": 64.71,
+              "loss": 1.005702,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 760357897,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 780,
+              "accuracy": 68.24,
+              "loss": 0.917884,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 824175844,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 840,
+              "accuracy": 67.46,
+              "loss": 0.930433,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 888741590,
+              "peers": 32,
+              "evaluated_models": 1
+            },
+            {
+              "time": 900,
+              "accuracy": 67.39,
+              "loss": 0.951165,
+              "worst_decile_accuracy": null,
+              "bytes_sent": 950091654,
+              "peers": 32,
+              "evaluated_models": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "validation": {
+    "protocol_tests": {
+      "passed": 26,
+      "note": "Numerical, byte conservation, overlap, shared-contributor, serialization and cache checks",
+      "command": "python -m pytest -q tests/test_conflux_v2.py tests/test_conflux_v2_overlap.py"
+    },
+    "focused_regression": {
+      "passed": 62,
+      "log": "focused-regression.log"
+    },
+    "full_cpu_regression": {
+      "passed": 1085,
+      "skipped": 25,
+      "warnings": 5,
+      "log": "cpu-regression.log",
+      "note": "CUDA_VISIBLE_DEVICES empty; GPUs dedicated to tuning"
+    },
+    "gpu_regression": {
+      "passed": 1109,
+      "failed": 1,
+      "log": "gpu-regression-before-registry-fix.log",
+      "resolution": "The generic leaderboard example excludes the dedicated CIFAR-10 V2 campaign. Its expected registered set was updated and the focused rerun passed."
+    },
+    "cifar10_gpu_preflight": {
+      "status": "completed",
+      "split": "validation",
+      "seed": 100,
+      "budget": 30,
+      "checkpoints": [
+        0,
+        30
+      ],
+      "output": "/tmp/conflux-v2-cifar-preflight",
+      "note": "Execution preflight only; no scores or parameters imported into TPE"
+    },
+    "javascript": {
+      "status": "passed",
+      "checks": [
+        "Publication-free research metadata renders",
+        "V2 sample, chunk and reducer columns present",
+        "Three source links present"
+      ]
+    },
+    "live_routes": {
+      "status": "passed",
+      "port": 8768,
+      "cifar10_algorithms": 6,
+      "cifar100_algorithms": 1
+    }
+  },
+  "interpretation": "Exploratory fixed-budget comparison. Parameters and shared checkpoint selected on validation only. Offline uniform parameter average of every physical client latest checkpoint, including retained inactive models. The 900-second endpoint is reported separately from the validation-selected checkpoint."
+}
