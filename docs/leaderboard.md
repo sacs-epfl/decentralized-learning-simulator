@@ -383,6 +383,59 @@ The queue runs detached to survive terminal exit. Its state, monitor log and
 eventual campaign log live in the sibling `demo-tpe-dirichlet01-h20-launch/`
 directory. Pending dashboard rows have no invented measurements.
 
+### Teleportation: jointly tuned active clients and token topology
+
+The independent CIFAR-10/GNLeNet campaign is declared in
+`experiments/methodology/teleportation-tpe-dirichlet01-h20.json` and appears at
+`/algorithm/teleportation`. It jointly tunes four parameters:
+
+| Parameter | Declared search |
+| --- | --- |
+| Learning rate | Log-uniform [0.001, 1] |
+| Local SGD steps H | {1, 5, 10, 15, 20} |
+| Active clients / model tokens b | {2, 4, 8, 16, 32} |
+| Token mixing topology | {ring, hypercube, complete} |
+
+Each round uniformly samples b distinct clients and shuffles token assignment.
+Each token performs H SGD updates on its current client's partition, mixes with
+same-round trained neighbors, and moves to the next client assigned that token.
+Remote gossip and full-model handoffs consume the physical clients' shared
+bandwidth and per-transfer latency. Self-handoffs are local. Equal self/neighbor
+weights are fixed; there is no separately tunable mixing coefficient.
+Power-of-two active counts make all hypercube combinations valid. The search
+excludes the single-token random-walk case and includes full participation at
+b=32, which still shuffles token ownership. Some small graphs coincide: ring
+and hypercube at b=2 and b=4; complete also coincides at b=2.
+
+Use the same 40 full-budget TPE configurations, 12 startup configurations,
+sampler seed 20261104, seeds 100/101/102, 900 simulated seconds per seed, and
+60-second validation checkpoints as the other campaigns. Tuning uses Dirichlet
+alpha 0.1 and homogeneous hardware. Two configurations per batch occupy six
+workers, three per GPU. Batch size 32, momentum 0, weight decay 0, compute and
+network capacities remain the same. No prior observations are imported.
+
+Freeze all four winning values and the shared validation-selected checkpoint
+for seeds 110/111/112 across IID/non-IID × homogeneous/heterogeneous hardware:
+120 tuning seed runs followed automatically by 12 test runs. Output goes to
+`output/leaderboard-v2/teleportation-tpe-dirichlet01-h20/`. The launch plan checks
+all 15 declared token graphs, records their actual edges and weights, and records
+the first two token assignments for each tuning/evaluation seed. The details
+page shows active count and topology in the candidate table and saved winner.
+
+```sh
+python scripts/run_methodology.py --algorithm teleportation --plan
+python scripts/run_methodology.py --algorithm teleportation
+```
+
+This uses the existing Algorithm 1 specialization with a local-SGD extension;
+hypercube is not the paper's Base-2 graph. Joint full-budget TPE does not
+reproduce the paper's active-node search procedure. Forty configurations are a
+finite four-parameter search. Stable membership and oracle token assignment are
+required. For compatibility with the common leaderboard, the offline readout
+averages all 32 physical clients' latest published models, including retained
+inactive models, rather than the paper's active-token average. This convention
+is used for both validation selection and test evaluation.
+
 These results measure transfer of parameters selected on one scenario, rather
 than each scenario's individually tuned optimum. The simulator's update order
 is a declared train-then-average variant and differs from Algorithm 1 in the

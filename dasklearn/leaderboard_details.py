@@ -316,6 +316,20 @@ def algorithm_document(entry, registry, setting):
                             ('DCT block size', 'demo_chunk'), ('Coefficients per block', 'demo_topk')]:
             value = chosen.options[name] if chosen else 'Joint search: ' + json.dumps(space.get(name, options[name]))
             parameters.append((label, value))
+    elif options['algorithm'] == 'teleportation':
+        parameters[1] = ('Total clients', options['peers'])
+        space = spec.get('search_spaces', {}).get(benchmark.runs[0].variant, {})
+        for label, name in [('Active clients / model tokens', 'sample_size'),
+                            ('Token mixing topology', 'teleportation_topology')]:
+            value = chosen.options[name] if chosen else 'Joint search: ' + json.dumps(space.get(name, options[name]))
+            parameters.append((label, value))
+        parameters.extend([
+            ('Token assignment', 'Seeded uniform sample without replacement and shuffled token ownership every round'),
+            ('Mixing weights', 'Equal weights over self and token neighbors'),
+            ('Model handoff', 'Full model sent to the next owner of the same token; remote transfers charged'),
+        ])
+        parameters = [(key, 'Uniform parameter average of all clients’ latest published models, including inactive clients’ retained models; offline diagnostic'
+                       if key == 'Readout' else value) for key, value in parameters]
     public = {key:value for key,value in entry.items() if not key.startswith('_') and key not in {'config'}}
     progress = None
     if adaptive:

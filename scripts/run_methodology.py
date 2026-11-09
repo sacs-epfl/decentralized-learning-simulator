@@ -67,6 +67,8 @@ def graph_plan(benchmark):
     options = benchmark.runs[0].options
     n = options['peers']
     algorithm = options['algorithm']
+    if algorithm == 'teleportation':
+        return teleportation_graph_plan(benchmark)
     if algorithm == 'demo':
         if n < 2:
             raise ValueError('The DeMo campaign requires at least two ring participants')
@@ -104,6 +106,54 @@ def graph_plan(benchmark):
             eigenvalues = nx.linalg.spectrum.adjacency_spectrum(graph).real
             record['spectral_gap'] = float(1-sorted(abs(value) for value in (eigenvalues+1)/(degree+1))[-2])
         graphs[str(seed)] = record
+    return graphs
+
+
+def teleportation_graph_plan(benchmark):
+    """Check every declared token graph using the simulator's actual routing rules."""
+    from types import SimpleNamespace
+    import networkx as nx
+    from dasklearn.simulation.teleportation.simulation import TeleportationSimulation
+    options = benchmark.runs[0].options
+    space = benchmark.tuning.get('search_spaces', {}).get(benchmark.runs[0].variant, {})
+
+    def choices(name):
+        distribution = space.get(name)
+        if distribution is None:
+            return [options[name]]
+        if distribution.get('type') != 'categorical':
+            raise ValueError(f'Teleportation graph planning requires categorical {name}')
+        return distribution['choices']
+
+    graphs = {}
+    for seed in benchmark.tuning['seeds'] + benchmark.seeds:
+        token_graphs = []
+        for size in choices('sample_size'):
+            if type(size) is not int or not 1 <= size <= options['peers']:
+                raise ValueError('Teleportation active clients must be in [1, peers]')
+            for topology in choices('teleportation_topology'):
+                if topology not in {'ring', 'hypercube', 'complete'}:
+                    raise ValueError('Unknown Teleportation topology')
+                if topology == 'hypercube' and size & (size - 1):
+                    raise ValueError('Hypercube token count must be a power of two')
+                sim = TeleportationSimulation.__new__(TeleportationSimulation)
+                sim.settings = SimpleNamespace(participants=options['peers'], sample_size=size,
+                                               topology=topology, seed=seed, shuffle_tokens=True)
+                graph = nx.Graph()
+                graph.add_nodes_from(range(size))
+                graph.add_edges_from((token, peer) for token in range(size) for peer in sim.neighbors(token))
+                degrees = {degree for _, degree in graph.degree()}
+                if not nx.is_connected(graph) or len(degrees) != 1:
+                    raise ValueError('Teleportation requires connected regular token graphs')
+                token_graphs.append(dict(active_clients=size, topology=topology,
+                    edges=sorted(sorted(edge) for edge in graph.edges), degree=next(iter(degrees)),
+                    self_and_neighbor_weight=1 / (next(iter(degrees)) + 1), connected=True,
+                    first_token_owners=sim.sample(1), next_token_owners=sim.sample(2)))
+        graphs[str(seed)] = dict(real_nodes=options['peers'], token_graphs=token_graphs,
+            token_topology_fixed=True, client_assignment_resampled_each_round=True,
+            sampling='Seeded uniform sampling without replacement, then shuffled token assignment',
+            handoff='Token i moves from sample(round)[i] to sample(round + 1)[i]; remote full-model transfers are charged',
+            validation_scope='All declared token graphs; first two token assignments')
     return graphs
 
 

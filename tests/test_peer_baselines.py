@@ -43,7 +43,7 @@ def test_variable_chunks_preserve_all_state_and_remainders():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("topology,size", [("ring",1),("ring",2),("ring",4),("hypercube",4)])
+@pytest.mark.parametrize("topology,size", [("ring",1),("ring",2),("ring",4),("hypercube",4),("complete",4)])
 async def test_teleportation_same_round_training_mix_and_token_handoff(tmp_path,topology,size):
     sim = simulate(TeleportationSimulation,settings(TeleportationSettings,tmp_path,
         sample_size=size,topology=topology,model_size_bytes=12000,network_latency_ms=10))

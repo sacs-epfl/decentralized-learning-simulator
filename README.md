@@ -175,6 +175,11 @@ settings. Algorithm names now open pages with explanations, paper links, paramet
 tables and live tuning evidence. The previous catalog is preserved as
 `experiments/leaderboard-legacy-settings.json`.
 
+The active CIFAR-10 campaign also includes [Teleportation](docs/leaderboard.md#teleportation-jointly-tuned-active-clients-and-token-topology).
+It jointly tunes learning rate, local steps, active-client count and token topology,
+then freezes the winner for all four evaluation settings:
+`python scripts/run_methodology.py --algorithm teleportation` (`--plan` previews it).
+
 The [D-PSGD k-regular extension](docs/leaderboard.md#d-psgd-with-log2n-regular-topology)
 adds a separate seeded 5-regular graph variant for 32 clients, bringing the
 leaderboard to 16 algorithms while preserving D-PSGD-ring and prior results.

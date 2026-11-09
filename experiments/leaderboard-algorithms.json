@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Decentralized learning leaderboard",
-  "notice": "Non-IID comparison: tune each algorithm independently on Dirichlet alpha 0.1 validation data with homogeneous hardware. Joint TPE search over learning rate and H in {1, 5, 10, 15, 20}; DeMo also tunes residual decay, DCT block size and coefficients per block (H is gradient accumulation for DeMo). Each algorithm receives 40 configurations, three paired seeds and full 900-second budgets. Freeze all winning parameters and the shared checkpoint for all four evaluation settings. New campaigns use three workers per GPU. Archived IID campaigns are excluded. DeMo is queued after the complete Epidemic Learning campaign.",
+  "notice": "Non-IID comparison: tune each algorithm independently on Dirichlet alpha 0.1 validation data with homogeneous hardware. Joint TPE search over learning rate and H in {1, 5, 10, 15, 20}; Teleportation also tunes active-client count and token topology; DeMo also tunes residual decay, DCT block size and coefficients per block (H is gradient accumulation for DeMo). Each algorithm receives 40 configurations, three paired seeds and full 900-second budgets. Freeze all winning parameters and the shared checkpoint for all four evaluation settings. New campaigns use three workers per GPU. Archived IID campaigns are excluded.",
   "scenarios": {
     "iid-uniform": {
       "partitioner": "iid",
@@ -414,6 +414,89 @@
       ],
       "changelog": [
         "5 November 2026: queue independent DeMo tuning after the complete Epidemic Learning campaign. Jointly search learning rate, gradient accumulation H, residual decay, DCT block size and coefficients per block. Use 40 TPE configurations, 12 startup configurations, paired tuning seeds 100/101/102, full 900-second budgets, and three workers per GPU. Freeze all five parameters and one shared validation-selected checkpoint for seeds 110/111/112 in all four data/hardware settings."
+      ]
+    },
+    {
+      "id": "teleportation",
+      "label": "teleportation",
+      "config": "methodology/teleportation-tpe-dirichlet01-h20.json",
+      "tuning_setting": "dirichlet01-uniform",
+      "description": "A small set of model tokens travels between randomly selected clients. Each selected client trains its token on local data, mixes it with neighboring tokens, and sends the mixed model to the next client assigned that token.",
+      "steps": [
+        "Sample b distinct clients uniformly without replacement and randomly assign the b model tokens to them.",
+        "Each active client performs H local SGD minibatch updates on its token model.",
+        "Exchange trained models over the token graph and average self plus same-round neighbors with equal weights.",
+        "Sample the next active clients and transfer each mixed model to the next owner of the same token. Remote handoffs consume bandwidth and latency.",
+        "Repeat with the same logical token graph and newly sampled physical clients."
+      ],
+      "paper": {
+        "title": "Scalable Decentralized Learning with Teleportation",
+        "authors": "Yuki Takezawa, Sebastian U. Stich",
+        "venue": "ICLR 2025 · peer reviewed",
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2025/hash/b3732a13897c4cea145c3bdece80de64-Abstract-Conference.html"
+      },
+      "author_code": null,
+      "author_code_note": "No verified authors’ code repository is registered for this campaign. Measurements use the local simulator sources linked below.",
+      "implementation_note": "Algorithm 1 specialization with H local SGD updates, seeded client sampling and shuffled token ownership. Ring, hypercube and complete token graphs use equal self/neighbor weights. Hypercube is not the paper’s Base-2 graph. The benchmark uses a joint full-budget TPE search rather than the paper’s active-node search procedure. The common leaderboard readout averages all 32 physical clients’ latest published models, including retained inactive models; it is not the paper’s active-token average.",
+      "implementation_files": [
+        "dasklearn/simulation/teleportation/client.py",
+        "dasklearn/simulation/teleportation/simulation.py",
+        "dasklearn/simulation/teleportation/settings.py"
+      ],
+      "parameter_notes": [
+        {
+          "parameter": "Total physical clients",
+          "value": 32,
+          "role": "Fixed; one data partition and one physical capacity allocation per client."
+        },
+        {
+          "parameter": "Active clients / model tokens b",
+          "value": "{2, 4, 8, 16, 32}",
+          "role": "Jointly tuned. Power-of-two counts make every hypercube candidate valid; b=32 retains shuffled token handoffs."
+        },
+        {
+          "parameter": "Token topology",
+          "value": "{ring, hypercube, complete}",
+          "role": "Jointly tuned. A fixed graph over b logical tokens is mapped onto new physical clients each round."
+        },
+        {
+          "parameter": "Learning rate / local steps H",
+          "value": "LR log-uniform [0.001, 1]; H in {1, 5, 10, 15, 20}",
+          "role": "Jointly tuned with active-client count and topology; H performs successive SGD updates."
+        },
+        {
+          "parameter": "Mixing / sampling",
+          "value": "Equal self/neighbor weights; uniform sample without replacement and shuffled assignment",
+          "role": "Fixed protocol rules. No separate tunable mixing coefficient is implemented."
+        },
+        {
+          "parameter": "Batch size / momentum / weight decay",
+          "value": "32 / 0 / 0",
+          "role": "Fixed to match the other plain-SGD campaigns. Momentum transport is not implemented."
+        },
+        {
+          "parameter": "Execution allocation",
+          "value": "3 workers per GPU; 6 total",
+          "role": "Two configurations × three paired seeds per TPE batch."
+        },
+        {
+          "parameter": "Modeled compute / network",
+          "value": "20 ms per SGD step; 1,000,000 bytes/s; 10 ms per transfer",
+          "role": "Same capacities as the other CIFAR-10 campaigns. Both gossip and remote handoffs are charged; self-handoffs are local."
+        }
+      ],
+      "limitations": [
+        "Forty configurations are a finite joint search over four parameters, not an exhaustive search or a global optimum.",
+        "The active-client range excludes the single-token random-walk case. Ring and hypercube coincide at b=2 and b=4; complete also coincides at b=2.",
+        "Tuning on one scenario measures parameter transfer, not the optimum from separately tuning each scenario.",
+        "The offline readout averages every physical client’s latest published model, including retained inactive models, rather than only active model tokens. Collection and evaluation costs are excluded.",
+        "Stable membership and oracle sampling/token assignment are required; discovery, churn recovery and optimizer-state transport are not implemented.",
+        "H local steps, hypercube/complete graphs and this TPE search are declared benchmark choices; this is not a reproduction of the paper’s full experiments.",
+        "The network is an uncalibrated endpoint-bandwidth abstraction; mixing has zero simulated compute cost. Actual execution wall time is reported separately.",
+        "CIFAR-10 test data was examined in earlier campaigns; these evaluations remain exploratory. No earlier scores or winners are imported."
+      ],
+      "protocol_amendments": [
+        "9 November 2026: add an independent Teleportation campaign to CIFAR-10/GNLeNet with 32 clients. Jointly tune learning rate, H, active-client count and token topology using 40 TPE configurations, 12 startup configurations, sampler seed 20261104, paired tuning seeds 100/101/102 and full 900-second budgets on Dirichlet alpha 0.1 / homogeneous hardware. Use two configurations per batch and three workers per GPU. Freeze all four winning parameters and one shared validation-selected checkpoint for evaluation seeds 110/111/112 in every data/hardware setting. Preserve all previous campaign artifacts."
       ]
     }
   ]

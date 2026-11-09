@@ -94,8 +94,9 @@ function render(data) {
   textRows("fixed-parameters",data.parameter_notes,["parameter","value","role"]);
   const search=data.tuning;
   const demo=data.id === "demo";
-  $("parameter-notes-title").textContent=demo ? "Algorithm parameters and search ranges" : "Fixed algorithm parameters";
-  $("search-title").textContent=demo ? "Joint learning-rate, accumulation and compression search" : "Joint learning-rate and local-step search";
+  const teleportation=data.id === "teleportation";
+  $("parameter-notes-title").textContent=demo || teleportation ? "Algorithm parameters and search ranges" : "Fixed algorithm parameters";
+  $("search-title").textContent=demo ? "Joint learning-rate, accumulation and compression search" : teleportation ? "Joint learning-rate, local-step, active-client and topology search" : "Joint learning-rate and local-step search";
   const tuningData=search.partitioner === 'dirichlet' ? `non-IID data (Dirichlet α = ${search.alpha})` : 'IID data';
   $("tuning-setting-note").textContent=`Tuning uses ${tuningData} and ${search.hardware_profile === 'heterogeneous' ? 'heterogeneous' : 'homogeneous'} hardware. The displayed setting describes the subsequent evaluation; it does not start a separate search.`;
   renderOptuna(search);
@@ -112,15 +113,15 @@ function render(data) {
   }
   $("boundary-note").hidden=!search.boundary_winner;
   const head=document.createElement("tr");
-  const compression=demo ? [["demo_decay","Residual decay"],["demo_chunk","DCT block size"],["demo_topk","Coefficients / block"]] : [];
-  for(const label of [...(adaptive ? ["Candidate"] : []),demo ? "Accumulation H" : "Local steps H","Learning rate",...compression.map(item=>item[1]),"Checkpoint s","Accuracy % ± SD","Loss ± SD","Seeds","Wall time / seed","Status"]){const th=document.createElement("th");th.scope="col";th.textContent=label;head.append(th);}
+  const extraParameters=demo ? [["demo_decay","Residual decay"],["demo_chunk","DCT block size"],["demo_topk","Coefficients / block"]] : teleportation ? [["sample_size","Active clients"],["teleportation_topology","Topology"]] : [];
+  for(const label of [...(adaptive ? ["Candidate"] : []),demo ? "Accumulation H" : "Local steps H","Learning rate",...extraParameters.map(item=>item[1]),"Checkpoint s","Accuracy % ± SD","Loss ± SD","Seeds","Wall time / seed","Status"]){const th=document.createElement("th");th.scope="col";th.textContent=label;head.append(th);}
   $("search-head").replaceChildren(head);
   $("search-rows").replaceChildren(...search.groups.map(row=>{
     const tr=document.createElement("tr");if(row.selected)tr.className="selected-row";
     const estimate=(v,digits=2)=>v ? `${format(v.mean,digits)} ± ${format(v.sd,digits)}` : "—";
     for(const value of [...(adaptive ? [row.candidate_id] : []),row.local_steps])cell(tr,value);
     learningRateCell(tr,row.learning_rate);
-    for(const [key] of compression)cell(tr,row.parameters?.[key]);
+    for(const [key] of extraParameters)cell(tr,row.parameters?.[key]);
     cell(tr,row.selected_time);
     const accuracy=cell(tr,estimate(row.accuracy));
     accuracy.title=search.seeds.map((seed,index)=>{
