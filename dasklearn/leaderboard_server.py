@@ -180,11 +180,23 @@ class LeaderboardHandler(BaseHTTPRequestHandler):
                 return
             self.send_error(503, "Waiting for benchmark results")
             return
-        if route == '/leaderboard.json' and path.with_name('manifest.json').exists():
-            from dasklearn.benchmark import checkpoint_budget_view
-            manifest = json.loads(path.with_name('manifest.json').read_text())
-            document = checkpoint_budget_view(json.loads(data), 600, times=manifest.get('times', []), seeds=manifest.get('seeds', []))
-            data = json.dumps(document, ensure_ascii=False, allow_nan=False).encode()
+        if route in {'/leaderboard.json', '/leaderboard.csv'}:
+            from dasklearn.benchmark import checkpoint_budget_view, leaderboard, leaderboard_csv
+            # Recompute saved endpoint-era tables from recorded curves without
+            # changing experiment files or rerunning training. Preserve pipeline metadata.
+            document = json.loads(path.with_name('leaderboard.json').read_text())
+            if document.get('runs') and 'tables' in document:
+                seeds = sorted({run['seed'] for run in document['runs']})
+                refreshed = leaderboard(document | dict(seeds=seeds))
+                document.update(tables=refreshed['tables'], checkpoint_policy=refreshed['checkpoint_policy'])
+                if document.get('evaluation'):
+                    document['evaluation'] = document['evaluation'] | dict(policy=refreshed['checkpoint_policy'])
+                manifest_path = path.with_name('manifest.json')
+                if manifest_path.exists():
+                    manifest = json.loads(manifest_path.read_text())
+                    document = checkpoint_budget_view(document, 600, times=manifest.get('times', []), seeds=seeds)
+                data = (json.dumps(document, ensure_ascii=False, allow_nan=False).encode()
+                        if route.endswith('.json') else leaderboard_csv(document).encode())
         if route == '/leaderboard.json' and self.algorithms:
             data = json.dumps(annotate_leaderboard(json.loads(data), self.algorithms), ensure_ascii=False, allow_nan=False).encode()
         if route == "/leaderboard.json" and self.reference is not None:

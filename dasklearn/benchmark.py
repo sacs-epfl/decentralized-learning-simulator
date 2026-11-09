@@ -343,16 +343,20 @@ def read_curve(directory, peers, times, *, strict=False, evaluation_model="local
     return curve
 
 
-def budget_metrics(curve, budget, targets):
+def budget_metrics(curve, budget, targets, *, best_accuracy=False):
+    """Summarize a complete budget; tuning keeps its endpoint objective by default."""
     eligible = [point for point in curve if point["time"] <= budget]
     if not eligible or eligible[0]["time"] != 0 or eligible[-1]["time"] != budget:
         return None
     # Left-constant integration: later observations never improve earlier time.
     area = sum(a["accuracy"] * (b["time"] - a["time"]) for a, b in zip(eligible, eligible[1:])) / budget
     final = eligible[-1]
-    return dict(accuracy=final["accuracy"], loss=final["loss"], average_accuracy=area,
-                worst_decile_accuracy=final["worst_decile_accuracy"], bytes_sent=final["bytes_sent"],
-                best_observed_accuracy=max(point["accuracy"] for point in eligible),
+    # Select independently per seed, with the earliest checkpoint breaking ties.
+    best = min(eligible, key=lambda point: (-point["accuracy"], point["time"]))
+    selected = best if best_accuracy else final
+    return dict(accuracy=selected["accuracy"], loss=selected["loss"], average_accuracy=area,
+                worst_decile_accuracy=selected["worst_decile_accuracy"], bytes_sent=final["bytes_sent"],
+                best_observed_accuracy=best["accuracy"],
                 time_to_accuracy={str(target): next((point["time"] for point in eligible if point["accuracy"] >= target), None)
                                   for target in targets})
 
@@ -372,7 +376,7 @@ def leaderboard(suite):
             for run in runs:
                 if run["status"] not in {"running", "completed"}:
                     continue
-                metrics = budget_metrics(run.get("curve", []), budget, suite["accuracy_targets"])
+                metrics = budget_metrics(run.get("curve", []), budget, suite["accuracy_targets"], best_accuracy=True)
                 if metrics is not None:
                     observed.append((run, metrics))
             row = dict(variant=variant, rank=None, seeds=[run["seed"] for run, _ in observed],
@@ -405,6 +409,7 @@ def leaderboard(suite):
                 scenario={key: suite["runs"][0]["options"][key] for key in ("dataset", "model", "peers", "partitioner", "alpha")},
                 provenance=suite.get("provenance"), selection=suite.get("selection"), extension=suite.get("extension"),
                 evaluation_model=suite.get("evaluation_model", "local"), execution_devices=suite.get("execution_devices"),
+                checkpoint_policy="best_accuracy_within_budget",
                 tables=tables, runs=suite["runs"])
 
 
@@ -420,7 +425,8 @@ def checkpoint_budget_view(document, budget, *, times, seeds):
 def leaderboard_csv(result):
     """Serialize the same columns for saved runs and live registry comparisons."""
     columns = ["budget", "variant", "rank", "provisional", "seeds", "accuracy_mean", "accuracy_sd",
-               "average_accuracy", "worst_decile_accuracy", "bytes_sent", "best_observed_accuracy", "execution_wall_seconds", "learning_rate"]
+               "average_accuracy", "worst_decile_accuracy", "bytes_sent", "best_observed_accuracy", "execution_wall_seconds", "learning_rate",
+               "loss_mean", "loss_sd"]
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=columns)
     writer.writeheader()
@@ -430,8 +436,10 @@ def leaderboard_csv(result):
                           provisional=table["provisional"], seeds=len(row["seeds"]),
                           accuracy_mean=row["accuracy"]["mean"] if row["accuracy"] else None,
                           accuracy_sd=row["accuracy"]["sd"] if row["accuracy"] else None,
+                          loss_mean=row["loss"]["mean"] if row["loss"] else None,
+                          loss_sd=row["loss"]["sd"] if row["loss"] else None,
                           learning_rate=row["learning_rate"])
-            for key in columns[7:-1]:
+            for key in ("average_accuracy", "worst_decile_accuracy", "bytes_sent", "best_observed_accuracy", "execution_wall_seconds"):
                 record[key] = row[key]["mean"] if row[key] else None
             writer.writerow(record)
     return buffer.getvalue()

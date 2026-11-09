@@ -13,7 +13,7 @@ import pytest
 
 from args import create_parser
 from dasklearn.algorithms import ALGORITHMS
-from dasklearn.benchmark import budget_metrics, checkpoint_budget_view, leaderboard, load_benchmark, read_curve
+from dasklearn.benchmark import budget_metrics, checkpoint_budget_view, leaderboard, leaderboard_csv, load_benchmark, read_curve
 from dasklearn.leaderboard_server import create_server
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,6 +103,102 @@ def test_partial_checkpoints_never_publish_or_fill_from_the_future(tmp_path):
     assert metrics["accuracy"] == 60 and metrics["bytes_sent"] == 500
     assert metrics["time_to_accuracy"] == {"40": 3, "80": None}
     assert budget_metrics(curve, 4, []) is None
+
+
+@pytest.mark.parametrize('global_model', [False, True])
+def test_best_accuracy_pairs_loss_and_worst_clients_without_changing_budget_costs(global_model):
+    curve = [dict(time=t, accuracy=accuracy, loss=loss, bytes_sent=t*100,
+                  worst_decile_accuracy=None if global_model else accuracy-10)
+             for t, accuracy, loss in [(0, 10, 4), (2, 60, 2), (3, 60, .5), (5, 40, 1), (7, 90, .1)]]
+    metrics = budget_metrics(curve, 5, [50, 80], best_accuracy=True)
+    assert metrics['accuracy'] == metrics['best_observed_accuracy'] == 60
+    assert metrics['loss'] == 2  # Earliest accuracy tie, not minimum loss.
+    assert metrics['worst_decile_accuracy'] == (None if global_model else 50)
+    assert metrics['bytes_sent'] == 500
+    assert metrics['average_accuracy'] == 40
+    assert metrics['time_to_accuracy'] == {'50': 2, '80': None}
+    assert budget_metrics(curve[:3], 5, [], best_accuracy=True) is None
+    assert budget_metrics(curve, 4, [], best_accuracy=True) is None
+    # Existing validation objectives still receive the endpoint metrics.
+    endpoint = budget_metrics(curve, 5, [])
+    assert endpoint['accuracy'] == 40 and endpoint['loss'] == 1
+    curve[0]['accuracy'] = 70
+    initial_best = budget_metrics(curve, 5, [], best_accuracy=True)
+    assert initial_best['accuracy'] == 70 and initial_best['loss'] == 4
+
+
+def test_leaderboard_ranks_mean_seed_maxima_and_exports_corresponding_losses(tmp_path):
+    benchmark = load_benchmark(config(tmp_path, runs=[dict(name='a'), dict(name='b')]), create_parser())
+    suite = benchmark.manifest() | dict(status='completed')
+    for run in suite['runs']:
+        if run['variant'] == 'a':
+            observations = [(0, 10, 4), (2, 70, 3), (3, 40, .5), (5, 40, .2)] if run['seed'] == 0 else [
+                (0, 10, 4), (2, 30, .1), (3, 80, 2), (5, 30, .5)]
+        else:
+            observations = [(0, 10, 4), (2, 65, 1), (3, 65, 1), (5, 65, 1)]
+        run.update(status='completed', wall_seconds=10, curve=[dict(time=t, accuracy=accuracy, loss=loss,
+                   bytes_sent=t*100, worst_decile_accuracy=accuracy) for t, accuracy, loss in observations])
+    result = leaderboard(suite)
+    assert result['checkpoint_policy'] == 'best_accuracy_within_budget'
+    table = result['tables'][-1]
+    assert not table['provisional']
+    a, b = table['rows']
+    assert (a['variant'], a['rank'], b['variant'], b['rank']) == ('a', 1, 'b', 2)
+    assert a['accuracy']['mean'] == 75  # Peaks are at different times for each seed.
+    assert a['accuracy']['sd'] == pytest.approx(50**.5)
+    assert a['loss']['mean'] == 2.5
+    assert a['loss']['sd'] == pytest.approx(.5**.5)
+    assert a['bytes_sent']['mean'] == 500
+    exported = list(csv.DictReader(io.StringIO(leaderboard_csv(result))))
+    record = next(row for row in exported if row['budget'] == '5' and row['variant'] == 'a')
+    assert float(record['accuracy_mean']) == 75 and float(record['loss_mean']) == 2.5
+    assert float(record['loss_sd']) == pytest.approx(.5**.5)
+
+    # An unfinished seed cannot contribute a peak or receive an official rank.
+    suite['runs'][1].update(status='running', curve=suite['runs'][1]['curve'][:-1])
+    partial = leaderboard(suite)['tables'][-1]
+    assert partial['provisional'] and all(row['rank'] is None for row in partial['rows'])
+    a = next(row for row in partial['rows'] if row['variant'] == 'a')
+    assert a['seeds'] == [0] and a['accuracy']['mean'] == 70
+
+
+@pytest.mark.parametrize('with_manifest', [False, True])
+def test_saved_endpoint_results_are_rescored_for_json_and_csv_without_rewriting(tmp_path, with_manifest):
+    benchmark = load_benchmark(config(tmp_path), create_parser())
+    benchmark.output.mkdir()
+    suite = benchmark.manifest() | dict(status='completed')
+    for run in suite['runs']:
+        run.update(status='completed', wall_seconds=1, curve=[dict(time=t, accuracy=accuracy, loss=loss,
+            bytes_sent=t*100, worst_decile_accuracy=accuracy) for t, accuracy, loss in [
+                (0, 10, 4), (2, 70, 2), (3, 40, 1), (4, 40, 1), (5, 30, .5)]])
+    saved = leaderboard(suite)
+    saved.pop('checkpoint_policy')
+    saved['pipeline'] = dict(phase='evaluation')
+    saved['tables'][-1]['rows'][0].update(accuracy=dict(mean=30, sd=0), loss=dict(mean=.5, sd=0))
+    files = {'manifest.json': json.dumps(suite), 'leaderboard.json': json.dumps(saved),
+             'leaderboard.csv': 'old endpoint export\n'}
+    if not with_manifest:
+        files.pop('manifest.json')  # Pipeline roots mirror results without a manifest.
+    for name, contents in files.items():
+        (benchmark.output / name).write_text(contents)
+    with create_server(benchmark.output, port=0) as server:
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            base = f'http://127.0.0.1:{server.server_port}'
+            with urlopen(base + '/leaderboard.json') as response:
+                result = json.load(response)
+            assert result['pipeline'] == saved['pipeline']
+            row = result['tables'][-1]['rows'][0]
+            assert row['accuracy']['mean'] == 70 and row['loss']['mean'] == 2
+            with urlopen(base + '/leaderboard.csv') as response:
+                rows = list(csv.DictReader(io.StringIO(response.read().decode())))
+            assert float(rows[-1]['accuracy_mean']) == 70 and float(rows[-1]['loss_mean']) == 2
+        finally:
+            server.shutdown()
+            thread.join()
+    for name, contents in files.items():
+        assert (benchmark.output / name).read_text() == contents
 
 
 def test_checkpoint_view_uses_exact_600_second_scores_without_changing_saved_results(tmp_path):

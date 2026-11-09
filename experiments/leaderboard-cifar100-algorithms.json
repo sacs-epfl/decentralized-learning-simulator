@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "CIFAR-100 / ResNet-18-GN · D-PSGD",
-  "notice": "CIFAR-100 / ResNet-18-GN: five-hour (18,000 simulated seconds) fixed-endpoint evaluations replace the earlier one-hour held-out runs. Reuse D-PSGD H=20 and LR=0.028495662538780223 from the completed 40-configuration, 3,600-second non-IID/homogeneous validation search; tuning is not repeated. Three paired evaluation seeds in each of the four settings; checkpoints every 300 seconds. Network: 100 Mbit/s per client, 10 ms latency; compute: 6 ms per minibatch. The original 3,600-second validation-selected checkpoint is provenance, not the new primary endpoint.",
+  "notice": "CIFAR-100 / ResNet-18-GN: five-hour (18,000 simulated seconds) evaluations replace the earlier one-hour held-out runs. Reuse D-PSGD H=20 and LR=0.028495662538780223 from the completed 40-configuration, 3,600-second non-IID/homogeneous validation search; tuning is not repeated. Three paired evaluation seeds in each of the four settings; checkpoints every 300 seconds. Network: 100 Mbit/s per client, 10 ms latency; compute: 6 ms per minibatch. The original 3,600-second validation-selected checkpoint is provenance. The leaderboard averages each seed’s highest accuracy within the selected budget and the loss at that checkpoint.",
   "scenarios": {
     "iid-uniform": {
       "partitioner": "iid",
@@ -117,7 +117,7 @@
         {
           "parameter": "Comparison horizon",
           "value": "18,000 simulated seconds (5 hours); hourly budget views",
-          "role": "Fixed endpoint requested after observing continued learning at one hour. Earlier held-out evaluation artifacts are removed and rerun from initialization with the same seeds and frozen parameters. Original tuning and its selected checkpoint remain recorded separately."
+          "role": "Fixed budget requested after observing continued learning at one hour. Scores average each seed’s best accuracy within the budget and its corresponding loss. Earlier held-out evaluation artifacts are removed and rerun from initialization with the same seeds and frozen parameters. Original tuning and its selected checkpoint remain recorded separately."
         }
       ],
       "limitations": [
@@ -145,7 +145,7 @@
         "6 November 2026: replace the one-hour held-out evaluation artifacts with five-hour evaluations across all four settings. Preserve the completed tuning and saved LR/H winner. Use a fixed 18,000-second primary endpoint; retain 300-second learning-curve checkpoints and original validation-selection provenance. No new tuning or test-based checkpoint selection."
       ],
       "evaluation": {
-        "policy": "fixed_endpoint",
+        "policy": "best_accuracy_within_budget",
         "primary_time": 18000
       }
     }

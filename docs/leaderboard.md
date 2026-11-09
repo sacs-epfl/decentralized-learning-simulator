@@ -10,8 +10,9 @@ LR=0.028495662538780223**. This replaces the earlier one-hour held-out runs;
 their evaluation directories and duplicated root score files are removed.
 The complete 40-configuration tuning history, winning parameters and original
 3,600-second validation-selected checkpoint remain intact. The five-hour primary
-endpoint is explicitly fixed by the experiment request, not validation-selected
-or chosen from the extended test curve. All four data/hardware settings use
+budget is explicitly fixed by the experiment request. The leaderboard reports
+each seed's highest accuracy within that budget and the loss at that checkpoint,
+then averages across seeds. All four data/hardware settings use
 seeds 110–112, hourly budget views and 300-second checkpoints. The extension
 follows inspection of prior test curves and remains exploratory.
 
@@ -759,12 +760,13 @@ For each selected budget the dashboard and exports contain:
 
 | Measurement | Definition |
 |---|---|
-| Accuracy | Mean client accuracy (`local`) or single averaged-model accuracy (`global`) at the exact budget; primary sort key |
+| Best accuracy | Highest checkpoint accuracy at or before the budget, selected independently per seed, then averaged across seeds; primary sort key. Each checkpoint uses mean client accuracy (`local`) or single averaged-model accuracy (`global`). Earliest checkpoint breaks exact accuracy ties, including initialization |
 | Accuracy SD | Sample standard deviation across seeds; blank for one seed |
+| Corresponding loss | Loss at each seed's highest-accuracy checkpoint, then mean and sample standard deviation across seeds; not the minimum loss or loss at a shared checkpoint |
 | Average accuracy | Area under the checkpoint curve from zero to the budget, divided by the budget; left-constant integration, in percentage points |
-| Worst 10% accuracy | Local readout only: mean of the lowest `ceil(clients / 10)` client accuracies, then mean across seeds; omitted for global readout |
-| Traffic | Total sent bytes, counted once, including bytes sent by unfinished transfers at the checkpoint |
-| Best observed accuracy | Maximum checkpoint mean accuracy within the budget, calculated per seed then averaged |
+| Worst 10% accuracy | Local readout only: mean of the lowest `ceil(clients / 10)` client accuracies at each seed's best-accuracy checkpoint, then mean across seeds; omitted for global readout |
+| Budget traffic | Total sent bytes at the budget endpoint, counted once, including bytes sent by unfinished transfers |
+| Best observed accuracy | JSON/CSV compatibility field, equal to the primary best-accuracy score |
 | Time to accuracy | First observed checkpoint reaching the target; no interpolation |
 | Full-run wall seconds | Worker startup, simulation, training, evaluation, and output through the largest configured horizon |
 
@@ -778,6 +780,16 @@ that budget. Until then, means and curves can cover different numbers of seeds;
 official numeric ranks are withheld. Failed/interrupted runs retain their status
 and logs, are excluded from aggregate scores, and keep the ranking provisional.
 Exact ties share a rank. Close means do not imply statistically distinct winners.
+
+A seed contributes only once its complete curve reaches the exact selected
+budget, even if an earlier checkpoint already has a high score. Existing runs
+served by the dashboard are rescored from their recorded curves without
+rerunning training or rewriting result files. JSON declares
+`checkpoint_policy: best_accuracy_within_budget`; CSV exports include
+`loss_mean` and `loss_sd` paired with `accuracy_mean` and `accuracy_sd`.
+Registry evaluation metadata also reports the best-accuracy policy and primary
+budget; legacy `fixed_endpoint` declarations remain readable. Validation tuning
+keeps its declared objective, including shared-checkpoint selection where configured.
 
 The default synthetic example uses common hyperparameters and is explicitly an
 **untuned screening**. Named runs support hand-selected configurations. The

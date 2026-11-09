@@ -120,10 +120,10 @@ function render(data) {
   $("export").href = `/leaderboard.csv?setting=${encodeURIComponent(selectedSetting ?? "default")}${workloadSuffix()}`;
   const table = data.tables.find(table => table.budget === +select.value);
   $("budget-label").textContent = `${table.budget} s`;
-  $("ranking-note").textContent = table.provisional ? "Provisional results · Official ranks appear after every variant has the full paired seed set. Partial or failed runs never receive a final rank." : "Complete paired comparison · Sorted by mean accuracy at the selected simulated budget. Small differences may fall within seed variation.";
-  if (data.evaluation?.policy === "fixed_endpoint") $("ranking-note").textContent += ` Primary evaluation uses the fixed endpoint at ${primaryTime} s. Hyperparameters come from the earlier validation search; other budget views describe the learning curve.`;
-  else if (data.selection?.selected_time != null) $("ranking-note").textContent += ` Primary evaluation uses the validation-selected checkpoint at ${data.selection.selected_time} s; other budget views describe the learning curve.`;
-  if (data.pipeline?.phase === "tuning") $("ranking-note").textContent = "Validation search trials · These candidate scores select learning rates. The algorithm comparison starts after selection, using fresh seeds and test data.";
+  $("ranking-note").textContent = table.provisional ? "Provisional results · Official ranks appear after every variant has the full paired seed set. Partial or failed runs never receive a final rank." : "Complete paired comparison · Sorted by mean best accuracy within the selected simulated budget. Small differences may fall within seed variation.";
+  $("ranking-note").textContent += " For each seed, select the highest-accuracy checkpoint within the budget and its corresponding loss, then report the mean ± sample SD across seeds. Earliest checkpoint breaks accuracy ties.";
+  if (data.evaluation?.primary_time != null) $("ranking-note").textContent += ` Primary evaluation budget: ${primaryTime} s. Hyperparameters come from the earlier validation search.`;
+  if (data.pipeline?.phase === "tuning") $("ranking-note").textContent += " Validation search trials · Parameter selection follows the declared tuning objective. The algorithm comparison starts after selection, using fresh seeds and test data.";
   $("rows").replaceChildren(); $("targets").replaceChildren();
   for (const row of table.rows) {
     const tr = document.createElement("tr");
@@ -131,7 +131,7 @@ function render(data) {
     const loss = row.loss ? `${number(row.loss.mean, 3)} ± ${row.loss.sd == null ? "—" : number(row.loss.sd, 3)}` : "—";
     const values = [row.rank ?? "—", row.variant, `${row.seeds.length}/${row.expected_seeds}${row.failed_runs ? " · failed" : ""}`, accuracy,
       loss, number(row.average_accuracy?.mean), ...(globalModel ? [] : [number(row.worst_decile_accuracy?.mean)]), number(row.bytes_sent?.mean == null ? null : row.bytes_sent.mean/1e6),
-      number(row.best_observed_accuracy?.mean), number(row.execution_wall_seconds?.mean, 1)];
+      number(row.execution_wall_seconds?.mean, 1)];
     values.forEach((value,index) => index === 1 ? algorithmCell(tr, row.variant, data) : cell(tr, value)); $("rows").append(tr);
     const targetRow = document.createElement("tr"); cell(targetRow, ""); algorithmCell(targetRow, row.variant, data);
     for (const target of data.accuracy_targets) {
@@ -162,8 +162,8 @@ function render(data) {
     dash.className="reference-swatch";
     label.append(dash, document.createTextNode(`Centralized · ${number(reference.steps, 0)} steps`)); $("legend").append(label);
   }
-  $("interpretation").textContent = data.evaluation_split === "test" ? "Exploratory test-set comparison. Best observed accuracy is a descriptive maximum over checkpoints; it is not an independently evaluated, validation-selected checkpoint or an estimate of unlimited-time performance." : "Best observed accuracy is measured on validation checkpoints within the declared budget. Final held-out test evaluation and automatic hyperparameter tuning are separate steps.";
-  if (data.pipeline) $("interpretation").textContent = data.pipeline.phase === "tuning" ? "Each algorithm receives the same number of candidates, tuning seeds, simulated seconds, and validation examples. Candidate ranges are declared in advance; no test scores enter LR selection." : "Learning rates were frozen using validation data on separate seeds. Test accuracy at the declared budgets is the held-out comparison. Best observed test accuracy is descriptive and must not be used to select checkpoints or retune settings.";
+  $("interpretation").textContent = data.evaluation_split === "test" ? "Scores report each seed’s best observed test accuracy within the budget and the loss at that checkpoint, averaged across seeds. These maxima describe the observed test curves; they are not independent validation-selected checkpoint estimates or estimates of unlimited-time performance." : "Scores report each seed’s best observed validation accuracy within the budget and its corresponding loss, averaged across seeds. Final held-out test evaluation and automatic hyperparameter tuning are separate steps.";
+  if (data.pipeline) $("interpretation").textContent += data.pipeline.phase === "tuning" ? " Each algorithm receives the same number of candidates, tuning seeds, simulated seconds, and validation examples. The declared validation objective selects parameters; no test scores enter selection." : " Hyperparameters were frozen using validation data on separate seeds.";
   $("provenance").textContent=JSON.stringify({scenario:data.scenario,network:data.network,provenance:data.provenance,reference:data.reference,runs:data.runs.map(({curve,...run}) => run)}, null, 2);
 }
 async function refresh() {

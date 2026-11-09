@@ -43,10 +43,11 @@ def load_algorithms(catalog):
         entry['_benchmark'] = load_benchmark(path.parent / entry['config'], create_parser())
         evaluation = entry.get('evaluation')
         if evaluation is not None and (not isinstance(evaluation, dict)
-                or set(evaluation) != {'policy', 'primary_time'} or evaluation['policy'] != 'fixed_endpoint'
+                or set(evaluation) != {'policy', 'primary_time'}
+                or evaluation['policy'] not in {'fixed_endpoint', 'best_accuracy_within_budget'}
                 or type(evaluation['primary_time']) is not int
                 or evaluation['primary_time'] not in entry['_benchmark'].budgets):
-            raise ValueError('Fixed evaluation endpoint must be a declared budget')
+            raise ValueError('Primary evaluation time must be a declared budget with a supported checkpoint policy')
         if entry['tuning_setting'] not in registry['scenarios']:
             raise ValueError('Unknown tuning setting')
     return registry
@@ -106,7 +107,7 @@ def annotate_leaderboard(document, registry):
         if any(policy is not None for policy in policies):
             if any(policy != policies[0] for policy in policies):
                 raise ValueError('Registered algorithms must use the same primary evaluation policy')
-            document['evaluation'] = policies[0]
+            document['evaluation'] = policies[0] | dict(policy='best_accuracy_within_budget')
     return document
 
 
@@ -295,12 +296,11 @@ def algorithm_document(entry, registry, setting):
         ('Selection rule', selection['rule'] if selection else
                           f"Highest validation accuracy averaged across all seeds at a shared training checkpoint ({spec['evaluation_period']}–{spec['budget']} s); earliest time breaks within-pair ties; lower LR, then variant name, break between-pair ties" if spec['metric']=='best_mean_accuracy' else
                           f"{'Lowest mean endpoint validation NLL' if spec['metric']=='loss' else 'Highest mean endpoint validation accuracy'} at {spec['budget']} s across all tuning seeds; lower LR, then variant name, break exact ties"),
-        ('Frozen evaluation checkpoint', f"{selection['selected_time']} simulated seconds" if selection and selection.get('selected_time') is not None else 'Not yet selected'),
+        ('Original validation-selected checkpoint', f"{selection['selected_time']} simulated seconds" if selection and selection.get('selected_time') is not None else 'Not yet selected'),
+        ('Leaderboard checkpoint rule', 'Highest accuracy within each budget, selected per seed; earliest checkpoint breaks ties; accuracy and corresponding loss averaged across seeds'),
     ]
-    if entry.get('evaluation', {}).get('policy') == 'fixed_endpoint':
-        parameters = [('Original validation-selected checkpoint' if key == 'Frozen evaluation checkpoint' else key, value)
-                      for key, value in parameters]
-        parameters.append(('Primary fixed evaluation endpoint', f"{entry['evaluation']['primary_time']} simulated seconds"))
+    if entry.get('evaluation'):
+        parameters.append(('Primary evaluation budget', f"{entry['evaluation']['primary_time']} simulated seconds"))
     if options['algorithm'] == 'shatter':
         parameters[2:2] = [('Virtual nodes per real node', options['k']),
                            ('Total virtual nodes', options['peers']*options['k']),
@@ -345,6 +345,8 @@ def algorithm_document(entry, registry, setting):
         parameters = [(key, 'Uniform parameter average of all clients’ latest published models, including inactive clients’ retained models; offline diagnostic'
                        if key == 'Readout' else value) for key, value in parameters]
     public = {key:value for key,value in entry.items() if not key.startswith('_') and key not in {'config'}}
+    if public.get('evaluation'):
+        public['evaluation'] = public['evaluation'] | dict(policy='best_accuracy_within_budget')
     progress = None
     if adaptive:
         from dasklearn.tpe_tuning import search_progress
