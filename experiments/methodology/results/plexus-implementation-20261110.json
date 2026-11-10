@@ -1,0 +1,83 @@
+{
+  "date": "2026-11-10",
+  "branch": "codex/plexus",
+  "algorithm": "plexus",
+  "scope": "Paper Algorithms 1 and 2; stable membership; full participation for experiments",
+  "success_fraction": 1.0,
+  "author_reference_commit": "82ae6cf48ba829df9c90473b7f9a80728c19d43f",
+  "paper_url": "https://euromlsys.eu/pdf/euromlsys25-10.pdf",
+  "paper_sha256": "61b8b76ceafe555810a3572e67e14fb77f9daa416a1ea84c486d47537f541ec8",
+  "reference_files": {
+    "sample_manager.py": {
+      "original_path": "dlsim/plexus/sample_manager.py",
+      "sha256": "6272b6da6676e4866157caba5bc72071f8b630d3b025ac223dd614ad115a735f"
+    },
+    "fedavg.py": {
+      "original_path": "dlsim/core/gradient_aggregation/fedavg.py",
+      "sha256": "5198e247b1ad96d34ac56f28635cf23953db212f184a8eb4dd77c7db506ff0b7"
+    }
+  },
+  "focused_protocol_tests": {
+    "passed": 23,
+    "log": "output/plexus-validation-20261110/plexus-focused-final.log"
+  },
+  "cifar_preflights": {
+    "uniform": {
+      "status": "completed",
+      "dataset": "cifar10",
+      "model": "gnlenet",
+      "peers": 32,
+      "sample_size": 4,
+      "local_steps": 5,
+      "seed": 100,
+      "split": "validation",
+      "examples": 100,
+      "simulated_seconds": 30,
+      "checkpoints": [
+        0,
+        15,
+        30
+      ],
+      "completed_aggregations": 16,
+      "device": "cuda:0",
+      "source": "output/plexus-validation-20261110/cifar10-uniform/leaderboard.json"
+    },
+    "heterogeneous": {
+      "status": "completed",
+      "dataset": "cifar10",
+      "model": "gnlenet",
+      "peers": 32,
+      "sample_size": 4,
+      "local_steps": 5,
+      "seed": 100,
+      "split": "validation",
+      "examples": 100,
+      "simulated_seconds": 30,
+      "checkpoints": [
+        0,
+        15,
+        30
+      ],
+      "completed_aggregations": 12,
+      "device": "cuda:0",
+      "source": "output/plexus-validation-20261110/cifar10-heterogeneous/leaderboard.json"
+    }
+  },
+  "release_difference": "Paper: aggregator in current training sample; released forward_trained_model: aggregator in next sample. This implementation follows the paper.",
+  "cpu_regression": {
+    "status": "passed",
+    "passed": 1120,
+    "skipped": 25,
+    "warnings": 5,
+    "seconds": 210.02,
+    "command": "CUDA_VISIBLE_DEVICES='' python -m pytest -q",
+    "log": "output/plexus-validation-20261110/cpu-regression.log"
+  },
+  "protocol_source_sha256": {
+    "dasklearn/simulation/plexus/__init__.py": "974fce6da989e6ccd7ab21b113e1303daa707d7970b976d7643a6ab53ffd6440",
+    "dasklearn/simulation/plexus/client.py": "3330caa816cf26794a32badc066fd9730ca3bb4b69d87273956ace150a832588",
+    "dasklearn/simulation/plexus/sampling.py": "aeb36dde52e4c2dfc56324fc439f2d9402c9c75ecf6621728c96b6890a284444",
+    "dasklearn/simulation/plexus/settings.py": "8120683d6d35c43a14138428847071b36ec7bb82f54fdb92359700e851fe40a0",
+    "dasklearn/simulation/plexus/simulation.py": "fab73bb21680c952ffcd9b0aa82bf3e78f02b62c93af8ce0a6892c7ba76f9862"
+  }
+}

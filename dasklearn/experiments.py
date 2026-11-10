@@ -202,6 +202,15 @@ def validate_run(options):
             raise ValueError(f"{field} must be nonnegative")
     if not 0 <= options["validation_set_fraction"] < 1:
         raise ValueError("validation_set_fraction must be in [0, 1)")
+    if options["algorithm"] == "plexus":
+        if not 1 <= options["sample_size"] <= options["peers"]:
+            raise ValueError("Plexus sample_size must be in [1, peers]")
+        if not 0 < options["success_fraction"] <= 1:
+            raise ValueError("Plexus success_fraction must be in (0, 1]")
+        if options["churn"] != "none" or options["synchronous"]:
+            raise ValueError("Plexus requires stable membership without synchronous barriers")
+        if options["momentum"] != 0:
+            raise ValueError("Plexus requires zero trainer momentum")
     if options["algorithm"] == "conflux-v2":
         if not 1 <= options["sample_size"] <= options["peers"]:
             raise ValueError("Conflux V2 sample_size must be in [1, peers]")

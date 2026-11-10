@@ -35,10 +35,16 @@ from dasklearn.simulation.motef_vr.settings import MoTEFVRSettings
 from dasklearn.simulation.motef_vr.simulation import MoTEFVRSimulation
 
 
-BASELINE_VARIANTS = ("motef-vr", "damsgrad", "fspda", "motef", "sgp", "relaysgd", "detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
+from dasklearn.simulation.plexus.settings import PlexusSettings
+from dasklearn.simulation.plexus.simulation import PlexusSimulation
+
+
+BASELINE_VARIANTS = ("plexus", "motef-vr", "damsgrad", "fspda", "motef", "sgp", "relaysgd", "detag", "gt-dsgd", "swift", "qgm", "dsgdm", "dsgd", "choco", "demo", "teleportation-ring", "teleportation-hypercube", "d-local-sgd-ring", "moshpit", "dspodfl")
 
 
 def baseline_spec(variant, peers, sample_size, group_size=8, averaging_steps=1):
+    if variant == "plexus":
+        return PlexusSimulation, PlexusSettings, {"sample_size": sample_size}
     if variant == 'damsgrad':
         return DAMSGradSimulation, DAMSGradSettings, {}
     if variant == 'fspda':

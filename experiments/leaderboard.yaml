@@ -27,6 +27,8 @@ settings:
   sample_size: 4
   group_size: 4
 runs:
+  - name: plexus
+    settings: {algorithm: plexus, success_fraction: 1}
   - name: fedavg
     settings: {algorithm: fl}
   - name: dpsgd-ring

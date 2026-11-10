@@ -43,7 +43,7 @@ def test_plan_has_exact_irregular_budgets_and_fixed_paired_scenario(tmp_path, mo
     example = load_benchmark(ROOT / "experiments/leaderboard.yaml", create_parser())
     # MoTEF-VR awaits screening; Conflux V2 is scoped to its CIFAR-10 campaign.
     assert {run.options["algorithm"] for run in example.runs} == set(ALGORITHMS) - {"motef-vr", "conflux-v2"}
-    assert len(example.runs) == 23 * 3
+    assert len(example.runs) == 24 * 3
 
 
 @pytest.mark.parametrize("changes,match", [

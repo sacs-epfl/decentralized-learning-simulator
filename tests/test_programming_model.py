@@ -194,6 +194,7 @@ async def test_every_registered_protocol_executes_with_new_api(tmp_path, algorit
     config_type, simulation_type = map(import_class, class_paths(algorithm))
     options = {
         'fl': dict(sample_size=2), 'dpsgd': dict(k=2), 'epidemic': dict(k=2),
+        'plexus': dict(sample_size=2),
         'conflux': dict(sample_size=2, chunks_in_sample=2),
         'conflux-v2': dict(sample_size=2, chunks_in_sample=2),
         'shatter': dict(k=2, r=2), 'moshpit': dict(group_size=2),

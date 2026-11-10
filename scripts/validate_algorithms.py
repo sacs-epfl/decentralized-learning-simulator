@@ -66,6 +66,7 @@ async def run_one(args, variant, profile, partitioner, seed):
         mode=specific['mode'];specific.update(qgm_options(args))
         if variant!='qgm':specific['mode']=mode
         algorithm='qgm'
+    if variant == 'plexus': specific['success_fraction'] = args.success_fraction
     if variant=='choco':specific.update(choco_options(args))
     if variant=='swift':specific.update(swift_options(args))
     if variant=='gt-dsgd':specific.update(gt_dsgd_options(args))
